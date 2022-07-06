@@ -1,0 +1,12 @@
+[package]
+name = "rpi-rust"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nannou = "0.18.1"
+nannou_osc = "0.18.0"
+circular-queue = "0.2.6"
+kiss3d = "0.34.0"
