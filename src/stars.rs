@@ -66,8 +66,8 @@ const POS_OFFSETXY: f32 = 10.;
 pub struct Stars(CircularQueue<Star>);
 
 impl Stars{
-    pub fn new() -> Self {
-        let mut stars = CircularQueue::with_capacity(100);
+    pub fn new(num_stars: usize) -> Self {
+        let mut stars = CircularQueue::with_capacity(num_stars);
 
         while !stars.is_full(){
             let new_star = Star::new_rand();

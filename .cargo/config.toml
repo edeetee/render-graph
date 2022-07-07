@@ -1,0 +1,8 @@
+#https://robamu.github.io/post/cross-compile-rust-rpi/
+
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+
+
+[alias]
+build_rpi = "build --target=aarch64-unknown-linux-gnu --release"

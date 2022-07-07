@@ -3,8 +3,18 @@ use nannou_osc as osc;
 use nannou_osc::rosc::OscType;
 use osc::Receiver;
 use nannou::winit::window::Fullscreen;
+use clap::Parser;
 
 use crate::stars::Stars;
+
+//pretty stars
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    /// Number of stars to render
+    #[clap(short, long, value_parser)]
+    stars: usize,
+}
 
 pub fn main() {
     nannou::app(start_nannou).update(update_nannou).run()
@@ -58,6 +68,8 @@ fn update_nannou(_app: &App, state: &mut NannouState, frame: Update){
 const PORT: u16 = 10000;
 
 fn start_nannou(app: &App) -> NannouState {
+    let args = Args::parse();
+
     let window_id = app
         .new_window()
         .title("Stars")
@@ -70,7 +82,7 @@ fn start_nannou(app: &App) -> NannouState {
     let (w, h) = window.rect().w_h();
     let window_scale = Vec3::new(w, h, 1.);
     
-    let stars = Stars::new();
+    let stars = Stars::new(args.stars);
     let scale = Mat4::from_scale(window_scale);
     let perspective = Mat4::perspective_rh(
         std::f32::consts::FRAC_PI_8, 
