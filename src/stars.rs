@@ -1,7 +1,7 @@
 use std::iter;
 
 // use kiss3d::nalgebra::Vector3;
-use nannou::{rand::random_range, prelude::Vec3};
+use nannou::{rand::random_range, prelude::*};
 
 //TODO: perspective camera?
 
@@ -9,6 +9,7 @@ use nannou::{rand::random_range, prelude::Vec3};
 pub struct Star{
     //position defined as m
     pub pos: Vec3,
+    // pub tx: Mat4,
     //velocity defined as m/s
     pub vel: Vec3,
     //radius to draw
@@ -31,7 +32,10 @@ impl Star{
     }
 
     fn update(&mut self, seconds: f32) {
-        self.pos += self.vel*seconds*Self::SPEED;
+        let delta = self.vel*seconds*Self::SPEED;
+        
+        self.pos += delta;
+        // self.tx.transform_point3(delta);
         // self.vel = (self.vel*10. + Self::rand_vel()).normalize();
     }
 
@@ -42,6 +46,7 @@ impl Star{
     }
 
     fn reset_pos(&mut self) {
+        // self.tx
         self.pos.x = random_range(-POS_OFFSETXY, POS_OFFSETXY);
         self.pos.y = random_range(-POS_OFFSETXY, POS_OFFSETXY);
         self.pos.z = random_range(-1000., -500.);

@@ -1,3 +1,4 @@
+use nannou::wgpu::Backends;
 use nannou::{prelude::*};
 use nannou_osc as osc;
 use nannou_osc::rosc::OscType;
@@ -12,12 +13,24 @@ use crate::stars::Stars;
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// Number of stars to render
-    #[clap(short, long, value_parser)]
+    #[clap(short, long, value_parser, default_value_t=10)]
     num_stars: usize,
 }
 
+const BACKEND: Backends = if cfg!(target_os="linux"){
+    Backends::GL
+} else {
+    Backends::PRIMARY
+};
+// const BACKEND: Backends = Backends::PRIMARY;
+
 pub fn main() {
-    nannou::app(start_nannou).update(update_nannou).run()
+    println!("Using {BACKEND:?} backend");
+
+    nannou::app(start_nannou)
+        .update(update_nannou)
+        .backends(BACKEND)
+        .run()
 }
 
 struct Options{
@@ -28,7 +41,8 @@ struct NannouState {
     stars: Stars,
     mat: Mat4,
     receiver: Receiver,
-    options: Options
+    options: Options,
+    last_elapsed_frames: u64
 }
 
 fn view_nannou(app: &App, model: &NannouState, frame: Frame){
@@ -45,10 +59,8 @@ fn view_nannou(app: &App, model: &NannouState, frame: Frame){
     draw.to_frame(app, &frame).unwrap()
 }
 
-fn update_nannou(_app: &App, state: &mut NannouState, frame: Update){
-    state.stars.update(frame.since_last.as_secs_f32()*state.options.speed);
-
-    // Vec::new().first()
+fn update_nannou(app: &App, state: &mut NannouState, update: Update){
+    state.stars.update(update.since_last.as_secs_f32()*state.options.speed);
 
     for (packet, _) in state.receiver.try_iter(){
         for msg in packet.into_msgs(){
@@ -56,13 +68,24 @@ fn update_nannou(_app: &App, state: &mut NannouState, frame: Update){
                 "/speed" => {
                     if let Some(speed) = msg.args.map(parse_float).flatten(){
                         state.options.speed = speed;
-                        println!("osc speed: {}", speed);
+                        println!("osc speed: {speed:.2}");
                     }
                 }
                 _ => {}
             }
         }
     }
+
+    let elapsed_frames = app.elapsed_frames();
+    let frames_since_last_update = elapsed_frames - state.last_elapsed_frames;
+
+    let frame_ms = update.since_last.as_secs_f32()/frames_since_last_update.to_f32().unwrap()*1000.0;
+
+    println!("frame ms {frame_ms:.2}");
+
+    state.last_elapsed_frames = elapsed_frames
+
+    // update.since_last
 }
 
 const PORT: u16 = 10000;
@@ -97,7 +120,7 @@ fn start_nannou(app: &App) -> NannouState {
         speed: 1.
     };
  
-    NannouState { stars, mat: perspective, receiver, options }
+    NannouState { stars, mat: perspective, receiver, options, last_elapsed_frames: 0 }
 }
 
 fn parse_float<'a>(args: Vec<OscType>) -> Option<f32> {
