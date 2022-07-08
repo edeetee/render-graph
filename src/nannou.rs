@@ -13,7 +13,7 @@ use crate::stars::Stars;
 struct Args {
     /// Number of stars to render
     #[clap(short, long, value_parser)]
-    stars: usize,
+    num_stars: usize,
 }
 
 pub fn main() {
@@ -24,7 +24,7 @@ struct Options{
     speed: f32
 }
 
-struct NannouState{
+struct NannouState {
     stars: Stars,
     mat: Mat4,
     receiver: Receiver,
@@ -37,7 +37,7 @@ fn view_nannou(app: &App, model: &NannouState, frame: Frame){
     let draw = app.draw()
         .transform(model.mat);
 
-    for star in model.stars.iter(){
+    for star in model.stars.iter() {
         let closeness = 0.995f32.pow(star.pos.length());
         draw.xyz(star.pos).ellipse().radius(star.radius*closeness);
     }
@@ -70,7 +70,7 @@ const PORT: u16 = 10000;
 fn start_nannou(app: &App) -> NannouState {
     let args = Args::parse();
 
-    let window_id = app
+    let _window_id = app
         .new_window()
         .title("Stars")
         .view(view_nannou)
@@ -78,12 +78,12 @@ fn start_nannou(app: &App) -> NannouState {
         .build()
         .unwrap();
 
-    let window = app.window(window_id).unwrap();
-    let (w, h) = window.rect().w_h();
-    let window_scale = Vec3::new(w, h, 1.);
+    // let window = app.window(window_id).unwrap();
+    // let (w, h) = window.rect().w_h();
+    // let window_scale = Vec3::new(w, h, 1.);
+    // let scale = Mat4::from_scale(window_scale);
     
-    let stars = Stars::new(args.stars);
-    let scale = Mat4::from_scale(window_scale);
+    let stars = Stars::new(args.num_stars);
     let perspective = Mat4::perspective_rh(
         std::f32::consts::FRAC_PI_8, 
         1., 

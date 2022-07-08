@@ -1,4 +1,5 @@
-use circular_queue::{CircularQueue, AscIter};
+use std::iter;
+
 // use kiss3d::nalgebra::Vector3;
 use nannou::{rand::random_range, prelude::Vec3};
 
@@ -63,33 +64,28 @@ const VEL_OFFSET: f32 = 0.2;
 const POS_OFFSETXY: f32 = 10.;
 
 
-pub struct Stars(CircularQueue<Star>);
+pub struct Stars {
+    stars: Vec<Star>
+}
 
-impl Stars{
+impl Stars {
     pub fn new(num_stars: usize) -> Self {
-        let mut stars = CircularQueue::with_capacity(num_stars);
-
-        while !stars.is_full(){
-            let new_star = Star::new_rand();
-            stars.push(new_star);
+        Self {
+            stars: iter::repeat_with(Star::new_rand).take(num_stars).collect()
         }
-
-        Self(stars)
     }
 
-    pub fn iter(self: &Self) -> AscIter<Star> {
-        self.0.asc_iter()
+    pub fn iter(&self) -> std::slice::Iter<'_, Star> {
+        self.stars.iter()
     }
 
-    pub fn update(self: &mut Self, seconds: f32) {
-        for star in self.0.asc_iter_mut(){
+    pub fn update(&mut self, seconds: f32) {
+        for star in self.stars.iter_mut(){
             star.update(seconds);
 
             if 0. < star.pos.z {
                 star.reset();
             }
-            
-            // println!("{star:?}");
         }
     }
 }

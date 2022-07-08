@@ -171,15 +171,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
-name = "circular-queue"
-version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d34327ead1c743a10db339de35fb58957564b99d248a67985c55638b22c59b5"
-dependencies = [
- "version_check",
-]
-
-[[package]]
 name = "clap"
 version = "3.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1825,7 +1816,6 @@ dependencies = [
 name = "rpi-rust"
 version = "0.1.0"
 dependencies = [
- "circular-queue",
  "clap",
  "nannou",
  "nannou_osc",

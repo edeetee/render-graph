@@ -5,4 +5,4 @@ linker = "aarch64-linux-gnu-gcc"
 
 
 [alias]
-build_rpi = "build --target=aarch64-unknown-linux-gnu --release"
+build-rpi = "build --target=aarch64-unknown-linux-gnu --release"

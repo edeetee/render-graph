@@ -1,5 +1,3 @@
-use std::{f32::consts::FRAC_PI_2, time::{SystemTime, Instant}};
-
 // mod renderer_nannou_view;
 mod nannou;
 mod stars;
