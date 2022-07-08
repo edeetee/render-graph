@@ -53,7 +53,11 @@ fn view_nannou(app: &App, model: &NannouState, frame: Frame){
 
     for star in model.stars.iter() {
         let closeness = 0.995f32.pow(star.pos.length());
-        draw.xyz(star.pos).ellipse().radius(star.radius*closeness);
+        draw
+            .xyz(star.pos)
+            .ellipse()
+            .radius(star.radius*closeness)
+            .color(star.color);
     }
 
     draw.to_frame(app, &frame).unwrap()
@@ -81,7 +85,7 @@ fn update_nannou(app: &App, state: &mut NannouState, update: Update){
 
     let frame_ms = update.since_last.as_secs_f32()/frames_since_last_update.to_f32().unwrap()*1000.0;
 
-    println!("frame ms {frame_ms:.2}");
+    println!("{frame_ms:.0}ms per frame");
 
     state.last_elapsed_frames = elapsed_frames
 
