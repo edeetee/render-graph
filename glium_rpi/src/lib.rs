@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{time::Instant, iter::{successors, from_fn}};
 
 use glium::{Surface, VertexBuffer, Display, index::{PrimitiveType, NoIndices}, IndexBuffer};
 
@@ -6,6 +6,7 @@ use glium::{Surface, VertexBuffer, Display, index::{PrimitiveType, NoIndices}, I
 extern crate glium;
 
 use glium::glutin;
+use stars::Stars;
 mod model;
 
 pub struct Options{
@@ -29,18 +30,9 @@ pub fn main(options: Options) {
     let frag_shader = include_str!("instance.frag");
     let vert_shader = include_str!("instance.vert");
 
-    // let instances = stars_arr.iter()
-    //     .map(|star| star.pos).collect::<Vec<_>>();
+    let instance_data = gen_instance_attrs(&model.stars);    
 
-    let instance_data = model.stars.iter().flat_map(|_| {
-        std::iter::repeat(
-            InstanceAttr {
-                world_position: [0.0, 0.0, 0.0],
-            }
-        ).take(TRI_VERTICES.len())
-    }).collect::<Vec<_>>();
-
-    let vert_data = std::iter::repeat(TRI_VERTICES)
+    let vert_data = std::iter::repeat(VERTICES)
         .take(model.stars.iter().count())
         .flatten()
         .collect::<Vec<_>>();
@@ -70,8 +62,12 @@ pub fn main(options: Options) {
             model.update(elapsed_time.as_secs_f32());
 
             let mut mapping = instances_buffer.map();
-            for (src, dest) in model.stars.iter().zip(mapping.iter_mut()) {
-                dest.world_position = src.pos.to_array();
+            let mapping_iter = mapping.chunks_exact_mut(VERTICES.len());
+            
+            for (src, dest) in model.stars.iter().zip(mapping_iter) {
+                for attr in dest {
+                    attr.world_position = src.pos.to_array();
+                }
             }
         }
 
@@ -105,7 +101,6 @@ pub fn main(options: Options) {
         std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
-        
         match ev {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 glutin::event::WindowEvent::CloseRequested => {
@@ -121,6 +116,16 @@ pub fn main(options: Options) {
     });
 }
 
+fn gen_instance_attrs(stars: &Stars) -> Vec<InstanceAttr> {
+    stars.iter().map(|star| star.pos.to_array() ).flat_map(|data| {
+        std::iter::repeat(
+            InstanceAttr {
+                world_position: data,
+            }
+        ).take(VERTICES.len())
+    }).collect::<Vec<_>>()
+}
+
 #[derive(Copy, Clone)]
 struct InstanceAttr {
     world_position: [f32; 3],
@@ -134,18 +139,10 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position, color);
 
-const TRI_VERTICES: [Vertex; 3] = [
-    Vertex { position: [-0.5, -0.5, 0.], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [ 0.0,  0.5, 0.], color: [0.0, 0.0, 1.0] },
-    Vertex { position: [ 0.5, -0.5, 0.], color: [1.0, 0.0, 0.0] },
+const VERT_SCALE: f32 = 0.01;
+
+const VERTICES: [Vertex; 3] = [
+    Vertex { position: [-VERT_SCALE, -VERT_SCALE, 0.], color: [0.0, 1.0, 0.0] },
+    Vertex { position: [ 0.0,  VERT_SCALE, 0.], color: [0.0, 0.0, 1.0] },
+    Vertex { position: [ VERT_SCALE, -VERT_SCALE, 0.], color: [1.0, 0.0, 0.0] },
 ];
-
-// fn triangle_buffers(display: &Display) -> (VertexBuffer<Vertex>, NoIndices) {
-//     let verts = glium::VertexBuffer::new(display,
-//         &TRI_VERTICES
-//     ).unwrap();
-
-//     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
-
-//     (verts, indices)
-// }
