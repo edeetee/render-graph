@@ -1,4 +1,11 @@
+# RPI Rendering
+
+https://symbolibre.org/graphics-acceleration-on-the-raspberry-pi-zero.html
+
 # Profiling
+
+https://gendignoux.com/blog/2019/11/09/profiling-rust-docker-perf.html
+hmm?
 
 ## Perf general
 
