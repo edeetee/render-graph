@@ -10,5 +10,5 @@ varying vec3 v_color;
 void main() {
     v_position = position;
     v_color = vec3(1.0, 1.0, 1.0);
-    gl_Position = persp_matrix * vec4(position * 0.01 + world_position, 1.0);
+    gl_Position = persp_matrix * vec4(position * 0.001 + world_position, 1.0);
 }

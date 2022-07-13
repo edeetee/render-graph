@@ -24,25 +24,26 @@ pub fn main(options: Options) {
 
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let (vertices, indices) = triangle_buffers(&display);
+    // let (vertices, indices) = triangle_buffers(&display);
 
     let frag_shader = include_str!("instance.frag");
     let vert_shader = include_str!("instance.vert");
 
-    #[derive(Copy, Clone)]
-    struct InstanceAttr {
-        world_position: [f32; 3],
-    }
-    implement_vertex!(InstanceAttr, world_position);
-
     // let instances = stars_arr.iter()
     //     .map(|star| star.pos).collect::<Vec<_>>();
 
-    let data = model.stars.iter().map(|_| {
-        InstanceAttr {
-            world_position: [0.0, 0.0, 0.0],
-        }
+    let instance_data = model.stars.iter().flat_map(|_| {
+        std::iter::repeat(
+            InstanceAttr {
+                world_position: [0.0, 0.0, 0.0],
+            }
+        ).take(TRI_VERTICES.len())
     }).collect::<Vec<_>>();
+
+    let vert_data = std::iter::repeat(TRI_VERTICES)
+        .take(model.stars.iter().count())
+        .flatten()
+        .collect::<Vec<_>>();
 
     let program = glium::Program::from_source(
         &display, 
@@ -51,9 +52,12 @@ pub fn main(options: Options) {
         None
     ).unwrap();
 
-    let mut instances_buffer = glium::vertex::VertexBuffer::dynamic(&display, &data).unwrap();
+    let mut instances_buffer = glium::vertex::VertexBuffer::dynamic(&display, &instance_data).unwrap();
+    let vertices_buffer = glium::vertex::VertexBuffer::new(&display, &vert_data).unwrap();
 
     let mut last_frame = Instant::now();
+
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
     event_loop.run(move |ev, _, control_flow| {
         
@@ -82,11 +86,13 @@ pub fn main(options: Options) {
         };
 
         //todo: multidraw?
+        //https://www.khronos.org/opengl/wiki/Vertex_Rendering#Indirect_rendering
+        //copy vertices per instance??
 
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
         target.draw(
-            (&vertices, instances_buffer.per_instance().unwrap()),
+            (&vertices_buffer, &instances_buffer),
             &indices, 
             &program, 
             &uniform! { persp_matrix: model.mat.to_cols_array_2d() },
@@ -115,6 +121,11 @@ pub fn main(options: Options) {
     });
 }
 
+#[derive(Copy, Clone)]
+struct InstanceAttr {
+    world_position: [f32; 3],
+}
+implement_vertex!(InstanceAttr, world_position);
 
 #[derive(Copy, Clone)]
 struct Vertex {
@@ -123,16 +134,18 @@ struct Vertex {
 }
 implement_vertex!(Vertex, position, color);
 
-fn triangle_buffers(display: &Display) -> (VertexBuffer<Vertex>, NoIndices) {
-    let verts = glium::VertexBuffer::new(display,
-        &[
-            Vertex { position: [-0.5, -0.5, 0.], color: [0.0, 1.0, 0.0] },
-            Vertex { position: [ 0.0,  0.5, 0.], color: [0.0, 0.0, 1.0] },
-            Vertex { position: [ 0.5, -0.5, 0.], color: [1.0, 0.0, 0.0] },
-        ]
-    ).unwrap();
+const TRI_VERTICES: [Vertex; 3] = [
+    Vertex { position: [-0.5, -0.5, 0.], color: [0.0, 1.0, 0.0] },
+    Vertex { position: [ 0.0,  0.5, 0.], color: [0.0, 0.0, 1.0] },
+    Vertex { position: [ 0.5, -0.5, 0.], color: [1.0, 0.0, 0.0] },
+];
 
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+// fn triangle_buffers(display: &Display) -> (VertexBuffer<Vertex>, NoIndices) {
+//     let verts = glium::VertexBuffer::new(display,
+//         &TRI_VERTICES
+//     ).unwrap();
 
-    (verts, indices)
-}
+//     let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+
+//     (verts, indices)
+// }
