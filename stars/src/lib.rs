@@ -1,10 +1,9 @@
-use std::{iter};
-
-// use kiss3d::nalgebra::Vector3;
+use std::iter;
 use glam::Vec3;
+use palette::{rgb::Rgb, Pixel, IntoColor, LinSrgb};
 use rand::{prelude::*, distributions::uniform::{SampleUniform, SampleRange}};
 
-//TODO: perspective camera?
+pub use palette::Hsv;
 
 #[derive(Debug, Default)]
 pub struct Star{
@@ -19,7 +18,7 @@ pub struct Star{
     pub radius: f32,
 
     //color for draw
-    // pub color: Hsv,
+    pub color: [f32; 3],
 }
 
 fn random_range<T,R>(range: R) -> T
@@ -30,12 +29,7 @@ where
     rand::thread_rng().gen_range(range)
 }
 
-// type Vec3 = Vec3;
-
 impl Star{
-    // fn new() -> Self {
-    //     Self::default()
-    // }
 
     fn new_rand() -> Self {
        let mut new_star = Self::default();
@@ -55,14 +49,14 @@ impl Star{
         self.rand_pos();
         self.rand_vel();
         self.rand_radius();
-        // self.rand_color();
+        self.rand_color();
     }
 
     fn rand_pos(&mut self) {
         // self.tx
         self.pos.x = random_range(-POS_OFFSETXY..POS_OFFSETXY);
         self.pos.y = random_range(-POS_OFFSETXY..POS_OFFSETXY);
-        self.pos.z = random_range(-10f32..-0.5f32);
+        self.pos.z = random_range(-100f32..-0.5f32);
     }
 
     fn rand_vel(&mut self) {
@@ -73,26 +67,41 @@ impl Star{
         self.vel = self.vel.normalize();
     }
 
-    // fn rand_color(&mut self){
-    //     self.color.hue = random_range(-180f32..180f32).into();
-    //     self.color.saturation = random_range(0f32..0.5f32);
-    //     self.color.value = 1.0;
-    //     // self.color.r = rand::thread_rng().gen_range(COLOR_RANGE);
-    //     // self.color.g = rand::thread_rng().gen_range(COLOR_RANGE);
-    //     // self.color.b = rand::thread_rng().gen_range(COLOR_RANGE);
-    // }
+    fn rand_color(&mut self){
+        let hsv = Hsv::new(
+            random_range(-180.0..180.0),
+            random_range(0.5..0.9),
+            random_range(0.7..1.0)
+        );
+
+        let rgb: Rgb = hsv.into_color();
+        self.color = rgb.into_raw();
+        // self.color.r = rand::thread_rng().gen_range(COLOR_RANGE);
+        // self.color.g = rand::thread_rng().gen_range(COLOR_RANGE);
+        // self.color.b = rand::thread_rng().gen_range(COLOR_RANGE);
+    }
 
     fn rand_radius(&mut self) { 
-        self.radius = random_range(0.5f32..1f32) 
+        self.radius = random_range(0.5f32..10f32) 
     }
 }
 
-const VEL_OFFSET: f32 = 0.2;
-const POS_OFFSETXY: f32 = 1.;
+const VEL_OFFSET: f32 = 0.05;
+const POS_OFFSETXY: f32 = 100.;
 
 
 pub struct Stars {
     stars: Vec<Star>
+}
+
+impl IntoIterator for Stars {
+    type Item = Star;
+
+    type IntoIter = std::vec::IntoIter<Star>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.stars.into_iter()
+    }
 }
 
 impl Stars {

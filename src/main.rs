@@ -1,7 +1,6 @@
 // mod renderer_nannou_view;
 
 use clap::Parser;
-// mod nannou;
 use glium_rpi::{self, Options};
 
 //pretty stars

@@ -16,40 +16,43 @@ impl Default for Options{
     }
 }
 
-struct PerformanceSnapshot {
-    total_frames: u64,
-    time_captured: Instant
+struct PerformanceRecord {
+    frames_count: u32,
+    time_started: Instant
 }
 
-impl Default for PerformanceSnapshot{
+impl Default for PerformanceRecord{
     fn default() -> Self {
-        Self { total_frames: Default::default(), time_captured: Instant::now() }
+        Self { frames_count: Default::default(), time_started: Instant::now() }
     }
 }
 
-// impl PerformanceSnapshot {
-//     fn avg_frame_period(&self, prev: &Self) -> Duration {
-//         let frames_elapsed = self.total_frames - prev.total_frames;
-//         let time_elapsed = self.time_captured - prev.time_captured;
+impl PerformanceRecord {
+    fn avg_frame_period(&self, now: Instant) -> Option<Duration> {
+        let time_elapsed = now - self.time_started;
 
-//         time_elapsed.div_f32(frames_elapsed.to_f32().unwrap())
-//     }
-// }
+        time_elapsed.checked_div(self.frames_count as _)
+    }
+}
 
 pub struct Model {
     pub stars: Stars,
     pub mat: Mat4,
     receiver: Receiver,
     options: Options,
-    last_perf_info: PerformanceSnapshot
+    perf_record: PerformanceRecord
 }
 
 const PORT: u16 = 10000;
 const PERF_UPDATE_DURATION: Duration = Duration::from_secs(2);
 
+pub struct UpdateInfo {
+    pub time_since_previous: Duration,
+    pub frames_since_previous: u32
+}
+
 impl Model {
     pub fn new(num_stars: usize) -> Self {
-        
         let stars = Stars::new(num_stars);
         let perspective = Mat4::perspective_rh(
             std::f32::consts::FRAC_PI_2, 
@@ -65,12 +68,12 @@ impl Model {
             receiver: osc::receiver(PORT).unwrap(),
     
             options: Options::default(),
-            last_perf_info: PerformanceSnapshot::default()
+            perf_record: PerformanceRecord::default()
         }
     }
 
-    pub fn update(&mut self, seconds: f32){
-        self.stars.update(seconds*self.options.speed);
+    pub fn update(&mut self, info: UpdateInfo){
+        self.stars.update(info.time_since_previous.as_secs_f32()*self.options.speed);
 
         for (packet, _) in self.receiver.try_iter(){
             for msg in packet.into_msgs(){
@@ -85,21 +88,25 @@ impl Model {
                 }
             }
         }
-    
-        // let now = Instant::now();
-        // if PERF_UPDATE_DURATION < (now - state.last_perf_info.time_captured){
-    
-        //     let perf_snapshot = PerformanceSnapshot{
-        //         total_frames: app.elapsed_frames(),
-        //         time_captured: now
-        //     };
-        //     let frame_s = perf_snapshot.avg_frame_period(&state.last_perf_info).as_secs_f32();
-        //     let fps = frame_s.inv();
-        //     let frame_ms = frame_s*1000.;
         
-        //     println!("{frame_ms:.0}ms, {fps:.0}fps");
-        //     self.last_perf_info = perf_snapshot;
-        // }
+        self.perf_record.frames_count += info.frames_since_previous;
+        let now = Instant::now();
+
+        if PERF_UPDATE_DURATION < (now - self.perf_record.time_started){
+
+            if let Some(duration) = self.perf_record.avg_frame_period(now){
+                let frame_s = duration.as_secs_f32();
+                let fps = 1.0/frame_s;
+                let frame_ms = frame_s*1000.;
+            
+                println!("{frame_ms:.1}ms, {fps:.1}fps");
+    
+                self.perf_record = PerformanceRecord {
+                    frames_count: 0,
+                    time_started: now
+                };
+            }
+        }
     }
 }
 

@@ -6,8 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glium = "*"
-rand = "0.8"
+glium = "0.31.0"
+rand = "0.8.5"
 stars = { path = "../stars" }
 glam = "0.17.3"
 nannou_osc = "0.18.0"
