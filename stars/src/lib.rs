@@ -1,6 +1,6 @@
-use std::iter;
-use glam::Vec3;
-use palette::{rgb::Rgb, Pixel, IntoColor, LinSrgb};
+use std::{iter, time::Instant};
+use glam::{Vec3, Vec2};
+use palette::{rgb::{Rgb, Rgba}, Pixel, IntoColor, LinSrgb, Hsva, blend::PreAlpha};
 use rand::{prelude::*, distributions::uniform::{SampleUniform, SampleRange}};
 
 pub use palette::Hsv;
@@ -14,11 +14,13 @@ pub struct Star{
     ///velocity per second
     vel: Vec3,
 
+    pub scale: Vec2,
+
     ///radius for draw
     pub radius: f32,
 
     //color for draw
-    pub color: [f32; 3],
+    pub rgba: [f32; 4],
 }
 
 fn random_range<T,R>(range: R) -> T
@@ -50,6 +52,7 @@ impl Star{
         self.rand_vel();
         self.rand_radius();
         self.rand_color();
+        self.rand_scale();
     }
 
     fn rand_pos(&mut self) {
@@ -67,28 +70,33 @@ impl Star{
         self.vel = self.vel.normalize();
     }
 
+    fn rand_scale(&mut self) {
+        self.scale.x = random_range(0.0..1.0);
+        self.scale.y = random_range(0.0..1.0);
+    }
+
     fn rand_color(&mut self){
-        let hsv = Hsv::new(
+        let hsv = Hsva::new(
             random_range(-180.0..180.0),
-            random_range(0.5..0.9),
-            random_range(0.7..1.0)
+            random_range(0.0..0.8),
+            1.0,
+            random_range(0.0..1.0)
         );
 
-        let rgb: Rgb = hsv.into_color();
-        self.color = rgb.into_raw();
+        let rgba: Rgba = hsv.into_color();
+        self.rgba = PreAlpha::from(rgba).into_raw();
         // self.color.r = rand::thread_rng().gen_range(COLOR_RANGE);
         // self.color.g = rand::thread_rng().gen_range(COLOR_RANGE);
         // self.color.b = rand::thread_rng().gen_range(COLOR_RANGE);
     }
 
     fn rand_radius(&mut self) { 
-        self.radius = random_range(0.5f32..10f32) 
+        self.radius = random_range(0.001f32..0.1f32)
     }
 }
 
 const VEL_OFFSET: f32 = 0.05;
-const POS_OFFSETXY: f32 = 100.;
-
+const POS_OFFSETXY: f32 = 20.;
 
 pub struct Stars {
     stars: Vec<Star>
@@ -106,23 +114,40 @@ impl IntoIterator for Stars {
 
 impl Stars {
     pub fn new(num_stars: usize) -> Self {
-        Self {
+        let mut new_self = Self {
             stars: iter::repeat_with(Star::new_rand).take(num_stars).collect()
-        }
+        };
+        
+        new_self.sort();
+
+        new_self
     }
 
     pub fn iter(&self) -> std::slice::Iter<'_, Star> {
         self.stars.iter()
     }
 
+    fn sort(&mut self){
+        self.stars.sort_unstable_by(|a, b| a.pos.z.partial_cmp(&b.pos.z).unwrap() );
+    }
+
     pub fn update(&mut self, seconds: f32) {
+        let mut changed = false;
+
         for star in self.stars.iter_mut(){
             star.update(seconds);
 
             if 0. < star.pos.z {
                 star.reset();
+                changed = true;
             }
             // println!("pos: {}", star.pos);
+        }
+        
+        if changed {
+            let pre_sort = Instant::now();
+            self.sort();
+            println!("sort took {}ms", (Instant::now()-pre_sort).as_millis())
         }
     }
 }

@@ -6,8 +6,8 @@ use nannou_osc::rosc::OscType;
 use osc::Receiver;
 use stars::Stars;
 
-struct Options {
-    speed: f32
+pub struct Options {
+    pub speed: f32
 }
 
 impl Default for Options{
@@ -37,22 +37,18 @@ impl PerformanceRecord {
 
 pub struct Model {
     pub stars: Stars,
-    pub mat: Mat4,
+    pub mat: [[f32; 4]; 4],
     receiver: Receiver,
     options: Options,
-    perf_record: PerformanceRecord
+    perf_record: PerformanceRecord,
+    pub feedback_displace: [f32; 2]
 }
 
 const PORT: u16 = 10000;
 const PERF_UPDATE_DURATION: Duration = Duration::from_secs(2);
 
-pub struct UpdateInfo {
-    pub time_since_previous: Duration,
-    pub frames_since_previous: u32
-}
-
 impl Model {
-    pub fn new(num_stars: usize) -> Self {
+    pub fn new(num_stars: usize, options: Option<Options>) -> Self {
         let stars = Stars::new(num_stars);
         let perspective = Mat4::perspective_rh(
             std::f32::consts::FRAC_PI_2, 
@@ -60,20 +56,24 @@ impl Model {
             0.001, 
             1000.
         );
+
+        let mut feedback_displace: [f32; 2] = [0.0, 1.0];
      
         Self { 
             stars, 
-            mat: perspective, 
+            mat: perspective.to_cols_array_2d(), 
+
+            feedback_displace,
     
             receiver: osc::receiver(PORT).unwrap(),
     
-            options: Options::default(),
+            options: options.unwrap_or(Options::default()),
             perf_record: PerformanceRecord::default()
         }
     }
 
-    pub fn update(&mut self, info: UpdateInfo){
-        self.stars.update(info.time_since_previous.as_secs_f32()*self.options.speed);
+    pub fn update(&mut self, step_seconds: f32){
+        self.stars.update(step_seconds*self.options.speed);
 
         for (packet, _) in self.receiver.try_iter(){
             for msg in packet.into_msgs(){
@@ -86,25 +86,6 @@ impl Model {
                     }
                     _ => {}
                 }
-            }
-        }
-        
-        self.perf_record.frames_count += info.frames_since_previous;
-        let now = Instant::now();
-
-        if PERF_UPDATE_DURATION < (now - self.perf_record.time_started){
-
-            if let Some(duration) = self.perf_record.avg_frame_period(now){
-                let frame_s = duration.as_secs_f32();
-                let fps = 1.0/frame_s;
-                let frame_ms = frame_s*1000.;
-            
-                println!("{frame_ms:.1}ms, {fps:.1}fps");
-    
-                self.perf_record = PerformanceRecord {
-                    frames_count: 0,
-                    time_started: now
-                };
             }
         }
     }

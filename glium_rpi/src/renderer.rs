@@ -1,18 +1,23 @@
-use std::{time::{Instant, Duration}};
-use glam::Vec3;
-use glium::{glutin::{self, window::Fullscreen, event}, Surface, implement_vertex, uniform, VertexBuffer, Display, Texture2d, uniforms::{self, MagnifySamplerFilter}, Smooth, Program, index, texture::{UncompressedFloatFormat, UncompressedIntFormat, self}, backend::{Context, Facade}, Blend};
-use rand::Rng;
-use stars::Stars;
-use crate::model::UpdateInfo;
+use glium::{glutin::{self, window::Fullscreen, event::{self, Event}, event_loop::ControlFlow}, Surface, Smooth, Blend, framebuffer::{RenderBuffer, SimpleFrameBuffer}, Frame};
 
+use crate::{model::{Model}, render_loop::{UpdateInfo, DrawInfo}, feedback_view::FeedbackView, stars_view::{StarsView, InstanceAttr}, util::DEFAULT_FORMAT};
 use super::model;
+use super::render_loop;
 
 pub struct Options{
-    pub num_stars: usize
+    pub num_stars: usize,
+    pub model_options: model::Options
+}
+
+struct View<'a>{
+    feedback: FeedbackView<'a>,
+    stars: StarsView,
+    temp_buffer: SimpleFrameBuffer<'a>,
+    res: [f32; 2]
 }
 
 pub fn main(options: Options) {
-    let mut model = model::Model::new(options.num_stars);
+    let model = model::Model::new(options.num_stars, Some(options.model_options));
 
     let event_loop = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new();
@@ -23,242 +28,71 @@ pub fn main(options: Options) {
     let fs = Fullscreen::Borderless(Some(monitor_handle));
     display.gl_window().window().set_fullscreen(Some(fs));
 
-    // print_formats(&display.get_context());
-
-    let program = glium::Program::from_source(
-        &display, 
-        include_str!("instance.vert"), 
-        include_str!("instance.frag"), 
-        None
-    ).unwrap();
-
-    let (vertices_buffer, mut instances_buffer) = gen_data(&display, &model.stars);
-    let vertices_per_instance = vertices_buffer.len()/model.stars.iter().len();
-
-    let fullscreen_vertices = FULLSCREEN_TRI
-        .map(|arr| VertexAttr {position: arr} );
-    let fullscreen_buffer = VertexBuffer::new(&display, &fullscreen_vertices).unwrap();
-
-    let fullscreen_feedback_program = Program::from_source(
-        &display,
-        include_str!("feedback.vert"),
-        include_str!("feedback.frag"),
-        None
-    ).unwrap();
-
-    let update_period = Duration::from_millis(20);
-    let mut last_update = Instant::now();
-    let mut frames_since_update: u32 = 0;
-
-    let mut res: [f32; 2] = get_res(&display).map(|a| a as f32);
-    let mut feedback_displace: [f32; 2] = [0.0, 0.0];
-
-    let feedback_texture = gen_texture(&display);
-    let draw_texture = gen_texture(&display);
-
-    event_loop.run(move |ev, _, control_flow| {
-        
-        let now = Instant::now();
-        let elapsed_time = now-last_update;
-
-        //update instances
-        if update_period < elapsed_time{
-            last_update = now;
-
-            // feedback_displace = [rand::thread_rng().gen_range(-1f32..1f32), rand::thread_rng().gen_range(-1f32..1f32)];
-
-            model.update(UpdateInfo{
-                time_since_previous: elapsed_time,
-                frames_since_previous: frames_since_update,
-            });
-
-            let mut mapping = instances_buffer.map();
-            let mapping_iter = mapping.chunks_exact_mut(vertices_per_instance);
-            
-            for (buf, star) in mapping_iter.zip(model.stars.iter()) {
-                for attr in buf {
-                    attr.instance_pos = star.pos.to_array();
-                }
-            }
-
-            frames_since_update = 0;
-        }
-
-        frames_since_update += 1;
-
-        // drawing a frame
-        let params = glium::DrawParameters {
-            // depth: glium::Depth {
-            //     test: glium::DepthTest::IfLess,
-            //     write: true,
-            //     .. Default::default()
-            // },
-            dithering: true,
-            smooth: Some(Smooth::Fastest),
-            blend: Blend::alpha_blending(),
-            .. Default::default()
-        };
-
-        //todo: multidraw?
-        //https://www.khronos.org/opengl/wiki/Vertex_Rendering#Indirect_rendering
-        //copy vertices per instance??
-        
-        let mut screen_surface = display.draw();
-        screen_surface.clear_color_and_depth((0.0, 0.0, 0.0, 0.0), 1.0);
-
-        let mut draw_surface = draw_texture.as_surface();
-        screen_surface.clear_color(0.0, 0.0, 0.0, 0.0);
-
-        //draw feedback
-        let feedback_sampler = feedback_texture.sampled()
-            .wrap_function(uniforms::SamplerWrapFunction::BorderClamp);
-
-            draw_surface.draw(
-            &fullscreen_buffer,
-            &index::NoIndices(index::PrimitiveType::TrianglesList),
-            &fullscreen_feedback_program,
-            &uniform! {
-                feedback_texture: feedback_sampler,
-                size: res,
-                displace: feedback_displace
-            },
-            &params
-        ).unwrap();
-
-        //draw objects
-        draw_surface.draw(
-            (&vertices_buffer, &instances_buffer),
-            &index::NoIndices(index::PrimitiveType::TrianglesList), 
-            &program, 
-            &uniform! { 
-                persp_matrix: model.mat.to_cols_array_2d(),
-            },
-            &params
-        ).unwrap();
-
-        //copy to feedback
-        feedback_texture.as_surface().clear_color(0.0, 0.0, 0.0, 0.0);
-        draw_surface.fill(&feedback_texture.as_surface(), glium::uniforms::MagnifySamplerFilter::Linear);
-
-        draw_surface.fill(&screen_surface, glium::uniforms::MagnifySamplerFilter::Linear);
-
-        screen_surface.finish().unwrap();
-
-        let next_frame_time = std::time::Instant::now() +
-        std::time::Duration::from_millis(1000/60);
-        *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-
-        match ev {
-            event::Event::WindowEvent { event, .. } => match event {
-                event::WindowEvent::CloseRequested => {
-                    *control_flow = glutin::event_loop::ControlFlow::Exit;
-                    return;
-                },
-                event::WindowEvent::Resized(size) => {
-                    res = [size.width as f32, size.height as f32];
-                }
-                event::WindowEvent::KeyboardInput { input, .. } => {
-                    if input.virtual_keycode == Some(event::VirtualKeyCode::Escape) {
-                        *control_flow = glutin::event_loop::ControlFlow::Exit;
-                    }
-                }
-                _ => {},
-            },
-            _ => (),
-        }
-    });
-}
-
-fn get_res(display: &Display) -> [u32; 2] {
-    let (w, h) = display.get_framebuffer_dimensions();
-    return [w, h];
-}
-
-fn gen_texture(display: &Display) -> Texture2d {
     let (width, height) = display.get_framebuffer_dimensions();
+    let render_buffer = RenderBuffer::new(&display, DEFAULT_FORMAT, width, height).unwrap();
+    let temp_surface = SimpleFrameBuffer::new(&display, &render_buffer).unwrap();
 
-    let texture = Texture2d::empty_with_format(
-        display, 
-        glium::texture::UncompressedFloatFormat::U16U16U16U16, 
-        glium::texture::MipmapsOption::NoMipmap, 
-        width, height
-    ).unwrap();
+    let view_state = View {
+        feedback: FeedbackView::new(&display),
+        stars: StarsView::new(&display, &model.stars),
+        temp_buffer: temp_surface,
+        res: [width, height].map(|s| s as f32)
+    };
 
-    texture.as_surface().clear_color(0.0, 0.0, 0.0, 1.0);
-
-    texture
+    render_loop::start(event_loop, display, model, view_state, update, draw, event);
 }
 
-fn gen_data(display: &Display, stars: &Stars) -> (VertexBuffer<VertexAttr>, VertexBuffer<InstanceAttr>) {
-    const VERT_SCALE: f32 = 0.01;
+fn update(model: &mut Model, view: &mut View, update_info: UpdateInfo) {
+    model.update(update_info.time_since_previous.as_secs_f32());
 
-    let tri = [
-        [-0.5, -0., 0.],
-        [ 0.,  1., 0.],
-        [ 0.5, -0., 0.],
-    ].map(|slice| Vec3::from_slice(&slice)*VERT_SCALE);
- 
-    let tri_opp = tri.map(|pos| pos*-1.0);
-
-    let vertices: Vec<VertexAttr> = [tri, tri_opp].iter()
-        .flatten()
-        .map(|pos| VertexAttr { position: pos.to_array() })
-        .collect();
-
-    let vertices_per_instance = vertices.len();
-
-    let vert_data = std::iter::repeat(vertices)
-        .take(stars.iter().count())
-        .flatten()
-        .collect::<Vec<_>>();
-        
-    let instance_data = stars.iter().flat_map(|star| {
-        std::iter::repeat(
-            InstanceAttr {
+    let new_instances_iter = model.stars.iter()
+        .map(|star| {
+            InstanceAttr{
                 instance_pos: star.pos.to_array(),
-                instance_color: star.color,
-                instance_radius: star.radius
+                instance_radius: star.radius,
+                instance_rgba: star.rgba
             }
-        ).take(vertices_per_instance)
-    }).collect::<Vec<_>>();
+        });
 
-    let instances_buffer = glium::vertex::VertexBuffer::dynamic(display, &instance_data).unwrap();
-    let vertices_buffer = glium::vertex::VertexBuffer::new(display, &vert_data).unwrap();
-
-    (vertices_buffer, instances_buffer)
+    view.stars.write_instances(new_instances_iter);
 }
 
-fn print_formats(context: &Context){
-    let all_formats = texture::UncompressedFloatFormat::get_formats_list();
-    let valid_formats = all_formats.iter()
-        .filter(|format| format.is_color_renderable(context) && format.is_supported(context));
+fn draw(frame: &mut Frame, model: &Model, view: &mut View, info: DrawInfo) {
+    //get temp screen
+    let draw_surface = &mut view.temp_buffer;
 
-    if valid_formats.clone().count() != 0 {
-        println!("Valid formats:");
-        for format in valid_formats {
-            println!("{format:?}")
-        }
-    } else {
-        println!("No valid formats!");
-    }
+    //draw feedback
+    view.feedback.draw_to(draw_surface, view.res, info.time_since_previous.as_secs_f32(), model.feedback_displace);
+
+    //draw objects
+    view.stars.draw_to(draw_surface, model.mat);
+
+    //copy to feedback
+    view.feedback.fill_from(draw_surface);
+
+    //draw to screen
+    draw_surface.fill(frame, glium::uniforms::MagnifySamplerFilter::Linear);
 }
 
-#[derive(Copy, Clone)]
-struct InstanceAttr {
-    instance_pos: [f32; 3],
-    instance_color: [f32; 3],
-    instance_radius: f32
+fn event(ev: Event<()>, _model: &mut Model, view: &mut View) -> Option<ControlFlow> {
+    match ev {
+        event::Event::WindowEvent { event, .. } => match event {
+            event::WindowEvent::CloseRequested => {
+                Some(glutin::event_loop::ControlFlow::Exit)
+            },
+            event::WindowEvent::Resized(size) => {
+                view.res = [size.width as f32, size.height as f32];
+                None
+            }
+            event::WindowEvent::KeyboardInput { input, .. } => {
+                if input.virtual_keycode == Some(event::VirtualKeyCode::Escape) {
+                    Some(glutin::event_loop::ControlFlow::Exit)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        },
+        _ => None,
+    } 
 }
-implement_vertex!(InstanceAttr, instance_pos, instance_color, instance_radius);
-
-#[derive(Copy, Clone)]
-struct VertexAttr {
-    position: [f32; 3]
-}
-implement_vertex!(VertexAttr, position);
-
-const FULLSCREEN_TRI: [[f32; 3]; 3] = [
-    [-1.0, -1.0, 0.0],
-    [3.0, -1.0, 0.0],
-    [-1.0, 3.0, 0.0]
-];
