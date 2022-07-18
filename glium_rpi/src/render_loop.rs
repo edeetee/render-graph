@@ -1,6 +1,6 @@
 use std::time::{Instant, Duration};
 
-use glium::{glutin::{event_loop::{EventLoop, ControlFlow}, event::Event, self}, Frame, Display};
+use glium::{glutin::{event_loop::{EventLoop, ControlFlow}, event::Event, self, platform::run_return::EventLoopExtRunReturn}, Frame, Display};
 
 pub struct UpdateInfo {
     pub time_since_previous: Duration,
@@ -12,7 +12,7 @@ pub struct DrawInfo{
 }
 
 pub fn start<Model, View>(
-    event_loop: EventLoop<()>,
+    mut event_loop: EventLoop<()>,
     display: Display, 
     mut model: Model,
     mut view: View,
@@ -21,16 +21,13 @@ pub fn start<Model, View>(
     event: fn(Event<()>, &mut Model, &mut View) -> Option<ControlFlow>
 ) -> !
 {
-    // let mut model = model;
-    // let mut view = view;
-
     let update_period = Duration::from_millis(20);
     let frame_period = Duration::from_millis(1000/120);
     let mut last_update = Instant::now();
     let mut last_frame = Instant::now();
     let mut frames_since_update: u32 = 0;
 
-    event_loop.run(move |ev, _, control_flow| {
+    event_loop.run_return(|ev, _, control_flow| {
         let now = Instant::now();
 
         let elapsed_since_update = now - last_update;
@@ -65,6 +62,8 @@ pub fn start<Model, View>(
             glutin::event_loop::ControlFlow::WaitUntil(next_frame_time)
         );
     });
+
+    ::std::process::exit(0)
 }
 
 // fn perf(){

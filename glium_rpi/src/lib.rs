@@ -2,7 +2,6 @@ mod renderer;
 mod model;
 mod render_loop;
 mod util;
-mod view;
 mod feedback_view;
 mod stars_view;
 

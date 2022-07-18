@@ -1,4 +1,3 @@
-use glium::framebuffer::{SimpleFrameBuffer, ValidationError, RenderBuffer};
 use glium::{Display, Texture2d, Surface, backend::Context};
 use glium::texture::{self, UncompressedFloatFormat, TextureCreationError};
 

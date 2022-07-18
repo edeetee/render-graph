@@ -1,6 +1,4 @@
-use glam::Vec3;
-use glium::{Display, vertex, VertexBuffer, implement_vertex, Program, Texture2d, Surface, index, uniform, uniforms, DrawParameters, Smooth, Blend};
-use stars::Stars;
+use glium::{Display, VertexBuffer, implement_vertex, Program, Texture2d, Surface, index, uniform, uniforms, DrawParameters, Smooth, Blend};
 use crate::util::*;
 
 #[derive(Copy, Clone)]
@@ -19,13 +17,12 @@ pub struct FeedbackView<'a> {
     vert_buffer: VertexBuffer<VertexAttr>,
     texture: Texture2d,
     program: Program,
-    display: &'a Display,
     params: DrawParameters<'a>
 }
 
-impl<'a> FeedbackView<'a>{
-    pub fn new(display: &'a Display) -> Self {
-    
+impl<'a> FeedbackView<'_>{
+    pub fn new(display: &Display) -> Self {
+
         let verts = FULLSCREEN_TRI
             .map(|arr| VertexAttr {position: arr} );
         let vert_buffer = VertexBuffer::new(display, &verts).unwrap();
@@ -47,7 +44,6 @@ impl<'a> FeedbackView<'a>{
         };
 
         Self{
-            display,
             vert_buffer,
             texture: feedback_texture,
             program,
@@ -80,7 +76,7 @@ impl<'a> FeedbackView<'a>{
         )?;
 
         //copy to texture
-        surface.fill(&self.texture.as_surface(),glium::uniforms::MagnifySamplerFilter::Linear);
+        // surface.fill(&self.texture.as_surface(),glium::uniforms::MagnifySamplerFilter::Linear);
 
         Ok(())
     }

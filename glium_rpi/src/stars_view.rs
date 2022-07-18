@@ -18,48 +18,15 @@ struct VertexAttr {
 }
 implement_vertex!(VertexAttr, position);
 
-pub struct StarsView {
-    pub vert_buffer: VertexBuffer<VertexAttr>,
-    pub inst_buffer: VertexBuffer<InstanceAttr>,
-    pub program: Program,
-    pub vert_per_inst: usize,
-    params: DrawParameters<'static>
+pub struct StarsView<'a> {
+    vert_buffer: VertexBuffer<VertexAttr>,
+    inst_buffer: VertexBuffer<InstanceAttr>,
+    program: Program,
+    vert_per_inst: usize,
+    params: DrawParameters<'a>
 }
 
-// struct OwnedChunksExactMut<'a, T>
-//     where [T]: Content,
-//         T: Copy
-// {
-//     mapping: Mapping<'a, [T]>,
-//     chunked_iter: ChunksExactMut<'a, T>
-// }
-
-// impl<'a, T> OwnedChunksExactMut<'a, T>
-// where [T]: Content,
-//     T: Copy
-// {
-//     fn new(mut mapping: Mapping<'a, [T]>, chunk_size: usize) -> Self {
-//         // let mut mapping = buffer.map();
-//         let chunked_iter = mapping.chunks_exact_mut(chunk_size);
-
-//         Self{
-//             mapping,
-//             chunked_iter
-//         }
-//     }
-// }
-
-// impl<'a, T: Copy> Iterator for OwnedChunksExactMut<'a, T>
-// {
-//     type Item = &'a mut [T];
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         self.chunked_iter.next()
-//     }
-// }
-
-
-impl StarsView {
+impl StarsView<'_> {
     pub fn new(display: &Display, stars: &Stars) -> Self {
         let program = Program::from_source(
             display, 
@@ -68,7 +35,7 @@ impl StarsView {
             None
         ).unwrap();
     
-        let (vert_buffer, inst_buffer) = gen_data(display, stars);
+        let (vert_buffer, inst_buffer) = gen_buffers(display, stars);
 
         let params = glium::DrawParameters {
             dithering: true,
@@ -92,12 +59,14 @@ impl StarsView {
         where I: Iterator<Item = InstanceAttr>
     {
         let mut mapping = self.inst_buffer.map();
+        
+        let zipped = mapping
+            .chunks_exact_mut(self.vert_per_inst)
+            .zip(iter);
 
-        for (chunk, from) in mapping.chunks_exact_mut(self.vert_per_inst).zip(iter){
+        for (chunk, from) in zipped {
             for inst in chunk {
-                inst.instance_pos = from.instance_pos;
-                inst.instance_radius = from.instance_radius;
-                inst.instance_rgba = from.instance_rgba
+                *inst = from;
             }
         }
     }
@@ -118,7 +87,7 @@ impl StarsView {
 }
 
 
-fn gen_data(display: &Display, stars: &Stars) -> (VertexBuffer<VertexAttr>, VertexBuffer<InstanceAttr>) {
+fn gen_buffers(display: &Display, stars: &Stars) -> (VertexBuffer<VertexAttr>, VertexBuffer<InstanceAttr>) {
     let tri = [
         [-0.5, -0., 0.],
         [ 0.,  1., 0.],

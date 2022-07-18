@@ -11,7 +11,7 @@ pub struct Options{
 
 struct View<'a>{
     feedback: FeedbackView<'a>,
-    stars: StarsView,
+    stars: StarsView<'a>,
     temp_buffer: SimpleFrameBuffer<'a>,
     res: [f32; 2]
 }
@@ -61,11 +61,13 @@ fn draw(frame: &mut Frame, model: &Model, view: &mut View, info: DrawInfo) {
     //get temp screen
     let draw_surface = &mut view.temp_buffer;
 
+    draw_surface.clear_color(0., 0., 0., 0.);
+
     //draw feedback
-    view.feedback.draw_to(draw_surface, view.res, info.time_since_previous.as_secs_f32(), model.feedback_displace);
+    view.feedback.draw_to(draw_surface, view.res, info.time_since_previous.as_secs_f32(), model.feedback_displace).unwrap();
 
     //draw objects
-    view.stars.draw_to(draw_surface, model.mat);
+    view.stars.draw_to(draw_surface, model.mat).unwrap();
 
     //copy to feedback
     view.feedback.fill_from(draw_surface);
