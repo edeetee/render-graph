@@ -11,4 +11,6 @@ edition = "2021"
 clap = { version = "3.2.8", features = ["derive"] }
 glium_rpi = { path = "glium_rpi" }
 
+# pprof = { version = "0.10", features = ["flamegraph"] }
+
 # circular-queue = "0.2.6"

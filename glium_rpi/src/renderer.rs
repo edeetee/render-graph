@@ -1,6 +1,6 @@
-use glium::{glutin::{self, window::Fullscreen, event::{self, Event}, event_loop::ControlFlow}, Surface, Smooth, Blend, framebuffer::{RenderBuffer, SimpleFrameBuffer}, Frame};
+use glium::{glutin::{self, window::Fullscreen, event::{self, Event}, event_loop::ControlFlow}, Surface, framebuffer::{RenderBuffer, SimpleFrameBuffer}, Frame};
 
-use crate::{model::{Model}, render_loop::{UpdateInfo, DrawInfo}, feedback_view::FeedbackView, stars_view::{StarsView, InstanceAttr}, util::DEFAULT_FORMAT};
+use crate::{model::{Model}, render_loop::{UpdateInfo, DrawInfo}, feedback::FeedbackView, instances::{InstancesView, InstanceAttr}, util::DEFAULT_FORMAT};
 use super::model;
 use super::render_loop;
 
@@ -11,7 +11,7 @@ pub struct Options{
 
 struct View<'a>{
     feedback: FeedbackView<'a>,
-    stars: StarsView<'a>,
+    stars: InstancesView<'a>,
     temp_buffer: SimpleFrameBuffer<'a>,
     res: [f32; 2]
 }
@@ -34,7 +34,7 @@ pub fn main(options: Options) {
 
     let view_state = View {
         feedback: FeedbackView::new(&display),
-        stars: StarsView::new(&display, &model.stars),
+        stars: InstancesView::new(&display, &model.stars),
         temp_buffer: temp_surface,
         res: [width, height].map(|s| s as f32)
     };

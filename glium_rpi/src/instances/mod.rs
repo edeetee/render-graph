@@ -1,7 +1,5 @@
-use std::slice::{ChunksExactMut, ChunksExact};
-
-use glam::{Vec3, Mat4};
-use glium::{Display, VertexBuffer, implement_vertex, Program, Surface, index, uniform, DrawParameters, Smooth, Blend, buffer::{Mapping, Content}};
+use glam::{Vec3};
+use glium::{Display, VertexBuffer, implement_vertex, Program, Surface, index, uniform, DrawParameters, Smooth, Blend};
 use stars::Stars;
 
 #[derive(Copy, Clone)]
@@ -18,7 +16,7 @@ struct VertexAttr {
 }
 implement_vertex!(VertexAttr, position);
 
-pub struct StarsView<'a> {
+pub struct InstancesView<'a> {
     vert_buffer: VertexBuffer<VertexAttr>,
     inst_buffer: VertexBuffer<InstanceAttr>,
     program: Program,
@@ -26,7 +24,7 @@ pub struct StarsView<'a> {
     params: DrawParameters<'a>
 }
 
-impl StarsView<'_> {
+impl InstancesView<'_> {
     pub fn new(display: &Display, stars: &Stars) -> Self {
         let program = Program::from_source(
             display, 
@@ -89,9 +87,9 @@ impl StarsView<'_> {
 
 fn gen_buffers(display: &Display, stars: &Stars) -> (VertexBuffer<VertexAttr>, VertexBuffer<InstanceAttr>) {
     let tri = [
-        [-0.5, -0., 0.],
+        [-0.5, 0., 0.],
         [ 0.,  1., 0.],
-        [ 0.5, -0., 0.],
+        [ 0.5, 0., 0.],
     ].map(|slice| Vec3::from_slice(&slice));
  
     let tri_opp = tri.map(|pos| pos*-1.0);

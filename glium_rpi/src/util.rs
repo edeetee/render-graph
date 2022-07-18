@@ -1,7 +1,6 @@
 use glium::{Display, Texture2d, Surface, backend::Context};
 use glium::texture::{self, UncompressedFloatFormat, TextureCreationError};
 
-
 pub fn get_res(display: &Display) -> [u32; 2] {
     let (w, h) = display.get_framebuffer_dimensions();
     return [w, h];

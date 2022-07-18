@@ -1,6 +1,6 @@
 use std::{iter, time::Instant};
 use glam::{Vec3, Vec2};
-use palette::{rgb::{Rgb, Rgba}, Pixel, IntoColor, LinSrgb, Hsva, blend::PreAlpha};
+use palette::{rgb::{Rgba}, Pixel, IntoColor, Hsva, blend::PreAlpha};
 use rand::{prelude::*, distributions::uniform::{SampleUniform, SampleRange}};
 
 pub use palette::Hsv;

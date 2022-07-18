@@ -1,5 +1,3 @@
-use std::time::{Instant, Duration};
-
 use glam::Mat4;
 use nannou_osc as osc;
 use nannou_osc::rosc::OscType;
@@ -16,36 +14,15 @@ impl Default for Options{
     }
 }
 
-struct PerformanceRecord {
-    frames_count: u32,
-    time_started: Instant
-}
-
-impl Default for PerformanceRecord{
-    fn default() -> Self {
-        Self { frames_count: Default::default(), time_started: Instant::now() }
-    }
-}
-
-impl PerformanceRecord {
-    fn avg_frame_period(&self, now: Instant) -> Option<Duration> {
-        let time_elapsed = now - self.time_started;
-
-        time_elapsed.checked_div(self.frames_count as _)
-    }
-}
-
 pub struct Model {
     pub stars: Stars,
     pub mat: [[f32; 4]; 4],
     receiver: Receiver,
     options: Options,
-    perf_record: PerformanceRecord,
     pub feedback_displace: [f32; 2]
 }
 
 const PORT: u16 = 10000;
-const PERF_UPDATE_DURATION: Duration = Duration::from_secs(2);
 
 impl Model {
     pub fn new(num_stars: usize, options: Option<Options>) -> Self {
@@ -57,7 +34,7 @@ impl Model {
             1000.
         );
 
-        let mut feedback_displace: [f32; 2] = [0.0, 1.0];
+        let feedback_displace: [f32; 2] = [0.0, 1.0];
      
         Self { 
             stars, 
@@ -68,7 +45,7 @@ impl Model {
             receiver: osc::receiver(PORT).unwrap(),
     
             options: options.unwrap_or(Options::default()),
-            perf_record: PerformanceRecord::default()
+            // perf_record: PerformanceRecord::default()
         }
     }
 
