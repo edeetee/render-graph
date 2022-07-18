@@ -1,14 +1,14 @@
 use glam::{Vec3};
 use glium::{Display, VertexBuffer, implement_vertex, Program, Surface, index, uniform, DrawParameters, Smooth, Blend};
-use stars::Stars;
+use stars::{Stars, Star};
 
 #[derive(Copy, Clone)]
 pub struct InstanceAttr {
     pub instance_pos: [f32; 3],
     pub instance_rgba: [f32; 4],
-    pub instance_radius: f32
+    pub instance_scale: [f32; 2]
 }
-implement_vertex!(InstanceAttr, instance_pos, instance_rgba, instance_radius);
+implement_vertex!(InstanceAttr, instance_pos, instance_rgba, instance_scale);
 
 #[derive(Copy, Clone)]
 struct VertexAttr {
@@ -20,20 +20,25 @@ pub struct InstancesView<'a> {
     vert_buffer: VertexBuffer<VertexAttr>,
     inst_buffer: VertexBuffer<InstanceAttr>,
     program: Program,
-    vert_per_inst: usize,
+    verts_per_inst: usize,
     params: DrawParameters<'a>
 }
 
 impl InstancesView<'_> {
-    pub fn new(display: &Display, stars: &Stars) -> Self {
+    pub fn new <I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>
+        (display: &Display, source: I) -> Self
+            
+    {
         let program = Program::from_source(
             display, 
             include_str!("instance.vert"), 
             include_str!("instance.frag"), 
             None
         ).unwrap();
+
+        let num_instances = source.len();
     
-        let (vert_buffer, inst_buffer) = gen_buffers(display, stars);
+        let (vert_buffer, inst_buffer) = gen_buffers(display, source);
 
         let params = glium::DrawParameters {
             dithering: true,
@@ -42,10 +47,10 @@ impl InstancesView<'_> {
             .. Default::default()
         };
 
-        let vert_per_inst = vert_buffer.len()/stars.iter().len();
+        let verts_per_inst = vert_buffer.len()/num_instances;
 
         Self{
-            vert_per_inst,
+            verts_per_inst,
             vert_buffer,
             inst_buffer,
             program,
@@ -59,7 +64,7 @@ impl InstancesView<'_> {
         let mut mapping = self.inst_buffer.map();
         
         let zipped = mapping
-            .chunks_exact_mut(self.vert_per_inst)
+            .chunks_exact_mut(self.verts_per_inst)
             .zip(iter);
 
         for (chunk, from) in zipped {
@@ -85,7 +90,8 @@ impl InstancesView<'_> {
 }
 
 
-fn gen_buffers(display: &Display, stars: &Stars) -> (VertexBuffer<VertexAttr>, VertexBuffer<InstanceAttr>) {
+fn gen_buffers<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>
+    (display: &Display, source: I) -> (VertexBuffer<VertexAttr>, VertexBuffer<InstanceAttr>) {
     let tri = [
         [-0.5, 0., 0.],
         [ 0.,  1., 0.],
@@ -102,17 +108,13 @@ fn gen_buffers(display: &Display, stars: &Stars) -> (VertexBuffer<VertexAttr>, V
     let vertices_per_instance = vertices.len();
 
     let vert_data = std::iter::repeat(vertices)
-        .take(stars.iter().count())
+        .take(source.len())
         .flatten()
         .collect::<Vec<_>>();
         
-    let instance_data = stars.iter().flat_map(|star| {
+    let instance_data = source.flat_map(|star| {
         std::iter::repeat(
-            InstanceAttr {
-                instance_pos: star.pos.to_array(),
-                instance_rgba: star.rgba,
-                instance_radius: star.radius
-            }
+            star.into()
         ).take(vertices_per_instance)
     }).collect::<Vec<_>>();
 

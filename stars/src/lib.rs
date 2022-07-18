@@ -1,4 +1,4 @@
-use std::{iter, time::Instant};
+use std::{iter, time::Instant, ops::Mul};
 use glam::{Vec3, Vec2};
 use palette::{rgb::{Rgba}, Pixel, IntoColor, Hsva, blend::PreAlpha};
 use rand::{prelude::*, distributions::uniform::{SampleUniform, SampleRange}};
@@ -17,7 +17,7 @@ pub struct Star{
     pub scale: Vec2,
 
     ///radius for draw
-    pub radius: f32,
+    // pub radius: f32,
 
     //color for draw
     pub rgba: [f32; 4],
@@ -50,7 +50,7 @@ impl Star{
     fn reset(&mut self) {
         self.rand_pos();
         self.rand_vel();
-        self.rand_radius();
+        // self.rand_radius();
         self.rand_color();
         self.rand_scale();
     }
@@ -71,8 +71,8 @@ impl Star{
     }
 
     fn rand_scale(&mut self) {
-        self.scale.x = random_range(0.0..1.0);
-        self.scale.y = random_range(0.0..1.0);
+        self.scale.x = random_range(0.0..0.2);
+        self.scale.y = random_range(0.0..0.2);
     }
 
     fn rand_color(&mut self){
@@ -90,9 +90,9 @@ impl Star{
         // self.color.b = rand::thread_rng().gen_range(COLOR_RANGE);
     }
 
-    fn rand_radius(&mut self) { 
-        self.radius = random_range(0.001f32..0.1f32)
-    }
+    // fn rand_radius(&mut self) { 
+    //     self.radius = random_range(0.001f32..0.1f32)
+    // }
 }
 
 const VEL_OFFSET: f32 = 0.05;

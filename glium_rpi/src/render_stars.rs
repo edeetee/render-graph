@@ -1,4 +1,5 @@
 use glium::{glutin::{self, window::Fullscreen, event::{self, Event}, event_loop::ControlFlow}, Surface, framebuffer::{RenderBuffer, SimpleFrameBuffer}, Frame};
+use stars::Star;
 
 use crate::{model::{Model}, render_loop::{UpdateInfo, DrawInfo}, feedback::FeedbackView, instances::{InstancesView, InstanceAttr}, util::DEFAULT_FORMAT};
 use super::model;
@@ -14,6 +15,16 @@ struct View<'a>{
     stars: InstancesView<'a>,
     temp_buffer: SimpleFrameBuffer<'a>,
     res: [f32; 2]
+}
+
+impl From<&Star> for InstanceAttr {
+    fn from(star: &Star) -> Self {
+        Self {
+            instance_pos: star.pos.to_array(),
+            instance_rgba: star.rgba,
+            instance_scale: star.scale.to_array()
+        }
+    }
 }
 
 pub fn main(options: Options) {
@@ -34,7 +45,7 @@ pub fn main(options: Options) {
 
     let view_state = View {
         feedback: FeedbackView::new(&display),
-        stars: InstancesView::new(&display, &model.stars),
+        stars: InstancesView::new(&display, model.stars.iter()),
         temp_buffer: temp_surface,
         res: [width, height].map(|s| s as f32)
     };
@@ -49,7 +60,7 @@ fn update(model: &mut Model, view: &mut View, update_info: UpdateInfo) {
         .map(|star| {
             InstanceAttr{
                 instance_pos: star.pos.to_array(),
-                instance_radius: star.radius,
+                instance_scale: star.scale.to_array(),
                 instance_rgba: star.rgba
             }
         });
