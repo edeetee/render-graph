@@ -16,3 +16,4 @@ glium_rpi = { path = "glium_rpi" }
 # circular-queue = "0.2.6"
 
 tracing = "0.1.35"
+tracing-subscriber = "0.3"

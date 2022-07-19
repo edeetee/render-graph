@@ -1,9 +1,9 @@
 use glium::{glutin::{self, window::Fullscreen, event::{self, Event}, event_loop::ControlFlow}, Surface, framebuffer::{RenderBuffer, SimpleFrameBuffer}, Frame};
 use stars::Star;
 
-use crate::{model::{Model}, render_loop::{UpdateInfo, DrawInfo}, feedback::FeedbackView, instances::{InstancesView, InstanceAttr}, util::DEFAULT_FORMAT};
+use crate::{model::{Model}, model_view_event_loop::{UpdateInfo, DrawInfo}, feedback::FeedbackView, instances::{InstancesView, InstanceAttr}, util::DEFAULT_FORMAT};
 use super::model;
-use super::render_loop;
+use super::model_view_event_loop;
 
 pub struct Options{
     pub num_stars: usize,
@@ -50,7 +50,7 @@ pub fn main(options: Options) {
         res: [width, height].map(|s| s as f32)
     };
 
-    render_loop::start(event_loop, display, model, view_state, update, draw, event);
+    model_view_event_loop::start(event_loop, display, model, view_state, update, draw, event);
 }
 
 fn update(model: &mut Model, view: &mut View, update_info: UpdateInfo) {
@@ -72,7 +72,7 @@ fn draw(frame: &mut Frame, model: &Model, view: &mut View, info: DrawInfo) {
     //get temp screen
     let draw_surface = &mut view.temp_buffer;
 
-    draw_surface.clear_color(0., 0., 0., 0.);
+    // draw_surface.clear_color(0., 0., 0., 0.);
 
     //draw feedback
     view.feedback.draw_to(draw_surface, view.res, info.time_since_previous.as_secs_f32(), model.feedback_displace).unwrap();

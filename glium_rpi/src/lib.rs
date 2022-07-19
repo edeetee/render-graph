@@ -1,6 +1,6 @@
 mod render_stars;
 mod model;
-mod render_loop;
+mod model_view_event_loop;
 mod util;
 mod feedback;
 mod instances;

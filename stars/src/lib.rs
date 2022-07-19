@@ -5,7 +5,7 @@ use rand::{prelude::*, distributions::uniform::{SampleUniform, SampleRange}};
 
 pub use palette::Hsv;
 
-use tracing::{span, Level};
+use tracing::{span, Level, instrument};
 
 #[derive(Debug, Default)]
 pub struct Star{
@@ -129,6 +129,7 @@ impl Stars {
         self.stars.iter()
     }
 
+    #[instrument(skip_all)]
     fn sort(&mut self){
         self.stars.sort_unstable_by(|a, b| a.pos.z.partial_cmp(&b.pos.z).unwrap() );
     }
@@ -146,9 +147,7 @@ impl Stars {
         }
         
         if changed {
-            span!(Level::TRACE, "stars_sort").in_scope(|| {
-                self.sort();
-            })
+            self.sort();
         }
     }
 }

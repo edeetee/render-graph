@@ -38,8 +38,8 @@ impl<'a> FeedbackView<'_>{
 
         let params = glium::DrawParameters {
             dithering: true,
-            smooth: Some(Smooth::Fastest),
-            blend: Blend::alpha_blending(),
+            // smooth: Some(Smooth::Fastest),
+            // blend: Blend::alpha_blending(),
             .. Default::default()
         };
 
@@ -70,7 +70,7 @@ impl<'a> FeedbackView<'_>{
                 feedback_texture: feedback_sampler,
                 size: res,
                 displace: displace,
-                feedback_mult: elapsed_s*10.0
+                feedback_mult: 0.95f32
             },
             &self.params
         )?;

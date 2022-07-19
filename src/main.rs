@@ -2,6 +2,8 @@
 
 use clap::Parser;
 use glium_rpi::{self, ModelOptions};
+use tracing::metadata::LevelFilter;
+use tracing_subscriber::fmt;
 
 //pretty stars
 #[derive(Parser, Debug)]
@@ -17,18 +19,13 @@ struct Args {
 
 fn main() {
     let args = Args::parse();
-    // main_kiss()
-    // nannou::main();
-    // glium::main();
-    // let guard = pprof::ProfilerGuardBuilder::default().frequency(1000).blocklist(&["libc", "libgcc", "pthread", "vdso"]).build().unwrap();
+
+    tracing_subscriber::fmt()
+        .with_max_level(LevelFilter::TRACE)
+        .init();
 
     glium_rpi::main(glium_rpi::Options {
         num_stars: args.num_stars,
         model_options: ModelOptions { speed: args.speed },
     });
-
-    // if let Ok(report) = guard.report().build() {
-    //     let file = File::create("flamegraph.svg").unwrap();
-    //     report.flamegraph(file).unwrap();
-    // };
 }
