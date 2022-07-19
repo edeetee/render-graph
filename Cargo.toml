@@ -14,3 +14,5 @@ glium_rpi = { path = "glium_rpi" }
 # pprof = { version = "0.10", features = ["flamegraph"] }
 
 # circular-queue = "0.2.6"
+
+tracing = "0.1.35"

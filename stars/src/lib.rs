@@ -5,6 +5,8 @@ use rand::{prelude::*, distributions::uniform::{SampleUniform, SampleRange}};
 
 pub use palette::Hsv;
 
+use tracing::{span, Level};
+
 #[derive(Debug, Default)]
 pub struct Star{
     ///position
@@ -141,13 +143,12 @@ impl Stars {
                 star.reset();
                 changed = true;
             }
-            // println!("pos: {}", star.pos);
         }
         
         if changed {
-            let pre_sort = Instant::now();
-            self.sort();
-            println!("sort took {}ms", (Instant::now()-pre_sort).as_millis())
+            span!(Level::TRACE, "stars_sort").in_scope(|| {
+                self.sort();
+            })
         }
     }
 }
