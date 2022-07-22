@@ -1,6 +1,5 @@
 use glam::{Vec3};
 use glium::{Display, VertexBuffer, implement_vertex, Program, Surface, index, uniform, DrawParameters, Smooth, Blend};
-use stars::{Stars, Star};
 
 #[derive(Copy, Clone)]
 pub struct InstanceAttr {
@@ -16,15 +15,15 @@ struct VertexAttr {
 }
 implement_vertex!(VertexAttr, position);
 
-pub struct InstancesView<'a> {
+pub struct InstancesView {
     vert_buffer: VertexBuffer<VertexAttr>,
     inst_buffer: VertexBuffer<InstanceAttr>,
     program: Program,
     verts_per_inst: usize,
-    params: DrawParameters<'a>
+    params: DrawParameters<'static>
 }
 
-impl InstancesView<'_> {
+impl InstancesView {
     pub fn new <I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>
         (display: &Display, source: I) -> Self
             
@@ -35,26 +34,27 @@ impl InstancesView<'_> {
             include_str!("instance.frag"), 
             None
         ).unwrap();
+        
 
-        let num_instances = source.len();
-    
-        let (vert_buffer, inst_buffer) = gen_buffers(display, source);
-
-        let params = glium::DrawParameters {
+        let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),
             blend: Blend::alpha_blending(),
             .. Default::default()
         };
 
+        let num_instances = source.len();
+    
+        let (vert_buffer, inst_buffer) = gen_buffers(display, source);
+
         let verts_per_inst = vert_buffer.len()/num_instances;
 
         Self{
+            params,
             verts_per_inst,
             vert_buffer,
             inst_buffer,
-            program,
-            params
+            program
         }
     }
 
@@ -112,9 +112,9 @@ fn gen_buffers<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>
         .flatten()
         .collect::<Vec<_>>();
         
-    let instance_data = source.flat_map(|star| {
+    let instance_data = source.flat_map(|intoAttrs| {
         std::iter::repeat(
-            star.into()
+            intoAttrs.into()
         ).take(vertices_per_instance)
     }).collect::<Vec<_>>();
 

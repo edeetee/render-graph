@@ -13,7 +13,7 @@ pub struct DrawInfo{
 
 pub fn start<Model, View>(
     mut event_loop: EventLoop<()>,
-    display: Display, 
+    display: &Display, 
     mut model: Model,
     mut view: View,
     update: fn(&mut Model, &mut View, UpdateInfo), 

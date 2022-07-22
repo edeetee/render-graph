@@ -1,9 +1,10 @@
 // mod renderer_nannou_view;
 
 use clap::Parser;
-use glium_rpi::{self, ModelOptions};
 use tracing::metadata::LevelFilter;
-use tracing_subscriber::fmt;
+
+mod stars;
+use stars::*;
 
 //pretty stars
 #[derive(Parser, Debug)]
@@ -24,7 +25,7 @@ fn main() {
         .with_max_level(LevelFilter::TRACE)
         .init();
 
-    glium_rpi::main(glium_rpi::Options {
+    render_stars(Options {
         num_stars: args.num_stars,
         model_options: ModelOptions { speed: args.speed },
     });

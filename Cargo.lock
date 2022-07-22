@@ -429,14 +429,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "glium_rpi"
+name = "glium_utils"
 version = "0.1.0"
 dependencies = [
  "glam",
  "glium",
- "nannou_osc",
- "rand",
- "stars",
 ]
 
 [[package]]
@@ -1073,7 +1070,10 @@ name = "rpi-rust"
 version = "0.1.0"
 dependencies = [
  "clap",
- "glium_rpi",
+ "glium_utils",
+ "nannou_osc",
+ "palette",
+ "rand",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1150,16 +1150,6 @@ dependencies = [
  "wayland-client",
  "wayland-cursor",
  "wayland-protocols",
-]
-
-[[package]]
-name = "stars"
-version = "0.1.0"
-dependencies = [
- "glam",
- "palette",
- "rand",
- "tracing",
 ]
 
 [[package]]

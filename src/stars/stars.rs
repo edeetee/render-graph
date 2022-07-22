@@ -1,11 +1,11 @@
-use std::{iter, time::Instant, ops::Mul};
-use glam::{Vec3, Vec2};
+use std::{iter};
+use glium_utils::glam::{Vec3, Vec2};
 use palette::{rgb::{Rgba}, Pixel, IntoColor, Hsva, blend::PreAlpha};
 use rand::{prelude::*, distributions::uniform::{SampleUniform, SampleRange}};
 
 pub use palette::Hsv;
 
-use tracing::{span, Level, instrument};
+use tracing::{instrument};
 
 #[derive(Debug, Default)]
 pub struct Star{

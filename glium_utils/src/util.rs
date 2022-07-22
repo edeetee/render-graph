@@ -18,7 +18,7 @@ pub fn gen_texture(display: &Display) -> Result<Texture2d, TextureCreationError>
         width, height
     )?;
 
-    texture.as_surface().clear_color(0.0, 0.0, 0.0, 1.0);
+    texture.as_surface().clear_color(0.0, 0.0, 0.0, 0.0);
 
     Ok(texture)
 }

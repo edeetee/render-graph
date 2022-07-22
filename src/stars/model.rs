@@ -1,8 +1,8 @@
-use glam::Mat4;
+use glium_utils::glam::Mat4;
 use nannou_osc as osc;
 use nannou_osc::rosc::OscType;
 use osc::Receiver;
-use stars::Stars;
+use super::stars::Stars;
 
 pub struct Options {
     pub speed: f32
@@ -34,7 +34,7 @@ impl Model {
             1000.
         );
 
-        let feedback_displace: [f32; 2] = [0.0, 1.0];
+        let feedback_displace: [f32; 2] = [0.0, 0.2];
      
         Self { 
             stars, 
