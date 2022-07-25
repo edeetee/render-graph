@@ -1,5 +1,3 @@
-use std::cell::{Ref, RefMut};
-
 use super::stars::Stars;
 use super::{stars::Star, model::Model};
 use super::model;
@@ -29,13 +27,13 @@ struct View<'a>{
 const DEFAULT_FULLSCREEN_MODE: Option<Fullscreen> = Some(Fullscreen::Borderless(None));
 
 impl<'a> View<'a> {
-    fn new(display: &'a Display, stars: &Stars, render_buffer: &'a RenderBuffer) -> Self {
+    fn new(display: &'a Display, model: &Model, render_buffer: &'a RenderBuffer) -> Self {
 
         display.gl_window().window().set_fullscreen(DEFAULT_FULLSCREEN_MODE);
         let temp_surface = SimpleFrameBuffer::new(display, render_buffer).unwrap();
 
         let feedback = FeedbackView::new(&display);
-        let stars = InstancesView::new(&display, stars.iter());
+        let stars = InstancesView::new(&display, model.stars.iter(), model.mat);
         let sdf = SdfView::new(&display);
     
         Self {
@@ -93,7 +91,7 @@ pub fn render_stars(options: Options) {
     let (width, height) = display.get_framebuffer_dimensions();
     let render_buffer = RenderBuffer::new(&display, DEFAULT_FORMAT, width, height).unwrap();
 
-    let view_state = View::new(&display, &model.stars, &render_buffer);
+    let view_state = View::new(&display, &model, &render_buffer);
 
     model_view_event_loop::start(event_loop, &display, model, view_state, update, draw, event);
 }
@@ -111,13 +109,6 @@ fn update(model: &mut Model, view: &mut View, update_info: UpdateInfo) {
         });
 
     view.stars.write_instances(new_instances_iter);
-
-    // view.feedback.
-    // view.feedback.size = view.res;
-
-//    view.update_shaders(update)
-
-    // view.feedback.update(view.res, info.time_since_previous.as_secs_f32(), model.feedback_displace)
 }
 
 fn draw(frame: &mut Frame, model: &Model, view: &mut View, info: DrawInfo) {
@@ -131,7 +122,7 @@ fn draw(frame: &mut Frame, model: &Model, view: &mut View, info: DrawInfo) {
     view.feedback.draw_to(draw_surface).unwrap();
 
     //draw objects
-    view.stars.draw_to(draw_surface, model.mat).unwrap();
+    view.stars.draw_to(draw_surface).unwrap();
 
     //copy to feedback
     view.feedback.feedback_from(draw_surface);

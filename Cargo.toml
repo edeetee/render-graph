@@ -13,6 +13,11 @@ tracing-subscriber = "0.3"
 palette = "0.6.0"
 nannou_osc = "0.18.0"
 rand = "0.8.5"
+egui_node_graph = "0.3.0"
+egui = "0.18.1"
+
+strum_macros = "0.24"
+strum = { version = "0.24", features = ["derive"] }
 
 # pprof = { version = "0.10", features = ["flamegraph"] }
 # circular-queue = "0.2.6"

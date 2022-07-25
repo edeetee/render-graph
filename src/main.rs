@@ -6,6 +6,8 @@ use tracing::metadata::LevelFilter;
 mod stars;
 use stars::*;
 
+mod graph;
+
 //pretty stars
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
