@@ -1,5 +1,4 @@
 use egui_node_graph::{NodeId, OutputId, InputId};
-
 pub trait GraphHelper<T>
 where T: Copy,
     T: Into<&'static str>

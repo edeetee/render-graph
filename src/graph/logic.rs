@@ -1,7 +1,7 @@
 use std::{borrow::Cow};
 
-use egui::color::{Hsva};
-use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, InputId, OutputId, NodeTemplateIter};
+use egui::{color::{Hsva}, DragValue};
+use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, InputId, OutputId, NodeTemplateIter, WidgetValueTrait};
 
 use super::{def::*, helpers::GraphHelper};
 
@@ -19,8 +19,6 @@ impl DataTypeTrait<GraphState> for NodeConnectionTypes {
         Cow::Borrowed(self.into())
     }
 }
-
-
 
 impl GraphHelper<NodeConnectionTypes> for Graph<NodeData, NodeConnectionTypes, ValueTypes> {
     fn input_named(&mut self, node_id: NodeId, connection: NodeConnectionTypes, name: &str) -> InputId {
@@ -81,3 +79,6 @@ impl NodeTemplateTrait for NodeTypes {
         }
     }
 }
+
+//TODO: populating node graph & deps
+//TODO: https://github.com/setzer22/egui_node_graph/blob/main/egui_node_graph_example/src/app.rs
