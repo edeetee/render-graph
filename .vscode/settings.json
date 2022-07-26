@@ -1,5 +1,10 @@
 {
     "cSpell.words": [
+        "eframe",
+        "egui",
+        "framebuffer",
+        "glium",
+        "glutin",
         "nannou"
     ]
 }

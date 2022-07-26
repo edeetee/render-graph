@@ -1,3 +1,4 @@
+use egui_node_graph::{GraphEditorState, NodeId};
 use strum::{EnumIter, IntoStaticStr, AsRefStr};
 
 
@@ -12,17 +13,17 @@ pub enum NodeConnectionTypes {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub enum ValueTypes {
+pub enum NodeValueTypes {
     Vec2 { value: [f32; 2] },
     Float { value: f32 },
     None
 }
 
-impl From<&NodeConnectionTypes> for ValueTypes {
+impl From<&NodeConnectionTypes> for NodeValueTypes {
     fn from(connection: &NodeConnectionTypes) -> Self {
         match connection {
-            NodeConnectionTypes::FrameBuffer => ValueTypes::None,
-            NodeConnectionTypes::Texture2D => ValueTypes::None,
+            NodeConnectionTypes::FrameBuffer => NodeValueTypes::None,
+            NodeConnectionTypes::Texture2D => NodeValueTypes::None,
         }
     }
 }
@@ -35,6 +36,11 @@ pub enum NodeTypes {
     Output
 }
 
-pub struct GraphState {
+#[derive(Debug, Clone)]
+pub enum GraphResponse {
+    None
+}
 
+pub struct GraphState {
+    // outputs: Vec<NodeId>
 }

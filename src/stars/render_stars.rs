@@ -1,4 +1,3 @@
-use super::stars::Stars;
 use super::{stars::Star, model::Model};
 use super::model;
 
@@ -6,7 +5,8 @@ use glium_utils::glium::uniforms;
 use glium_utils::glium::{glutin::{self, window::{Fullscreen}, event::{self, Event, ElementState}, event_loop::ControlFlow}, Surface, framebuffer::{RenderBuffer, SimpleFrameBuffer}, Frame, Display};
 
 use glium_utils::modular_shader::modular_shader::{ModularShader, ShaderUpdate};
-use glium_utils::{model_view_event_loop::{UpdateInfo, DrawInfo}, util::DEFAULT_FORMAT, modular_shader::{feedback::FeedbackView, instances::{InstancesView, InstanceAttr}, sdf::SdfView}};
+use glium_utils::util::TogglingFullscreen;
+use glium_utils::{model_view_event_loop::{UpdateInfo, DrawInfo}, util::DEFAULT_TEXTURE_FORMAT, modular_shader::{feedback::FeedbackView, instances::{InstancesView, InstanceAttr}, sdf::SdfView}};
 
 use glium_utils::model_view_event_loop;
 
@@ -24,12 +24,8 @@ struct View<'a>{
     display: &'a Display
 }
 
-const DEFAULT_FULLSCREEN_MODE: Option<Fullscreen> = Some(Fullscreen::Borderless(None));
-
 impl<'a> View<'a> {
     fn new(display: &'a Display, model: &Model, render_buffer: &'a RenderBuffer) -> Self {
-
-        display.gl_window().window().set_fullscreen(DEFAULT_FULLSCREEN_MODE);
         let temp_surface = SimpleFrameBuffer::new(display, render_buffer).unwrap();
 
         let feedback = FeedbackView::new(&display);
@@ -43,19 +39,6 @@ impl<'a> View<'a> {
             temp_buffer: temp_surface,
             display
         }
-    }
-
-    fn toggle_fullscreen(&self){
-        let gl_window = self.display.gl_window();
-        let current_mode = gl_window.window().fullscreen();
-
-        let new_fullscreen_mode = if current_mode.is_some() {
-            None
-        } else {
-            DEFAULT_FULLSCREEN_MODE
-        };
-
-        gl_window.window().set_fullscreen(new_fullscreen_mode);
     }
 
     fn shaders_iter_mut(&mut self) -> [&mut dyn ModularShader; 2] {
@@ -89,7 +72,7 @@ pub fn render_stars(options: Options) {
     let display = Display::new(wb, cb, &event_loop).unwrap();
     
     let (width, height) = display.get_framebuffer_dimensions();
-    let render_buffer = RenderBuffer::new(&display, DEFAULT_FORMAT, width, height).unwrap();
+    let render_buffer = RenderBuffer::new(&display, DEFAULT_TEXTURE_FORMAT, width, height).unwrap();
 
     let view_state = View::new(&display, &model, &render_buffer);
 
@@ -150,7 +133,7 @@ fn event(ev: Event<()>, _model: &mut Model, view: &mut View) -> Option<ControlFl
                     Some(event::VirtualKeyCode::F11) =>
                         {
                             if input.state == ElementState::Pressed{
-                                view.toggle_fullscreen();
+                                view.display.toggle_fullscreen();
                             }
                         }
 

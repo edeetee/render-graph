@@ -8,6 +8,8 @@ use stars::*;
 
 mod graph;
 
+mod render_egui;
+
 //pretty stars
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -26,6 +28,12 @@ fn main() {
     tracing_subscriber::fmt()
         .with_max_level(LevelFilter::TRACE)
         .init();
+    
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native("Shader Graph", native_options, 
+    Box::new(|cc| 
+        Box::new(graph::NodeGraphApp::new(cc))
+    ));
 
     render_stars(Options {
         num_stars: args.num_stars,

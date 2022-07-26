@@ -1,7 +1,8 @@
 use std::{borrow::Cow};
 
-use egui::{color::{Hsva}, DragValue};
-use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, InputId, OutputId, NodeTemplateIter, WidgetValueTrait};
+use egui::{color::{Hsva}};
+use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, InputId, OutputId, NodeTemplateIter, UserResponseTrait};
+use strum::IntoEnumIterator;
 
 use super::{def::*, helpers::GraphHelper};
 
@@ -20,7 +21,7 @@ impl DataTypeTrait<GraphState> for NodeConnectionTypes {
     }
 }
 
-impl GraphHelper<NodeConnectionTypes> for Graph<NodeData, NodeConnectionTypes, ValueTypes> {
+impl GraphHelper<NodeConnectionTypes> for Graph<NodeData, NodeConnectionTypes, NodeValueTypes> {
     fn input_named(&mut self, node_id: NodeId, connection: NodeConnectionTypes, name: &str) -> InputId {
         let value = (&connection).into();
 
@@ -39,10 +40,23 @@ impl GraphHelper<NodeConnectionTypes> for Graph<NodeData, NodeConnectionTypes, V
     }
 }
 
+// const NODE_TYPES_VEC: Vec<NodeTypes> = ;
+
+pub struct AllNodeTypes;
+impl NodeTemplateIter for AllNodeTypes {
+    type Item = NodeTypes;
+
+    fn all_kinds(&self) -> Vec<Self::Item> {
+        NodeTypes::iter().collect()
+    }
+}
+
+impl UserResponseTrait for GraphResponse {}
+
 impl NodeTemplateTrait for NodeTypes {
     type NodeData = NodeData;
     type DataType = NodeConnectionTypes;
-    type ValueType = ValueTypes;
+    type ValueType = NodeValueTypes;
 
     fn node_finder_label(&self) -> &str {
         self.into()
@@ -61,7 +75,6 @@ impl NodeTemplateTrait for NodeTypes {
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
         node_id: NodeId
     ) {
-        
         match self {
             NodeTypes::Instances => {
                 graph.input(node_id, NodeConnectionTypes::FrameBuffer);

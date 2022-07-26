@@ -1,22 +1,8 @@
-use egui_node_graph::GraphEditorState;
-
 mod def;
 mod logic;
 mod helpers;
-mod ui;
+mod app;
+// mod render_glium;
 
-use def::*;
-
-type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, ValueTypes, NodeTypes, GraphState>;
-
-pub struct NodeGraph{
-    state: EditorState
-}
-
-impl NodeGraph {
-    fn new() -> Self {
-        Self { 
-            state: GraphEditorState::new(1.0, GraphState {})
-        }
-    }
-}
+pub use app::NodeGraphApp;
+// pub use render_glium::render_glium;

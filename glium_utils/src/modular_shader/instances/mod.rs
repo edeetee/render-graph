@@ -125,7 +125,7 @@ fn gen_buffers<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>
         .collect::<Vec<_>>();
 
     let instance_data = source
-        .flat_map(|intoAttrs| std::iter::repeat(intoAttrs.into()).take(vertices_per_instance))
+        .flat_map(|into_attrs| std::iter::repeat(into_attrs.into()).take(vertices_per_instance))
         .collect::<Vec<_>>();
 
     let instances_buffer = glium::vertex::VertexBuffer::dynamic(display, &instance_data).unwrap();

@@ -1,4 +1,4 @@
-use glium::{Display, VertexBuffer, Program, Texture2d, Surface, uniform, uniforms::{self}, DrawParameters, Blend, BlendingFunction, LinearBlendingFactor, DrawError};
+use glium::{Display, Texture2d, Surface, uniform, uniforms::{self}, DrawParameters, Blend, BlendingFunction, LinearBlendingFactor, DrawError};
 
 use crate::{util::*};
 use super::{fullscreen_shader::{FullscreenFrag}, modular_shader::{ModularShader}};
