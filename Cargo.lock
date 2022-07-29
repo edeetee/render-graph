@@ -1424,6 +1424,7 @@ dependencies = [
  "nannou_osc",
  "palette",
  "rand",
+ "slotmap",
  "strum",
  "strum_macros",
  "tracing",

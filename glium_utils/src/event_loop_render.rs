@@ -1,6 +1,6 @@
 use std::time::{Instant, Duration};
 
-use glium::{glutin::{event_loop::{EventLoop, ControlFlow}, event::Event, self, platform::run_return::EventLoopExtRunReturn}, Frame, Display};
+use glium::{glutin::{event_loop::{EventLoop, ControlFlow}, event::{Event, self}, self, platform::run_return::EventLoopExtRunReturn}, Frame, Display};
 
 pub struct UpdateInfo {
     pub time_since_previous: Duration,
@@ -11,7 +11,44 @@ pub struct DrawInfo{
     pub time_since_previous: Duration
 }
 
-pub fn start<Model, View>(
+// pub fn start(
+//     mut event_loop: EventLoop<()>,
+//     display: &Display, 
+//     draw: FnMut(&mut Frame, DrawInfo) -> Option<ControlFlow>,
+// ){
+//     let frame_period = Duration::from_millis(1000/120);
+//     let mut last_frame = Instant::now();
+
+//     event_loop.run_return(|ev, _, control_flow| {
+//         let now = Instant::now();
+
+//         //update frame
+//         let elapsed_since_frame = now - last_frame;
+
+//         let mut frame = display.draw();
+
+//         let ms_since_frame = elapsed_since_frame.as_millis();
+
+//         println!("frame period: {ms_since_frame}");
+
+//         let draw_control_flow = draw(&mut frame, DrawInfo{
+//             time_since_previous: elapsed_since_frame
+//         });
+
+//         frame.finish().unwrap();
+
+//         frames_since_update += 1;
+//         last_frame = now;
+
+//         *control_flow = draw_control_flow.unwrap_or(
+//             glutin::event_loop::ControlFlow::WaitUntil(next_frame_time)
+//         );
+
+//         let next_frame_time = last_frame + frame_period;     
+//     });
+// }
+
+pub fn start_model_view<Model, View>(
     mut event_loop: EventLoop<()>,
     display: &Display, 
     mut model: Model,
@@ -73,4 +110,23 @@ pub fn start<Model, View>(
     });
 
     std::process::exit(0)
+}
+
+pub fn default_ev_control_flow(ev: Event<()>) -> Option<ControlFlow> {
+    match ev {
+        event::Event::WindowEvent { event, .. } => match event {
+            event::WindowEvent::CloseRequested => {
+                Some(glutin::event_loop::ControlFlow::Exit)
+            },
+            event::WindowEvent::KeyboardInput { input, .. } => {
+                match input.virtual_keycode {
+                    Some(event::VirtualKeyCode::Escape) =>
+                        Some(glutin::event_loop::ControlFlow::Exit),
+                    _ => None
+                }
+            },
+            _ => None
+        },
+        _ => None,
+    }
 }

@@ -1,8 +1,9 @@
 mod def;
-mod logic;
-mod helpers;
-mod app;
-// mod render_glium;
+mod trait_impl;
+mod util;
+mod ui;
+mod glium_egui;
+mod shader_manager;
 
-pub use app::NodeGraphApp;
-// pub use render_glium::render_glium;
+pub use ui::ShaderNodeGraph;
+pub use glium_egui::render_glium;

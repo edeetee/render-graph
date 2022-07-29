@@ -1,4 +1,4 @@
-use glium::{Display, Texture2d, Surface, uniform, uniforms::{self}, DrawParameters, Blend, BlendingFunction, LinearBlendingFactor, DrawError};
+use glium::{Display, Texture2d, Surface, uniform, uniforms::{self}, DrawParameters, Blend, BlendingFunction, LinearBlendingFactor, DrawError, backend::Facade};
 
 use crate::{util::*};
 use super::{fullscreen_shader::{FullscreenFrag}, modular_shader::{ModularShader}};
@@ -25,8 +25,8 @@ const FEEDBACK_BLEND: Blend = Blend{
     constant_value: (0.0, 0.0, 0.0, 0.0)
 };
 
-impl ModularShader for FeedbackView {
-    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), DrawError> {
+impl<S: Surface> ModularShader<S> for FeedbackView {
+    fn draw_to(&self, surface: &mut S) -> Result<(), DrawError> {
         let feedback_sampler = self.texture.sampled()
             .wrap_function(uniforms::SamplerWrapFunction::BorderClamp);
 
@@ -48,9 +48,9 @@ impl ModularShader for FeedbackView {
 // }
 
 impl FeedbackView {
-    pub fn new(display: &Display) -> Self {
+    pub fn new<F: Facade>(facade: &F) -> Self {
         
-        let feedback_texture = gen_texture(&display).unwrap();
+        let feedback_texture = gen_texture(facade).unwrap();
 
         let params = DrawParameters {
             dithering: true,
@@ -60,7 +60,7 @@ impl FeedbackView {
         };
 
         Self{
-            fullscreen: FullscreenFrag::new_with_params(&display, include_str!("feedback.frag"), params),
+            fullscreen: FullscreenFrag::new_with_params(facade, include_str!("feedback.frag"), params),
 
             texture: feedback_texture,
             size: [1., 1.],

@@ -1,7 +1,7 @@
 use glam::Vec3;
 use glium::{
     implement_vertex, index, uniform, Blend, Display, DrawParameters, Program, Smooth, Surface,
-    VertexBuffer,
+    VertexBuffer, backend::Facade,
 };
 
 use super::modular_shader::ModularShader;
@@ -32,13 +32,13 @@ pub struct InstancesView {
 }
 
 impl InstancesView {
-    pub fn new<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>(
-        display: &Display,
+    pub fn new<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>, F: Facade>(
+        facade: &F,
         source: I,
         projection_mat: Mat4
     ) -> Self {
         let program = Program::from_source(
-            display,
+            facade,
             include_str!("instance.vert"),
             include_str!("instance.frag"),
             None,
@@ -54,7 +54,7 @@ impl InstancesView {
 
         let num_instances = source.len();
 
-        let (vert_buffer, inst_buffer) = gen_buffers(display, source);
+        let (vert_buffer, inst_buffer) = gen_buffers(facade, source);
 
         let verts_per_inst = vert_buffer.len() / num_instances;
 
@@ -84,8 +84,8 @@ impl InstancesView {
     }
 }
 
-impl ModularShader for InstancesView {
-    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), glium::DrawError>
+impl<S: Surface> ModularShader<S> for InstancesView {
+    fn draw_to(&self, surface: &mut S) -> Result<(), glium::DrawError>
     where
         Self: Sized 
     {
@@ -101,8 +101,8 @@ impl ModularShader for InstancesView {
     }
 }
 
-fn gen_buffers<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>(
-    display: &Display,
+fn gen_buffers<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>, F: Facade>(
+    facade: &F,
     source: I,
 ) -> (VertexBuffer<VertexAttr>, VertexBuffer<InstanceAttr>) {
     let tri = [[-0.5, 0., 0.], [0., 1., 0.], [0.5, 0., 0.]].map(|slice| Vec3::from_slice(&slice));
@@ -128,8 +128,8 @@ fn gen_buffers<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>
         .flat_map(|into_attrs| std::iter::repeat(into_attrs.into()).take(vertices_per_instance))
         .collect::<Vec<_>>();
 
-    let instances_buffer = glium::vertex::VertexBuffer::dynamic(display, &instance_data).unwrap();
-    let vertices_buffer = glium::vertex::VertexBuffer::new(display, &vert_data).unwrap();
+    let instances_buffer = glium::vertex::VertexBuffer::dynamic(facade, &instance_data).unwrap();
+    let vertices_buffer = glium::vertex::VertexBuffer::new(facade, &vert_data).unwrap();
 
     (vertices_buffer, instances_buffer)
 }

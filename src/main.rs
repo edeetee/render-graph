@@ -1,14 +1,13 @@
 // mod renderer_nannou_view;
 
 use clap::Parser;
+use graph::render_glium;
 use tracing::metadata::LevelFilter;
 
-mod stars;
-use stars::*;
+// mod stars;
+// use stars::*;
 
 mod graph;
-
-mod render_egui;
 
 //pretty stars
 #[derive(Parser, Debug)]
@@ -29,14 +28,16 @@ fn main() {
         .with_max_level(LevelFilter::TRACE)
         .init();
     
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native("Shader Graph", native_options, 
-    Box::new(|cc| 
-        Box::new(graph::NodeGraphApp::new(cc))
-    ));
+    // let native_options = eframe::NativeOptions::default();
+    // eframe::run_native("Shader Graph", native_options, 
+    // Box::new(|cc| 
+    //     Box::new(graph::NodeGraphUI::new(cc))
+    // ));
 
-    render_stars(Options {
-        num_stars: args.num_stars,
-        model_options: ModelOptions { speed: args.speed },
-    });
+    render_glium();
+
+    // render_stars(Options {
+    //     num_stars: args.num_stars,
+    //     model_options: ModelOptions { speed: args.speed },
+    // });
 }

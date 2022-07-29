@@ -7,7 +7,7 @@ pub struct FullscreenFrag{
 }
 
 impl FullscreenFrag {
-    pub fn new(display: &Display, frag: &'static str) -> Self {
+    pub fn new<F: Facade>(facade: &F, frag: &'static str) -> Self {
         let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),
@@ -15,14 +15,14 @@ impl FullscreenFrag {
             .. Default::default()
         };
 
-        Self::new_with_params(display, frag, params)
+        Self::new_with_params(facade, frag, params)
     }
 
-    pub fn new_with_params(display: &Display, frag: &'static str, params: DrawParameters<'static>) -> Self {
-        let vert_buffer = new_fullscreen_buffer(display).unwrap();
+    pub fn new_with_params<F: Facade>(facade: &F, frag: &'static str, params: DrawParameters<'static>) -> Self {
+        let vert_buffer = new_fullscreen_buffer(facade).unwrap();
     
         let program = Program::from_source(
-            display,
+            facade,
             FULLSCREEN_VERT_SHADER,
             frag,
             None

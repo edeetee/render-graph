@@ -1,3 +1,4 @@
+use glium::backend::Facade;
 use glium::glutin::window::Fullscreen;
 use glium::{Display, Texture2d, Surface, backend::Context};
 use glium::texture::{self, UncompressedFloatFormat, TextureCreationError};
@@ -9,11 +10,11 @@ pub fn get_res(display: &Display) -> [u32; 2] {
 
 pub const DEFAULT_TEXTURE_FORMAT: UncompressedFloatFormat = UncompressedFloatFormat::U16U16U16U16;
 
-pub fn gen_texture(display: &Display) -> Result<Texture2d, TextureCreationError> {
-    let (width, height) = display.get_framebuffer_dimensions();
+pub fn gen_texture<F: Facade>(facade: &F) -> Result<Texture2d, TextureCreationError> {
+    let (width, height) = facade.get_context().get_framebuffer_dimensions();
 
     let texture = Texture2d::empty_with_format(
-        display, 
+        facade, 
         DEFAULT_TEXTURE_FORMAT, 
         glium::texture::MipmapsOption::NoMipmap, 
         width, height
@@ -26,10 +27,12 @@ pub fn gen_texture(display: &Display) -> Result<Texture2d, TextureCreationError>
 
 pub fn print_formats(context: &Context){
     let all_formats = texture::UncompressedFloatFormat::get_formats_list();
-    let valid_formats = all_formats.iter()
-        .filter(|format| format.is_color_renderable(context) && format.is_supported(context));
 
-    if valid_formats.clone().count() != 0 {
+    let valid_formats = all_formats.iter()
+        .filter(|format| format.is_color_renderable(context) && format.is_supported(context))
+        .collect::<Vec<_>>();
+    
+    if valid_formats.len() != 0 {
         println!("Valid formats:");
         for format in valid_formats {
             println!("{format:?}")

@@ -1,4 +1,4 @@
-pub mod model_view_event_loop;
+pub mod event_loop_render;
 pub mod util;
 pub mod modular_shader;
 
