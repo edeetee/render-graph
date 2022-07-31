@@ -18,6 +18,7 @@ egui_node_graph = "0.3.0"
 egui = "0.18.1"
 eframe = "0.18.0"
 egui_glium = "0.18.0"
+ouroboros = "0.15.0"
 
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }

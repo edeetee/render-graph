@@ -1,5 +1,4 @@
 use glium::{VertexBuffer, implement_vertex, index::{self, NoIndices}, backend::Facade, Program, DrawParameters, Display, Smooth, Blend, DrawError, Surface, uniforms::Uniforms};
-
 pub struct FullscreenFrag{
     verts: VertexBuffer<VertexAttr>,
     program: Program,

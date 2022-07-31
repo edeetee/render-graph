@@ -8,7 +8,7 @@ use glium::{Frame, texture::SrgbTexture2d, framebuffer::SimpleFrameBuffer, backe
 use glium_utils::modular_shader::{modular_shader::ModularShader, instances::InstancesView, sdf::SdfView};
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 
-use super::{def::{*, self}, trait_impl::AllNodeTypes};
+use super::{def::{*, self}, trait_impl::AllNodeTypes, shader_manager::{ShaderData, new_shader_data}};
 
 impl NodeDataTrait for NodeData {
     type Response = GraphResponse;
@@ -74,7 +74,7 @@ pub struct ShaderNodeGraph<'a>
 {
     pub state: EditorState,
     output_nodes: Vec<NodeId>,
-    shaders: SecondaryMap<NodeId, ShaderData<'a>>,
+    shaders: SecondaryMap<NodeId, ShaderData<Frame>>,
     pub egui_glium: EguiGlium,
     display: &'a Display
 }
@@ -95,8 +95,8 @@ impl<'a> ShaderNodeGraph<'a> {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
                 let node = &mut self.state.graph[node_id];
                 
-                let new_shader = ShaderData::new(self.display, &mut self.egui_glium, node.user_data.template);
-                node.user_data.result = Some(new_shader.tex_id);
+                let new_shader = new_shader_data(self.display, &mut self.egui_glium, node.user_data.template);
+                node.user_data.result = Some(new_shader.clone_tex_id());
                 self.shaders[node_id] = new_shader;
 
                 if node.user_data.template == NodeTypes::Output {
@@ -122,9 +122,11 @@ impl<'a> ShaderNodeGraph<'a> {
     fn render_node_and_inputs(&self, frame: &mut Frame, node_id: NodeId) {
         let shader_data = &self.shaders[node_id];
 
-        if let Some(shader) = shader_data.modular_shader.as_ref() {
-            shader.draw_to(frame);
-        }
+        shader_data.render(frame);
+
+        // if let Some(shader) = shader_data.modular_shader.as_ref() {
+        //     shader.draw_to(frame);
+        // }
     }
 
     pub fn render_shaders(&mut self){
@@ -172,7 +174,7 @@ impl<'a> ShaderNodeGraph<'a> {
                 .flatten();
 
             if let Some(cache) = output {
-                ui.image(cache.tex_id, [512., 512.]);
+                ui.image(cache.clone_tex_id(), [512., 512.]);
             }
 
             graph_resp
@@ -189,48 +191,3 @@ impl<'a> ShaderNodeGraph<'a> {
 //         self.draw(ctx);
 //     }
 // }
-
-pub struct ShaderData<'a> {
-    tex: SrgbTexture2d,
-    pub tex_fb: SimpleFrameBuffer<'a>,
-    pub tex_id: TextureId,
-    modular_shader: Option<Box<dyn ModularShader<Frame>>>
-}
-
-const DEFAULT_RES: [u32; 2] = [1920, 1080];
-
-impl ShaderData<'_> {
-    pub fn new<F: Facade>(facade: &F, egui_glium: &mut EguiGlium, template: NodeTypes) -> Self {
-        let output_texture = SrgbTexture2d::empty_with_format(
-            facade, 
-            glium::texture::SrgbFormat::U8U8U8U8, 
-            glium::texture::MipmapsOption::NoMipmap, 
-            DEFAULT_RES[0].into(), 
-            DEFAULT_RES[1].into()
-        ).unwrap();
-    
-        let output_texture_rc = Rc::new(output_texture);
-        let output_frame_buffer = SimpleFrameBuffer::new(facade, output_texture_rc.clone()).unwrap();
-        let output_texture_egui = egui_glium.painter.register_native_texture(output_texture_rc);
-
-        let modular_shader: Option<Box<dyn ModularShader<_>>> = match template {
-            // NodeTypes::Instances => InstancesView::new(facade),
-            NodeTypes::Sdf => Some(Box::new(SdfView::new(facade))),
-            _ => None
-        };
-
-        Self {
-            tex: output_texture,
-            tex_fb: output_frame_buffer,
-            tex_id: output_texture_egui,
-            modular_shader
-        }
-    }
-
-    pub fn render(&mut self, frame: &mut Frame) {
-        if let Some(shader) = self.modular_shader {
-            shader.draw_to(frame);
-        }
-    }
-}
-
