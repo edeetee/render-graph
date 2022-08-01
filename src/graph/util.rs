@@ -1,6 +1,4 @@
-use egui_node_graph::{NodeId, OutputId, InputId, Graph, Node};
-
-use super::def::{NodeData, NodeConnectionTypes, NodeValueTypes};
+use egui_node_graph::{NodeId, OutputId, InputId};
 
 ///Simplifies adding connections to nodes
 pub trait GraphMutHelper<T>

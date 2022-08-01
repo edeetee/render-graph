@@ -1,4 +1,4 @@
-use glium::{VertexBuffer, implement_vertex, index::{self, NoIndices}, backend::Facade, Program, DrawParameters, Display, Smooth, Blend, DrawError, Surface, uniforms::Uniforms};
+use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::Uniforms};
 pub struct FullscreenFrag{
     verts: VertexBuffer<VertexAttr>,
     program: Program,
@@ -6,7 +6,7 @@ pub struct FullscreenFrag{
 }
 
 impl FullscreenFrag {
-    pub fn new<F: Facade>(facade: &F, frag: &'static str) -> Self {
+    pub fn new(facade: &impl Facade, frag: &'static str) -> Self {
         let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),
@@ -17,7 +17,7 @@ impl FullscreenFrag {
         Self::new_with_params(facade, frag, params)
     }
 
-    pub fn new_with_params<F: Facade>(facade: &F, frag: &'static str, params: DrawParameters<'static>) -> Self {
+    pub fn new_with_params(facade: &impl Facade, frag: &'static str, params: DrawParameters<'static>) -> Self {
         let vert_buffer = new_fullscreen_buffer(facade).unwrap();
     
         let program = Program::from_source(

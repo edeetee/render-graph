@@ -1,6 +1,6 @@
 use glam::Vec3;
 use glium::{
-    implement_vertex, index, uniform, Blend, Display, DrawParameters, Program, Smooth, Surface,
+    implement_vertex, index, uniform, Blend, DrawParameters, Program, Smooth, Surface,
     VertexBuffer, backend::Facade,
 };
 
@@ -32,8 +32,8 @@ pub struct InstancesView {
 }
 
 impl InstancesView {
-    pub fn new<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>, F: Facade>(
-        facade: &F,
+    pub fn new<I: Iterator<Item = T> + ExactSizeIterator, T: Into<InstanceAttr>>(
+        facade: &impl Facade,
         source: I,
         projection_mat: Mat4
     ) -> Self {

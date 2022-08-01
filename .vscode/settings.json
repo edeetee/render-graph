@@ -5,6 +5,7 @@
         "framebuffer",
         "glium",
         "glutin",
-        "nannou"
+        "nannou",
+        "Srgb"
     ]
 }

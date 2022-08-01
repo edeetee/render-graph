@@ -1,4 +1,4 @@
-use glium::{Display, Surface, uniform, DrawParameters, Smooth, Blend, backend::Facade};
+use glium::{Surface, uniform, backend::Facade};
 use super::{modular_shader::ModularShader, fullscreen_shader::FullscreenFrag};
 
 pub struct SdfView {
@@ -19,7 +19,7 @@ impl<S: Surface> ModularShader<S> for SdfView {
 }
 
 impl SdfView{
-    pub fn new<F: Facade>(facade: &F) -> Self {
+    pub fn new(facade: &impl Facade) -> Self {
         Self{
             fullscreen: FullscreenFrag::new(facade,include_str!("sdf.frag")),
             size: [0., 0.]

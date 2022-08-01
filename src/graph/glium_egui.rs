@@ -1,12 +1,9 @@
-use std::{rc::Rc};
+use egui_glium::EguiGlium;
+use glium::glutin::{self, event::{Event, WindowEvent}};
 
-use egui_node_graph::{NodeId, NodeResponse};
-use glium::{glutin::{window::Fullscreen, self, event::{Event, WindowEvent}}, framebuffer::{SimpleFrameBuffer}, texture::SrgbTexture2d, Frame};
+use super::ShaderNodeGraph;
 
-
-use super::{*, def::{NodeData}, ShaderNodeGraph};
-
-const DEFAULT_FULLSCREEN_MODE: Option<Fullscreen> = Some(Fullscreen::Borderless(None));
+// const DEFAULT_FULLSCREEN_MODE: Option<Fullscreen> = Some(Fullscreen::Borderless(None));
 
 // reference:
 // https://github.com/emilk/egui/blob/master/egui_glium/examples/native_texture.rs
@@ -16,26 +13,26 @@ pub fn render_glium() {
     // let model = ();
 
     let event_loop = glutin::event_loop::EventLoop::new();
+
     let display = create_display(&event_loop);
+
+    let mut egui_glium = EguiGlium::new(&display);
     
     // let (width, height) = display.get_framebuffer_dimensions();
     // let render_buffer = RenderBuffer::new(&display, DEFAULT_TEXTURE_FORMAT, width, height).unwrap();
 
-    let mut shader_node_graph = ShaderNodeGraph::new(&display);
+    let mut shader_node_graph = ShaderNodeGraph::new();
 
     event_loop.run(move |ev, _, control_flow| {
-
         match ev {
             Event::RedrawRequested(_) => {
-                shader_node_graph.draw();
+                shader_node_graph.draw(&display, &mut egui_glium);
             },
-
             Event::RedrawEventsCleared => {
                 display.gl_window().window().request_redraw();
             }
-
             Event::WindowEvent { event: window_ev, .. } => {
-                let egui_consumed_event = shader_node_graph.window_event(&window_ev);
+                let egui_consumed_event = egui_glium.on_event(&window_ev);
 
                 if !egui_consumed_event {
                     if matches!(window_ev, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
