@@ -1,7 +1,7 @@
 use glam::Vec3;
 use glium::{
     implement_vertex, index, uniform, Blend, DrawParameters, Program, Smooth, Surface,
-    VertexBuffer, backend::Facade,
+    VertexBuffer, backend::Facade, framebuffer::SimpleFrameBuffer,
 };
 
 use super::modular_shader::ModularShader;
@@ -85,7 +85,7 @@ impl InstancesView {
 }
 
 impl ModularShader for InstancesView {
-    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), glium::DrawError>
+    fn draw_to(&self, surface: &mut SimpleFrameBuffer<'_>) -> Result<(), glium::DrawError>
     {
         surface.draw(
             (&self.vert_buffer, &self.inst_buffer),

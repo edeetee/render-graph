@@ -1,4 +1,4 @@
-use glium::{Surface, uniform, backend::Facade};
+use glium::{Surface, uniform, backend::Facade, framebuffer::SimpleFrameBuffer};
 use super::{modular_shader::ModularShader, fullscreen_shader::FullscreenFrag};
 
 pub struct SdfView {
@@ -7,7 +7,7 @@ pub struct SdfView {
 }
 
 impl ModularShader for SdfView {
-    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), glium::DrawError>
+    fn draw_to(&self, surface: &mut SimpleFrameBuffer<'_>) -> Result<(), glium::DrawError>
     {
         self.fullscreen.draw(
             surface, 

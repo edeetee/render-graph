@@ -69,7 +69,7 @@ impl ShaderNodeGraph {
         }
     }
 
-    fn render_node_and_inputs(&self, surface: &mut SimpleFrameBuffer<'_>, node_id: NodeId, rendered: &mut Vec<NodeId>) {
+    fn render_node_and_inputs(&mut self, surface: &mut SimpleFrameBuffer<'_>, node_id: NodeId, rendered: &mut Vec<NodeId>) {
         //skip if rendered by another path
         if rendered.contains(&node_id){
             return;
@@ -84,7 +84,7 @@ impl ShaderNodeGraph {
         }
 
         //render after previous preceeding nodes
-        let shader_data = &self.shaders[node_id];
+        let shader_data = &mut self.shaders[node_id];
         shader_data.render();
         rendered.push(node_id);
     }
@@ -92,7 +92,7 @@ impl ShaderNodeGraph {
     fn render_shaders(&mut self, facade: &impl Facade){
         let mut rendered_nodes = vec![];
 
-        for (output_id, output_target) in &self.output_targets {
+        for (output_id, output_target) in self.output_targets.iter_mut() {
             // let node = self.state.graph[*output_id];
             // let mut temp_surface = SimpleFrameBuffer::new(facade, output_target).unwrap();
             output_target.with_fb_mut(|fb| {
@@ -145,8 +145,8 @@ impl ShaderNodeGraph {
         egui::CentralPanel::default().show(ctx, |ui| {
             let graph_resp = self.graph_state.draw_graph_editor(ui, AllNodeTypes);
 
-            let output = self.output_targets.first()
-                .map(|output_node_id| self.shaders.get(*output_node_id))
+            let output = self.output_targets.iter().next()
+                .map(|(output_node_id, _)| self.shaders.get(output_node_id))
                 .flatten();
 
             if let Some(cache) = output {

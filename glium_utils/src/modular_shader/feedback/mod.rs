@@ -1,4 +1,4 @@
-use glium::{Texture2d, Surface, uniform, uniforms::{self}, DrawParameters, Blend, BlendingFunction, LinearBlendingFactor, DrawError, backend::Facade};
+use glium::{Texture2d, Surface, uniform, uniforms::{self}, DrawParameters, Blend, BlendingFunction, LinearBlendingFactor, DrawError, backend::Facade, framebuffer::SimpleFrameBuffer};
 
 use crate::{util::*};
 use super::{fullscreen_shader::{FullscreenFrag}, modular_shader::{ModularShader}};
@@ -26,7 +26,7 @@ const FEEDBACK_BLEND: Blend = Blend{
 };
 
 impl ModularShader for FeedbackView {
-    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), DrawError> {
+    fn draw_to(&self, surface: &mut SimpleFrameBuffer<'_>) -> Result<(), DrawError> {
         let feedback_sampler = self.texture.sampled()
             .wrap_function(uniforms::SamplerWrapFunction::BorderClamp);
 

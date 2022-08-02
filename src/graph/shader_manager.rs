@@ -18,7 +18,7 @@ pub struct ShaderData {
 
     // #[borrows(tex_rc)]
     // #[not_covariant]
-    modular_shader: Option<Box<dyn ModularFrameBuffer>>,
+    modular_shader: Option<Box<dyn ModularShader>>,
 
     #[borrows(tex_rc)]
     #[covariant]
@@ -37,19 +37,17 @@ pub fn new_shader_data(facade: &impl Facade, egui_glium: &mut EguiGlium, templat
         DEFAULT_RES[1].into()
     ).unwrap();
 
-    // let a = tex
-
     let tex_rc = Rc::new(tex);
     let output_texture_egui = egui_glium.painter.register_native_texture(tex_rc.clone());
 
-    let get_modular_shader = |tex_r| match template {
-        NodeTypes::Sdf => Some(Box::new(SdfView::new(facade)) as Box<dyn ModularShader<_>>),
+    let modular_shader = match template {
+        NodeTypes::Sdf => Some(Box::new(SdfView::new(facade)) as Box<dyn ModularShader>),
         _ => None
     };
 
     ShaderDataBuilder {
         tex_id: output_texture_egui,
-        modular_shader_builder: get_modular_shader,
+        modular_shader,
         tex_rc,
         tex_fb_builder: |tex_rc: &Rc<SrgbTexture2d>| SimpleFrameBuffer::new(facade, tex_rc.as_ref()).unwrap(),
     }.build()
