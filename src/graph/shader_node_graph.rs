@@ -6,7 +6,7 @@ use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use itertools::Itertools;
 
-use super::{def::{*, self}, trait_impl::AllNodeTypes, shader_manager::{ShaderData, new_shader_data}};
+use super::{def::{*, self}, trait_impl::AllNodeTypes, shader_manager::{NodeShader}};
 
 type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 
@@ -24,7 +24,7 @@ pub struct ShaderNodeGraph
 {
     pub graph_state: EditorState,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
-    shaders: SecondaryMap<NodeId, ShaderData>
+    shaders: SecondaryMap<NodeId, NodeShader>
 }
 
 
@@ -42,7 +42,7 @@ impl ShaderNodeGraph {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
                 let node = &mut self.graph_state.graph[node_id];
                 
-                let new_shader = new_shader_data(facade, egui_glium, node.user_data.template);
+                let new_shader = NodeShader::new(facade, egui_glium, node.user_data.template);
                 node.user_data.result = Some(new_shader.clone_tex_id());
                 self.shaders.insert(node_id, new_shader);
 
@@ -69,7 +69,7 @@ impl ShaderNodeGraph {
         }
     }
 
-    fn render_node_and_inputs(&mut self, surface: &mut SimpleFrameBuffer<'_>, node_id: NodeId, rendered: &mut Vec<NodeId>) {
+    fn render_node_and_inputs(&mut self, surface: & SimpleFrameBuffer<'_>, node_id: NodeId, rendered: &mut Vec<NodeId>) {
         //skip if rendered by another path
         if rendered.contains(&node_id){
             return;
@@ -92,12 +92,13 @@ impl ShaderNodeGraph {
     fn render_shaders(&mut self, facade: &impl Facade){
         let mut rendered_nodes = vec![];
 
-        for (output_id, output_target) in self.output_targets.iter_mut() {
+        for (output_id, output_target) in &self.output_targets {
             // let node = self.state.graph[*output_id];
             // let mut temp_surface = SimpleFrameBuffer::new(facade, output_target).unwrap();
-            output_target.with_fb_mut(|fb| {
-                self.render_node_and_inputs(fb, output_id, &mut rendered_nodes);
-            })
+            self.render_node_and_inputs(output_target.borrow_fb(), output_id, &mut rendered_nodes)
+            // output_target.with_fb_mut(|fb| {
+            //     self.render_node_and_inputs(fb, output_id, &mut rendered_nodes);
+            // })
         }
 
         let rendered_node_names: String = rendered_nodes.iter()

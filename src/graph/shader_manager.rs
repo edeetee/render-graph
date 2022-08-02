@@ -12,51 +12,56 @@ use ouroboros::self_referencing;
 // }
 
 #[self_referencing]
-pub struct ShaderData {
+struct NodeShaderData{
     tex_rc: Rc<SrgbTexture2d>,
     tex_id: TextureId,
 
-    // #[borrows(tex_rc)]
-    // #[not_covariant]
-    modular_shader: Option<Box<dyn ModularShader>>,
-
     #[borrows(tex_rc)]
     #[covariant]
-    // #[covariant]
     tex_fb: SimpleFrameBuffer<'this>
+}
+
+pub struct NodeShader {
+    data: NodeShaderData,
+    modular_shader: Option<Box<dyn ModularShader>>,
 }
 
 const DEFAULT_RES: [u32; 2] = [1920, 1080];
 
-pub fn new_shader_data(facade: &impl Facade, egui_glium: &mut EguiGlium, template: NodeTypes) -> ShaderData{
-    let tex = SrgbTexture2d::empty_with_format(
-        facade, 
-        glium::texture::SrgbFormat::U8U8U8U8, 
-        glium::texture::MipmapsOption::NoMipmap, 
-        DEFAULT_RES[0].into(), 
-        DEFAULT_RES[1].into()
-    ).unwrap();
+impl NodeShader {
+    pub fn new(facade: &impl Facade, egui_glium: &mut EguiGlium, template: NodeTypes) -> Self{
+        let tex = SrgbTexture2d::empty_with_format(
+            facade, 
+            glium::texture::SrgbFormat::U8U8U8U8, 
+            glium::texture::MipmapsOption::NoMipmap, 
+            DEFAULT_RES[0].into(), 
+            DEFAULT_RES[1].into()
+        ).unwrap();
+    
+        let tex_rc = Rc::new(tex);
+        let output_texture_egui = egui_glium.painter.register_native_texture(tex_rc.clone());
+    
+        let modular_shader = match template {
+            NodeTypes::Sdf => Some(Box::new(SdfView::new(facade)) as Box<dyn ModularShader>),
+            _ => None
+        };
+    
+        Self {
+            modular_shader,
+            data: NodeShaderDataBuilder {
+                tex_id: output_texture_egui,
+                tex_rc,
+                tex_fb_builder: |tex_rc: &Rc<SrgbTexture2d>| SimpleFrameBuffer::new(facade, tex_rc.as_ref()).unwrap(),
+            }.build()
+        }
+    }
 
-    let tex_rc = Rc::new(tex);
-    let output_texture_egui = egui_glium.painter.register_native_texture(tex_rc.clone());
-
-    let modular_shader = match template {
-        NodeTypes::Sdf => Some(Box::new(SdfView::new(facade)) as Box<dyn ModularShader>),
-        _ => None
-    };
-
-    ShaderDataBuilder {
-        tex_id: output_texture_egui,
-        modular_shader,
-        tex_rc,
-        tex_fb_builder: |tex_rc: &Rc<SrgbTexture2d>| SimpleFrameBuffer::new(facade, tex_rc.as_ref()).unwrap(),
-    }.build()
-}
-
-impl ShaderData {
     pub fn render(&mut self) {
-        if let Some(shader) = self.borrow_modular_shader().as_deref() {
-            shader.draw_to(&mut self.borrow_tex_fb()).unwrap();
+        // self.with_tex_fb_mut(user)
+        if let Some(shader) = self.modular_shader.as_deref() {
+            self.data.with_tex_fb_mut(|tex_fb| {
+                shader.draw_to(tex_fb).unwrap();
+            })
         }
 
         //fill op image even if no operation
@@ -64,6 +69,6 @@ impl ShaderData {
     }
 
     pub fn clone_tex_id(&self) -> TextureId{
-        self.borrow_tex_id().clone()
+        self.data.borrow_tex_id().clone()
     }
 }
