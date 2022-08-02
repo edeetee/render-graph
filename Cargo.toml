@@ -19,6 +19,7 @@ egui = "0.18.1"
 eframe = "0.18.0"
 egui_glium = "0.18.0"
 ouroboros = "0.15.0"
+itertools = "0.10.2"
 
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }

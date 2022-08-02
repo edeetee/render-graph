@@ -84,10 +84,8 @@ impl InstancesView {
     }
 }
 
-impl<S: Surface> ModularShader<S> for InstancesView {
-    fn draw_to(&self, surface: &mut S) -> Result<(), glium::DrawError>
-    where
-        Self: Sized 
+impl ModularShader for InstancesView {
+    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), glium::DrawError>
     {
         surface.draw(
             (&self.vert_buffer, &self.inst_buffer),

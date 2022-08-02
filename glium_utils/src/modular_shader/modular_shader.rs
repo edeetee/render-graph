@@ -1,11 +1,19 @@
-use glium::{DrawError, Surface};
+use glium::{DrawError, Surface, framebuffer::SimpleFrameBuffer};
 
 ///An object that can render to a surface with parameters
-pub trait ModularShader<S: Surface>
+pub trait ModularShader
+    where Self: Sized
 {
     ///Draw to a surface
-    fn draw_to(&self, surface: &mut S) -> Result<(), DrawError>;
+    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), DrawError>;
     fn update(&mut self, _update: &ShaderUpdate) {}
+}
+
+pub trait ModularFrameBuffer: ModularShader
+{
+    fn draw_to(&self, fb: &mut SimpleFrameBuffer<'_>) -> Result<(), DrawError> {
+        ModularShader::draw_to(self, fb)
+    }
 }
 
 pub enum ShaderUpdate {

@@ -6,8 +6,8 @@ pub struct SdfView {
     size: [f32; 2]
 }
 
-impl<S: Surface> ModularShader<S> for SdfView {
-    fn draw_to(&self, surface: &mut S) -> Result<(), glium::DrawError>
+impl ModularShader for SdfView {
+    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), glium::DrawError>
     {
         self.fullscreen.draw(
             surface, 

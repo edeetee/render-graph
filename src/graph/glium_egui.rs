@@ -23,6 +23,8 @@ pub fn render_glium() {
 
     let mut shader_node_graph = ShaderNodeGraph::new();
 
+    println!("TEST");
+
     event_loop.run(move |ev, _, control_flow| {
         match ev {
             Event::RedrawRequested(_) => {

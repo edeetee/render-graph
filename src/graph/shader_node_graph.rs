@@ -1,82 +1,117 @@
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId, GraphEditorState, NodeResponse};
-use glium::{Frame, backend::Facade, Display, Surface};
-use slotmap::{SecondaryMap};
+use glium::{Frame, backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}};
+use glium_utils::util::DEFAULT_TEXTURE_FORMAT;
+use ouroboros::self_referencing;
+use slotmap::{SecondaryMap, SparseSecondaryMap};
+use itertools::Itertools;
 
 use super::{def::{*, self}, trait_impl::AllNodeTypes, shader_manager::{ShaderData, new_shader_data}};
 
 type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 
+
+#[self_referencing]
+pub struct OutputTarget{
+    rb: RenderBuffer,
+
+    #[borrows(rb)]
+    #[covariant]
+    fb: SimpleFrameBuffer<'this>
+}
+
 pub struct ShaderNodeGraph
 {
     pub graph_state: EditorState,
-    output_nodes: Vec<NodeId>,
-    shaders: SecondaryMap<NodeId, ShaderData<Frame>>
+    output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
+    shaders: SecondaryMap<NodeId, ShaderData>
 }
+
 
 impl ShaderNodeGraph {
     pub fn new() -> Self {
         Self { 
             graph_state: GraphEditorState::new(1.0, GraphState::default()),
-            output_nodes: Vec::new(),
+            output_targets: SparseSecondaryMap::new(),
             shaders: SecondaryMap::new()
         }
     }
 
-    pub fn node_event(&mut self, display: &impl Facade, egui_glium: &mut EguiGlium, event: NodeResponse<def::GraphResponse, NodeData>) {
+    pub fn node_event(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, event: NodeResponse<def::GraphResponse, NodeData>) {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
                 let node = &mut self.graph_state.graph[node_id];
                 
-                let new_shader = new_shader_data(display, egui_glium, node.user_data.template);
+                let new_shader = new_shader_data(facade, egui_glium, node.user_data.template);
                 node.user_data.result = Some(new_shader.clone_tex_id());
                 self.shaders.insert(node_id, new_shader);
 
                 if node.user_data.template == NodeTypes::Output {
-                    self.output_nodes.push(node_id)
+                    let output_target = OutputTargetBuilder {
+                        rb: RenderBuffer::new(facade, DEFAULT_TEXTURE_FORMAT, 512, 512).unwrap(),
+                        fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap()
+                    }.build();
+                    self.output_targets.insert(node_id, output_target);
+                    // self.output_targets.push(node_id)
                 }
             },
 
             NodeResponse::DeleteNodeFull { node_id, .. } => {
-                if let Some(output_index) = self.output_nodes.iter().position(|id| *id == node_id){
-                    self.output_nodes.swap_remove(output_index);
-                }
+                // if let Some(output_index) = self.output_targets.iter().position(|id| *id == node_id){
+                //     self.output_targets.remove(output_index);
+                // }
 
                 // slotmap may pre destroy this
+                self.output_targets.remove(node_id);
                 self.shaders.remove(node_id);
             }
             _ => {}
         }
     }
 
-    fn render_node_and_inputs(&self, frame: &mut Frame, node_id: NodeId, rendered: &mut Vec<NodeId>) {
+    fn render_node_and_inputs(&self, surface: &mut SimpleFrameBuffer<'_>, node_id: NodeId, rendered: &mut Vec<NodeId>) {
+        //skip if rendered by another path
         if rendered.contains(&node_id){
             return;
         }
 
-        let shader_data = &self.shaders[node_id];
-        shader_data.render(frame);
-
-        rendered.push(node_id);
-
-        for input in &self.graph_state.graph[node_id].inputs {
-            self.render_node_and_inputs(frame, self.graph_state.graph[input.1].node, rendered)
+        //depth-first
+        for (_, input_id) in &self.graph_state.graph[node_id].inputs {
+            if let Some(output_id) = self.graph_state.graph.connection(*input_id){
+                let next_node_id = self.graph_state.graph[output_id].node;
+                self.render_node_and_inputs(surface, next_node_id, rendered)
+            }
         }
+
+        //render after previous preceeding nodes
+        let shader_data = &self.shaders[node_id];
+        shader_data.render();
+        rendered.push(node_id);
     }
 
-    fn render_shaders(&mut self, display: &Display){
+    fn render_shaders(&mut self, facade: &impl Facade){
         let mut rendered_nodes = vec![];
 
-        for output_id in &self.output_nodes {
+        for (output_id, output_target) in &self.output_targets {
             // let node = self.state.graph[*output_id];
-            let mut frame = display.draw();
-            self.render_node_and_inputs(&mut frame, *output_id, &mut rendered_nodes);
-            frame.finish().unwrap();
+            // let mut temp_surface = SimpleFrameBuffer::new(facade, output_target).unwrap();
+            output_target.with_fb_mut(|fb| {
+                self.render_node_and_inputs(fb, output_id, &mut rendered_nodes);
+            })
         }
+
+        let rendered_node_names: String = rendered_nodes.iter()
+            .map(|node_id| self.graph_state.graph[*node_id].label.clone())
+            .intersperse(", ".to_string())
+            .collect();
+
+        println!("FINISHED render_shaders: {rendered_node_names}");
     }
 
     pub fn draw(&mut self, display: &Display, egui_glium: &mut EguiGlium){
         let mut frame = display.draw();
+        
+        frame.clear_color_and_depth((1.,1.,1.,1.), 0.);
 
         let mut graph_response = None;
 
@@ -92,7 +127,7 @@ impl ShaderNodeGraph {
 
         self.render_shaders(display);
         
-        frame.clear_color_and_depth((1.,1.,1.,1.), 0.);
+        // frame.clear_color_and_depth((1.,1.,1.,1.), 0.);
 
         egui_glium.paint(display, &mut frame);
 
@@ -110,7 +145,7 @@ impl ShaderNodeGraph {
         egui::CentralPanel::default().show(ctx, |ui| {
             let graph_resp = self.graph_state.draw_graph_editor(ui, AllNodeTypes);
 
-            let output = self.output_nodes.first()
+            let output = self.output_targets.first()
                 .map(|output_node_id| self.shaders.get(*output_node_id))
                 .flatten();
 

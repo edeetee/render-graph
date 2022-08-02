@@ -25,8 +25,8 @@ const FEEDBACK_BLEND: Blend = Blend{
     constant_value: (0.0, 0.0, 0.0, 0.0)
 };
 
-impl<S: Surface> ModularShader<S> for FeedbackView {
-    fn draw_to(&self, surface: &mut S) -> Result<(), DrawError> {
+impl ModularShader for FeedbackView {
+    fn draw_to<S: Surface>(&self, surface: &mut S) -> Result<(), DrawError> {
         let feedback_sampler = self.texture.sampled()
             .wrap_function(uniforms::SamplerWrapFunction::BorderClamp);
 
@@ -61,7 +61,6 @@ impl FeedbackView {
 
         Self{
             fullscreen: FullscreenFrag::new_with_params(facade, include_str!("feedback.frag"), params),
-
             texture: feedback_texture,
             size: [1., 1.],
             displace: [0., 0.],
