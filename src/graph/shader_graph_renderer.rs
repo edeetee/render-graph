@@ -102,14 +102,14 @@ impl ShaderGraphRenderer {
             
             // let mut temp_surface = SimpleFrameBuffer::new(facade, output_target).unwrap();
 
-            let _rendered_output = graph.for_each(output_id, 
+            let _rendered_output = graph.map(output_id, 
                 &mut |node_id, _| {
                     if rendered_nodes.contains(&node_id){
                         return;
                     }
                     
                     let shader_data = &mut shaders[node_id];
-                    shader_data.render();
+                    shader_data.render(output_target.borrow_fb());
                     rendered_nodes.push(node_id);
                 }
             );

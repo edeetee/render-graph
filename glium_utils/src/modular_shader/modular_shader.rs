@@ -8,13 +8,6 @@ pub trait ModularShader
     fn update(&mut self, _update: &ShaderUpdate) {}
 }
 
-pub trait ModularFrameBuffer: ModularShader
-{
-    fn draw_to(&self, fb: &mut SimpleFrameBuffer<'_>) -> Result<(), DrawError> {
-        ModularShader::draw_to(self, fb)
-    }
-}
-
 pub enum ShaderUpdate {
     Resolution([f32; 2]),
 }

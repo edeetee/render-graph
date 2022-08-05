@@ -32,14 +32,14 @@ impl IndexMut<NodeId> for ShaderGraph {
 
 impl ShaderGraph {
     ///Call f for each node in correct order
-    pub fn for_each<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<T>) -> T) -> T{
+    pub fn map<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<T>) -> T) -> T{
         let mut prev_vals = vec![];
 
         //call preceeding nodes first
         for (_, input_id) in &self.0.graph[node_id].inputs {
             if let Some(output_id) = self.0.graph.connection(*input_id){
                 let next_node_id = self.0.graph[output_id].node;
-                prev_vals.push(self.for_each(next_node_id, f));
+                prev_vals.push(self.map(next_node_id, f));
             }
         }
 

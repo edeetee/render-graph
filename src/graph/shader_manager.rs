@@ -3,7 +3,7 @@ use std::{rc::Rc, borrow::BorrowMut};
 use egui::TextureId;
 use egui_glium::EguiGlium;
 use glium::{texture::SrgbTexture2d, framebuffer::{SimpleFrameBuffer}, backend::Facade, Surface};
-use glium_utils::modular_shader::{modular_shader::{ModularShader, ModularFrameBuffer}, sdf::SdfView};
+use glium_utils::modular_shader::{modular_shader::{ModularShader}, sdf::SdfView};
 use super::def::{NodeTypes};
 use ouroboros::self_referencing;
 
@@ -56,13 +56,16 @@ impl NodeShader {
         }
     }
 
-    pub fn render(&mut self) {
+    pub fn render(&mut self, surface: &impl Surface) {
         // self.with_tex_fb_mut(user)
-        if let Some(shader) = self.modular_shader.as_deref() {
-            self.data.with_tex_fb_mut(|tex_fb| {
+        self.data.with_tex_fb_mut(|tex_fb| {
+            if let Some(shader) = self.modular_shader.as_deref() {
                 shader.draw_to(tex_fb).unwrap();
-            })
-        }
+            }
+            tex_fb.fill(surface, glium::uniforms::MagnifySamplerFilter::Nearest);
+        })
+        
+        
 
         //fill op image even if no operation
         // surface.fill(self.borrow_tex_fb(), glium::uniforms::MagnifySamplerFilter::Linear);
