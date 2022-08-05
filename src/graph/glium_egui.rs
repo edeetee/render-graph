@@ -1,7 +1,7 @@
 use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}};
 
-use super::ShaderNodeGraph;
+use super::ShaderGraphRenderer;
 
 // const DEFAULT_FULLSCREEN_MODE: Option<Fullscreen> = Some(Fullscreen::Borderless(None));
 
@@ -21,7 +21,7 @@ pub fn render_glium() {
     // let (width, height) = display.get_framebuffer_dimensions();
     // let render_buffer = RenderBuffer::new(&display, DEFAULT_TEXTURE_FORMAT, width, height).unwrap();
 
-    let mut shader_node_graph = ShaderNodeGraph::new();
+    let mut shader_node_graph = ShaderGraphRenderer::new();
 
     println!("TEST");
 

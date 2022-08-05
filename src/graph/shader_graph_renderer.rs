@@ -1,15 +1,17 @@
+use std::ops::Index;
+
+use eframe::glow::Shader;
 use egui_glium::EguiGlium;
-use egui_node_graph::{NodeId, GraphEditorState, NodeResponse};
+use egui_node_graph::{NodeId, GraphEditorState, NodeResponse, Node};
 use glium::{Frame, backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}};
 use glium_utils::util::DEFAULT_TEXTURE_FORMAT;
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use itertools::Itertools;
 
-use super::{def::{*, self}, trait_impl::AllNodeTypes, shader_manager::{NodeShader}};
+use super::{def::{*, self}, trait_impl::AllNodeTypes, shader_manager::{NodeShader}, shader_graph::ShaderGraph};
 
-type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
-
+pub(crate) type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 
 #[self_referencing]
 pub struct OutputTarget{
@@ -20,27 +22,23 @@ pub struct OutputTarget{
     fb: SimpleFrameBuffer<'this>
 }
 
-pub struct ShaderNodeGraph
+#[derive(Default)]
+pub struct ShaderGraphRenderer
 {
-    pub graph_state: EditorState,
+    graph: ShaderGraph,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     shaders: SecondaryMap<NodeId, NodeShader>
 }
 
-
-impl ShaderNodeGraph {
+impl ShaderGraphRenderer {
     pub fn new() -> Self {
-        Self { 
-            graph_state: GraphEditorState::new(1.0, GraphState::default()),
-            output_targets: SparseSecondaryMap::new(),
-            shaders: SecondaryMap::new()
-        }
+        Default::default()
     }
 
     pub fn node_event(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, event: NodeResponse<def::GraphResponse, NodeData>) {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
-                let node = &mut self.graph_state.graph[node_id];
+                let node = &mut self.graph[node_id];
                 
                 let new_shader = NodeShader::new(facade, egui_glium, node.user_data.template);
                 node.user_data.result = Some(new_shader.clone_tex_id());
@@ -69,40 +67,57 @@ impl ShaderNodeGraph {
         }
     }
 
-    fn render_node_and_inputs(&mut self, surface: & SimpleFrameBuffer<'_>, node_id: NodeId, rendered: &mut Vec<NodeId>) {
-        //skip if rendered by another path
-        if rendered.contains(&node_id){
-            return;
-        }
-
-        //depth-first
-        for (_, input_id) in &self.graph_state.graph[node_id].inputs {
-            if let Some(output_id) = self.graph_state.graph.connection(*input_id){
-                let next_node_id = self.graph_state.graph[output_id].node;
-                self.render_node_and_inputs(surface, next_node_id, rendered)
-            }
-        }
-
-        //render after previous preceeding nodes
-        let shader_data = &mut self.shaders[node_id];
-        shader_data.render();
-        rendered.push(node_id);
-    }
+    // fn render_node_and_inputs(
+    //     &self, 
+    //     surface: & SimpleFrameBuffer<'_>, 
+    //     node_id: NodeId, 
+    //     // shaders: &mut SecondaryMap<NodeId, NodeShader>, 
+    //     // rendered: &mut Vec<NodeId>
+    // ) {
+    //     //skip if rendered by another path
+    //     if rendered.contains(&node_id){
+    //         return;
+    //     }
+    
+    //     //depth-first
+    //     for (_, input_id) in &self.graph_state.graph[node_id].inputs {
+    //         if let Some(output_id) = self.graph_state.graph.connection(*input_id){
+    //             let next_node_id = self.graph_state.graph[output_id].node;
+    //             self.render_node_and_inputs(surface, next_node_id, shaders, rendered)
+    //         }
+    //     }
+    
+    //     //render after previous preceeding nodes
+    //     let shader_data = &mut shaders[node_id];
+    //     shader_data.render();
+    //     rendered.push(node_id);
+    // }
 
     fn render_shaders(&mut self, facade: &impl Facade){
         let mut rendered_nodes = vec![];
+        let mut shaders = &mut self.shaders;
+        let graph = &self.graph;
 
         for (output_id, output_target) in &self.output_targets {
-            // let node = self.state.graph[*output_id];
+            
             // let mut temp_surface = SimpleFrameBuffer::new(facade, output_target).unwrap();
-            self.render_node_and_inputs(output_target.borrow_fb(), output_id, &mut rendered_nodes)
-            // output_target.with_fb_mut(|fb| {
-            //     self.render_node_and_inputs(fb, output_id, &mut rendered_nodes);
-            // })
+
+            let _rendered_output = graph.for_each(output_id, 
+                &mut |node_id, _| {
+                    if rendered_nodes.contains(&node_id){
+                        return;
+                    }
+                    
+                    let shader_data = &mut shaders[node_id];
+                    shader_data.render();
+                    rendered_nodes.push(node_id);
+                }
+            );
+
         }
 
         let rendered_node_names: String = rendered_nodes.iter()
-            .map(|node_id| self.graph_state.graph[*node_id].label.clone())
+            .map(|node_id| self.graph[*node_id].label.clone())
             .intersperse(", ".to_string())
             .collect();
 
@@ -117,7 +132,7 @@ impl ShaderNodeGraph {
         let mut graph_response = None;
 
         let _needs_repaint = egui_glium.run(display, |ctx| {
-            graph_response = Some(self.draw_egui(ctx));
+            graph_response = Some(self.graph.draw(ctx));
         });
 
         if let Some(response) = graph_response {
@@ -133,29 +148,6 @@ impl ShaderNodeGraph {
         egui_glium.paint(display, &mut frame);
 
         frame.finish().unwrap();
-    }
-
-    fn draw_egui(&mut self, ctx: &egui::Context) -> egui_node_graph::GraphResponse<GraphResponse, NodeData> {
-        egui::TopBottomPanel::top("top").show(ctx, |ui| {
-            ui.heading("Hello World!");
-            egui::menu::bar(ui, |ui| {
-                egui::widgets::global_dark_light_mode_switch(ui);
-            })
-        });
-
-        egui::CentralPanel::default().show(ctx, |ui| {
-            let graph_resp = self.graph_state.draw_graph_editor(ui, AllNodeTypes);
-
-            let output = self.output_targets.iter().next()
-                .map(|(output_node_id, _)| self.shaders.get(output_node_id))
-                .flatten();
-
-            if let Some(cache) = output {
-                ui.image(cache.clone_tex_id(), [512., 512.]);
-            }
-
-            graph_resp
-        }).inner
     }
 }
 
