@@ -3,7 +3,7 @@ use std::ops::Index;
 use eframe::glow::Shader;
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId, GraphEditorState, NodeResponse, Node};
-use glium::{Frame, backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}};
+use glium::{Frame, backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}, BlitMask, Rect};
 use glium_utils::util::DEFAULT_TEXTURE_FORMAT;
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
@@ -42,6 +42,7 @@ impl ShaderGraphRenderer {
                 
                 let new_shader = NodeShader::new(facade, egui_glium, node.user_data.template);
                 node.user_data.result = Some(new_shader.clone_tex_id());
+
                 self.shaders.insert(node_id, new_shader);
 
                 if node.user_data.template == NodeTypes::Output {
@@ -50,14 +51,10 @@ impl ShaderGraphRenderer {
                         fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap()
                     }.build();
                     self.output_targets.insert(node_id, output_target);
-                    // self.output_targets.push(node_id)
                 }
             },
 
             NodeResponse::DeleteNodeFull { node_id, .. } => {
-                // if let Some(output_index) = self.output_targets.iter().position(|id| *id == node_id){
-                //     self.output_targets.remove(output_index);
-                // }
 
                 // slotmap may pre destroy this
                 self.output_targets.remove(node_id);
@@ -67,53 +64,29 @@ impl ShaderGraphRenderer {
         }
     }
 
-    // fn render_node_and_inputs(
-    //     &self, 
-    //     surface: & SimpleFrameBuffer<'_>, 
-    //     node_id: NodeId, 
-    //     // shaders: &mut SecondaryMap<NodeId, NodeShader>, 
-    //     // rendered: &mut Vec<NodeId>
-    // ) {
-    //     //skip if rendered by another path
-    //     if rendered.contains(&node_id){
-    //         return;
-    //     }
-    
-    //     //depth-first
-    //     for (_, input_id) in &self.graph_state.graph[node_id].inputs {
-    //         if let Some(output_id) = self.graph_state.graph.connection(*input_id){
-    //             let next_node_id = self.graph_state.graph[output_id].node;
-    //             self.render_node_and_inputs(surface, next_node_id, shaders, rendered)
-    //         }
-    //     }
-    
-    //     //render after previous preceeding nodes
-    //     let shader_data = &mut shaders[node_id];
-    //     shader_data.render();
-    //     rendered.push(node_id);
-    // }
-
     fn render_shaders(&mut self, facade: &impl Facade){
         let mut rendered_nodes = vec![];
-        let mut shaders = &mut self.shaders;
+        let shaders = &mut self.shaders;
         let graph = &self.graph;
 
-        for (output_id, output_target) in &self.output_targets {
-            
-            // let mut temp_surface = SimpleFrameBuffer::new(facade, output_target).unwrap();
+        for (output_id, output_target) in &mut self.output_targets {
+            output_target.with_fb_mut(|fb| {
+                fb.clear_color(0., 0., 0., 0.);
+            });
 
-            let _rendered_output = graph.map(output_id, 
-                &mut |node_id, _| {
-                    if rendered_nodes.contains(&node_id){
-                        return;
+            output_target.with_fb_mut(|surface| {
+                let _rendered_output = graph.map(output_id, 
+                    &mut |node_id, _| {
+                        if rendered_nodes.contains(&node_id){
+                            return;
+                        }
+                        
+                        let shader_data = &mut shaders[node_id];
+                        shader_data.render(surface);
+                        rendered_nodes.push(node_id);
                     }
-                    
-                    let shader_data = &mut shaders[node_id];
-                    shader_data.render(output_target.borrow_fb());
-                    rendered_nodes.push(node_id);
-                }
-            );
-
+                );
+            });
         }
 
         let rendered_node_names: String = rendered_nodes.iter()
@@ -142,17 +115,28 @@ impl ShaderGraphRenderer {
         }
 
         self.render_shaders(display);
-        
-        // frame.clear_color_and_depth((1.,1.,1.,1.), 0.);
 
         egui_glium.paint(display, &mut frame);
+
+        if let Some((_, first_output)) = self.output_targets.iter_mut().next() {
+            let fb = first_output.borrow_fb();
+
+            // fb.fill(&frame, )
+            // let source_rec = Rect{
+            //     width: 1,
+            //     height: 1,
+            //     ..Default::default()
+            // };        
+            // let target_rect = Rect {
+
+            // }
+            // let source_rect = Rect::(Pos2::ZERO, [1.,1.].into());
+            // let target_rect = Rect::from_two_pos([0.5, 0.5].into(), [1., 1.].into());
+            let filter = glium::uniforms::MagnifySamplerFilter::Linear;
+            frame.fill(fb, filter);
+            // frame.blit_buffers_from_simple_framebuffer(&fb, &source_rect, &target_rect, filter, BlitMask::color());
+        }
 
         frame.finish().unwrap();
     }
 }
-
-// impl eframe::App for ShaderNodeGraph {
-//     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-//         self.draw(ctx);
-//     }
-// }

@@ -3,7 +3,7 @@ use std::{rc::Rc, borrow::BorrowMut};
 use egui::TextureId;
 use egui_glium::EguiGlium;
 use glium::{texture::SrgbTexture2d, framebuffer::{SimpleFrameBuffer}, backend::Facade, Surface};
-use glium_utils::modular_shader::{modular_shader::{ModularShader}, sdf::SdfView};
+use glium_utils::modular_shader::{modular_shader::{ModularShader}, sdf::SdfView, uv::UvView};
 use super::def::{NodeTypes};
 use ouroboros::self_referencing;
 
@@ -26,7 +26,7 @@ pub struct NodeShader {
     modular_shader: Option<Box<dyn ModularShader>>,
 }
 
-const DEFAULT_RES: [u32; 2] = [1920, 1080];
+const DEFAULT_RES: [u32; 2] = [512, 512];
 
 impl NodeShader {
     pub fn new(facade: &impl Facade, egui_glium: &mut EguiGlium, template: NodeTypes) -> Self{
@@ -37,12 +37,16 @@ impl NodeShader {
             DEFAULT_RES[0].into(), 
             DEFAULT_RES[1].into()
         ).unwrap();
+
+        // tex.write(rect, data)
+        // tex.first_layer().main_level().get_texture().
     
         let tex_rc = Rc::new(tex);
         let output_texture_egui = egui_glium.painter.register_native_texture(tex_rc.clone());
     
-        let modular_shader = match template {
-            NodeTypes::Sdf => Some(Box::new(SdfView::new(facade)) as Box<dyn ModularShader>),
+        let modular_shader: Option<Box<dyn ModularShader>> = match template {
+            NodeTypes::Sdf => Some(Box::new(SdfView::new(facade))),
+            NodeTypes::UV => Some(Box::new(UvView::new(facade))),
             _ => None
         };
     
@@ -51,24 +55,37 @@ impl NodeShader {
             data: NodeShaderDataBuilder {
                 tex_id: output_texture_egui,
                 tex_rc,
-                tex_fb_builder: |tex_rc: &Rc<SrgbTexture2d>| SimpleFrameBuffer::new(facade, tex_rc.as_ref()).unwrap(),
+                tex_fb_builder: |tex_rc: &Rc<SrgbTexture2d>| {
+                   let mut fb =  SimpleFrameBuffer::new(facade, tex_rc.as_ref()).unwrap();
+                   fb.clear_color(0., 0., 0., 0.);
+                   fb
+                },
             }.build()
         }
     }
 
-    pub fn render(&mut self, surface: &impl Surface) {
+    pub fn render(&mut self, target: &mut SimpleFrameBuffer) {
         // self.with_tex_fb_mut(user)
-        self.data.with_tex_fb_mut(|tex_fb| {
-            if let Some(shader) = self.modular_shader.as_deref() {
-                shader.draw_to(tex_fb).unwrap();
-            }
-            tex_fb.fill(surface, glium::uniforms::MagnifySamplerFilter::Nearest);
-        })
-        
-        
+        let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
-        //fill op image even if no operation
-        // surface.fill(self.borrow_tex_fb(), glium::uniforms::MagnifySamplerFilter::Linear);
+        self.data.with_tex_fb_mut(|tex_fb| {
+            //fill background from prev
+            // target.fill(tex_fb, filter);
+            let draw_surface = target;
+            let copy_target = tex_fb;
+
+            draw_surface.clear_color_and_depth((0., 0., 0., 1.), 0.);
+
+            // draw_surface
+
+            //do the draw
+            if let Some(shader) = self.modular_shader.as_deref() {
+                shader.draw_to(draw_surface).unwrap();
+            }
+
+            //copy back to target
+            draw_surface.fill(copy_target, filter);
+        })
     }
 
     pub fn clone_tex_id(&self) -> TextureId{

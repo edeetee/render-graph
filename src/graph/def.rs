@@ -25,6 +25,7 @@ pub enum NodeTypes {
     Instances,
     Feedback,
     Sdf,
+    UV,
     Output
 }
 
@@ -36,6 +37,7 @@ impl From<&NodeTypes> for NodeConnectionTypes {
             NodeTypes::Feedback => Self::Texture2D,
             NodeTypes::Sdf => Self::Texture2D,
             NodeTypes::Output => Self::Texture2D,
+            NodeTypes::UV => Self::Texture2D,
         }
     }
 }
