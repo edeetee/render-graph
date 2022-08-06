@@ -9,7 +9,7 @@ use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use itertools::Itertools;
 
-use super::{def::{*, self}, trait_impl::AllNodeTypes, shader_manager::{NodeShader}, shader_graph::ShaderGraph};
+use super::{def::{*, self}, trait_impl::AllNodeTypes, node_shader::{NodeShader}, shader_graph::ShaderGraph};
 
 pub(crate) type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 

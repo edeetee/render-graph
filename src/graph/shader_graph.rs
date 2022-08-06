@@ -5,7 +5,7 @@ use egui_node_graph::{GraphEditorState, NodeId, Node};
 use glium::framebuffer::SimpleFrameBuffer;
 use slotmap::SecondaryMap;
 
-use super::{shader_graph_renderer::EditorState, def::{GraphState, NodeData, GraphResponse}, shader_manager::NodeShader, trait_impl::AllNodeTypes};
+use super::{shader_graph_renderer::EditorState, def::{GraphState, NodeData, GraphResponse}, node_shader::NodeShader, trait_impl::AllNodeTypes};
 
 // #[derive(Default)]
 pub struct ShaderGraph(EditorState);

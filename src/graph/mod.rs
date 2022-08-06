@@ -3,7 +3,7 @@ mod trait_impl;
 mod util;
 mod ui;
 mod glium_egui;
-mod shader_manager;
+mod node_shader;
 mod shader_graph_renderer;
 mod shader_graph;
 
