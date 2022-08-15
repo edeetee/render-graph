@@ -10,7 +10,7 @@ impl ModularShader for UvView {
     {
             self.fullscreen.draw(
             surface, 
-            &EmptyUniforms
+            EmptyUniforms
         )
     }
 }

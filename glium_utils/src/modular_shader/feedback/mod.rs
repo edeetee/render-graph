@@ -32,12 +32,12 @@ impl ModularShader for FeedbackView {
 
         let uniforms = uniform! {
             feedback_texture: feedback_sampler,
-            size: self.size,
+            // size: self.size,
             displace: self.displace,
             feedback_mult: self.feedback_gain
         };
 
-        self.fullscreen.draw(surface, &uniforms)
+        self.fullscreen.draw(surface, uniforms)
     }
 }
 

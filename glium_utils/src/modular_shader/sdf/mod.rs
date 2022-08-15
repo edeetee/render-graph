@@ -11,7 +11,7 @@ impl ModularShader for SdfView {
     {
             self.fullscreen.draw(
             surface, 
-            &uniform! {
+            uniform! {
                 size: self.size,
             }
         )
