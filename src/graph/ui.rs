@@ -22,8 +22,8 @@ impl NodeDataTrait for NodeData {
     {
         let me = &graph[node_id];
 
-        if let Some(tex_id) = &me.user_data.result {
-            ui.image(*tex_id, ui.available_size());
+        if let Some(tex_id) = &me.user_data.texture_cache {
+            ui.image(tex_id.clone_tex_id(), ui.available_size());
         } else {
             ui.label("NO IMAGE AVAILABLE");
         }

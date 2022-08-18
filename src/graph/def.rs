@@ -1,10 +1,22 @@
 use egui::TextureId;
 use strum::{EnumIter, IntoStaticStr};
 
+use super::node_shader::NodeShader;
+
 pub struct NodeData {
     pub template: NodeTypes,
-    pub result: Option<TextureId>
-    // pub texture_cache: Option<ShaderData>
+    // pub result: Option<TextureId>,
+    pub texture_cache: Option<NodeShader>
+}
+
+impl NodeData {
+    pub fn new(ty: NodeTypes) -> Self {
+        Self {
+            template: ty,
+            // result: None,
+            texture_cache: None,
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, IntoStaticStr, Clone, Copy)]

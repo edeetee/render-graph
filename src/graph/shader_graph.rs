@@ -48,8 +48,9 @@ impl ShaderGraph {
         self.0.graph.connection(input)
     }
 
+    
     ///Call f for each node in correct order, ending on node_id
-    pub fn map_to<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<T>) -> T) -> T{
+    pub fn map_to<T>(&mut self, node_id: NodeId, f: &mut impl FnMut(&mut Node<NodeData>, Vec<T>) -> T) -> T{
         let mut prev_vals = vec![];
 
         //call preceeding nodes first
@@ -60,8 +61,9 @@ impl ShaderGraph {
             }
         }
 
-        f(node_id, prev_vals)
+        f(&mut self.0.graph[node_id], prev_vals)
     }
+
 
     pub fn draw(&mut self, ctx: &egui::Context) -> egui_node_graph::GraphResponse<GraphResponse, NodeData> {
         egui::TopBottomPanel::top("top").show(ctx, |ui| {

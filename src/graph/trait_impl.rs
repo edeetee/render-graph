@@ -76,7 +76,7 @@ impl NodeTemplateTrait for NodeTypes {
     }
 
     fn user_data(&self) -> Self::NodeData {
-        NodeData { template: *self, result: None }
+        NodeData::new(*self)
     }
 
     fn build_node(

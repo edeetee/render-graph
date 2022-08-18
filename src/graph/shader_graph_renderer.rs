@@ -27,7 +27,7 @@ pub struct ShaderGraphRenderer
 {
     graph: ShaderGraph,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
-    shaders: SecondaryMap<NodeId, NodeShader>
+    // shaders: SecondaryMap<NodeId, NodeShader>
 }
 
 impl ShaderGraphRenderer {
@@ -50,10 +50,11 @@ impl ShaderGraphRenderer {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
 
+                // build shader
                 let new_shader = NodeShader::new(facade, egui_glium, self.graph[node_id].user_data.template);
-                self.graph[node_id].user_data.result = Some(new_shader.clone_tex_id());
+                self.graph[node_id].user_data.texture_cache = Some(new_shader);
 
-                self.shaders.insert(node_id, new_shader);
+                // self.shaders.insert(node_id, new_shader);
 
                 let node = &self.graph[node_id];
 
@@ -83,15 +84,15 @@ impl ShaderGraphRenderer {
             NodeResponse::DeleteNodeFull { node_id, .. } => {
                 // slotmap may pre destroy this
                 self.output_targets.remove(node_id);
-                self.shaders.remove(node_id);
+                // self.shaders.remove(node_id);
             }
             _ => {}
         }
     }
 
-    fn render_shaders(&mut self, facade: &impl Facade){
-        let shaders = &mut self.shaders;
-        let graph = &self.graph;
+    fn render_shaders(&mut self){
+        // let shaders = &mut self.shaders;
+        // let graph = &mut self.graph;
 
         for (output_id, output_target) in &mut self.output_targets {
             let mut rendered_nodes = vec![];
@@ -101,15 +102,15 @@ impl ShaderGraphRenderer {
             });
 
             output_target.with_fb_mut(|surface| {
-                let _rendered_output = graph.map_to(output_id, 
-                    &mut |node_id, _| {
-                        if rendered_nodes.contains(&node_id){
+                let _rendered_output = self.graph.map_to(output_id, 
+                    &mut |node, _| {
+                        if rendered_nodes.contains(&node.id){
                             return;
                         }
-                        
-                        let shader_data = &mut shaders[node_id];
-                        shader_data.render(surface);
-                        rendered_nodes.push(node_id);
+
+                        let shader = node.user_data.texture_cache.as_mut().unwrap();
+                        shader.render(surface);
+                        rendered_nodes.push(node.id);
                     }
                 );
             });
@@ -141,7 +142,7 @@ impl ShaderGraphRenderer {
             }
         }
 
-        self.render_shaders(display);
+        self.render_shaders();
 
         egui_glium.paint(display, &mut frame);
 
