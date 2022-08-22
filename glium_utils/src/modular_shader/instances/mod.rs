@@ -4,8 +4,6 @@ use glium::{
     VertexBuffer, backend::Facade, framebuffer::SimpleFrameBuffer,
 };
 
-use super::modular_shader::ModularShader;
-
 #[derive(Copy, Clone)]
 pub struct InstanceAttr {
     pub instance_pos: [f32; 3],
@@ -84,8 +82,8 @@ impl InstancesView {
     }
 }
 
-impl ModularShader for InstancesView {
-    fn draw_to(&self, surface: &mut SimpleFrameBuffer<'_>) -> Result<(), glium::DrawError>
+impl InstancesView {
+    fn draw_to(&self, surface: &mut impl Surface) -> Result<(), glium::DrawError>
     {
         surface.draw(
             (&self.vert_buffer, &self.inst_buffer),

@@ -46,7 +46,7 @@ impl FullscreenFrag {
         }
     }
 
-    pub fn draw<S: Surface, U: Uniforms>(&self, surface: &mut S, uniforms: U) -> Result<(), DrawError>{
+    pub fn draw(&self, surface: &mut impl Surface, uniforms: impl Uniforms) -> Result<(), DrawError>{
         let dim = surface.get_dimensions();
 
         let extra_uniforms = FullscreenUniforms {

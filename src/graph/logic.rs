@@ -4,22 +4,17 @@ use egui::{color::{Hsva}};
 use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, InputId, OutputId, NodeTemplateIter, UserResponseTrait};
 use strum::IntoEnumIterator;
 
-use super::{def::*, util::GraphMutHelper};
+use super::{def::*};
 
-impl From<&NodeConnectionTypes> for NodeValueTypes {
-    fn from(connection: &NodeConnectionTypes) -> Self {
-        match connection {
-            // NodeConnectionTypes::FrameBuffer => NodeValueTypes::None,
-            NodeConnectionTypes::Texture2D => NodeValueTypes::None,
-        }
-    }
-}
+
 
 impl DataTypeTrait<GraphState> for NodeConnectionTypes {
     fn data_type_color(&self, _: &GraphState) -> egui::Color32 {
         let hue = match self {
             // NodeConnectionTypes::FrameBuffer => 0.0,
             NodeConnectionTypes::Texture2D => 0.7,
+            NodeConnectionTypes::Float => 0.2,
+            NodeConnectionTypes::Vec2 => 0.4,
         };
 
         Hsva::new(hue, 1., 1., 1.).into()
@@ -27,25 +22,6 @@ impl DataTypeTrait<GraphState> for NodeConnectionTypes {
 
     fn name(&self) -> std::borrow::Cow<str> {
         Cow::Borrowed(self.into())
-    }
-}
-
-impl GraphMutHelper<NodeConnectionTypes> for Graph<NodeData, NodeConnectionTypes, NodeValueTypes> {
-    fn input_named(&mut self, node_id: NodeId, connection: NodeConnectionTypes, name: &str) -> InputId {
-        let value = (&connection).into();
-
-        self.add_input_param(
-            node_id, 
-            name.into(), 
-            connection, 
-            value, 
-            egui_node_graph::InputParamKind::ConnectionOnly, 
-            true
-        )
-    }
-
-    fn output_named(&mut self, node_id: NodeId, connection: NodeConnectionTypes, name: &str) -> OutputId {
-        self.add_output_param(node_id, name.into(), connection)
     }
 }
 
@@ -84,13 +60,21 @@ impl NodeTemplateTrait for NodeTypes {
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
         node_id: NodeId
     ) {
-        match self {
-            NodeTypes::Output => {
-                graph.input(node_id, NodeConnectionTypes::Texture2D);
-            },
-            _ => {
-                graph.in_out(node_id, self.into());
-            },
+        
+        for input in self.get_input_types() {
+            let value_ty: NodeValueTypes = input.value;
+            let kind = match value_ty {
+                NodeValueTypes::None => egui_node_graph::InputParamKind::ConnectionOnly,
+                _ => egui_node_graph::InputParamKind::ConnectionOrConstant,
+            };
+            let name: &str = input.name;
+
+            graph.add_input_param(node_id, name.into(), input.ty, value_ty, kind, true);
+        }
+
+        for output in self.get_output_types() {
+            let name: &str = output.name;
+            graph.add_output_param(node_id, name.into(), output.ty);
         }
     }
 }

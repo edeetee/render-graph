@@ -1,15 +1,12 @@
-use std::{ops::Index, process::Output};
-
-use eframe::glow::Shader;
 use egui_glium::EguiGlium;
-use egui_node_graph::{NodeId, GraphEditorState, NodeResponse, Node, OutputId};
-use glium::{Frame, backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}, BlitMask, Rect};
+use egui_node_graph::{NodeId, GraphEditorState, NodeResponse};
+use glium::{backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}};
 use glium_utils::util::DEFAULT_TEXTURE_FORMAT;
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use itertools::Itertools;
 
-use super::{def::{*, self}, trait_impl::AllNodeTypes, node_shader::{NodeShader}, shader_graph::ShaderGraph};
+use super::{def::{*, self}, node_shader::{NodeShader}, shader_graph::ShaderGraph};
 
 pub(crate) type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 
@@ -23,20 +20,19 @@ pub struct OutputTarget{
 }
 
 #[derive(Default)]
-pub struct ShaderGraphRenderer
+pub struct ShaderGraphProcessor
 {
     graph: ShaderGraph,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     shaders: SecondaryMap<NodeId, NodeShader>
 }
 
-impl ShaderGraphRenderer {
+impl ShaderGraphProcessor {
     pub fn new() -> Self {
         Default::default()
     }
 
     fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId){
-        let node = &self.graph.graph_ref()[node_id];
         // let is_output_target = node.outputs(&self.graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
         let output_target = OutputTargetBuilder {
@@ -50,33 +46,36 @@ impl ShaderGraphRenderer {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
 
-                let new_shader = NodeShader::new(facade, egui_glium, self.graph[node_id].user_data.template);
-                self.graph[node_id].user_data.result = Some(new_shader.clone_tex_id());
+                if let Some(new_shader) = NodeShader::new(facade, egui_glium, self.graph[node_id].user_data.template){
+                    // new_shader.init_inputs(self.graph[node_id].input_ids().map(|input_id| &mut self.graph.[input_id]));
 
-                self.shaders.insert(node_id, new_shader);
-
-                let node = &self.graph[node_id];
-
-                for input in node.inputs(self.graph.graph_ref()) {
-                    if input.typ == NodeConnectionTypes::Texture2D{
-                        let connected_output = self.graph.graph_ref().connection(input.id);
-                        if let Some(output_id) = connected_output {
-                            let connected_node_id = self.graph.graph_ref().outputs[output_id].node;
-
-                            self.output_targets.remove(connected_node_id);
+                    self.graph[node_id].user_data.result = Some(new_shader.clone_tex_id());
+    
+                    self.shaders.insert(node_id, new_shader);
+    
+                    let node = &self.graph[node_id];
+    
+                    for input in node.inputs(self.graph.graph_ref()) {
+                        if input.typ == NodeConnectionTypes::Texture2D{
+                            let connected_output = self.graph.graph_ref().connection(input.id);
+                            if let Some(output_id) = connected_output {
+                                let connected_node_id = self.graph.graph_ref().outputs[output_id].node;
+    
+                                self.output_targets.remove(connected_node_id);
+                            }
                         }
                     }
+    
+                    self.add_dangling_output(facade, node_id);
                 }
-
-                self.add_dangling_output(facade, node_id);
             },
 
             //may create new output target
-            NodeResponse::DisconnectEvent { output, input } => {
+            NodeResponse::DisconnectEvent { output, .. } => {
                 self.add_dangling_output(facade, self.graph.graph_ref().outputs[output].node);
             },
 
-            NodeResponse::ConnectEventEnded { output, input } => {
+            NodeResponse::ConnectEventEnded { output, .. } => {
                 self.output_targets.remove(self.graph.graph_ref()[output].node);
             },
 
@@ -89,7 +88,7 @@ impl ShaderGraphRenderer {
         }
     }
 
-    fn render_shaders(&mut self, facade: &impl Facade){
+    fn render_shaders(&mut self){
         let shaders = &mut self.shaders;
         let graph = &self.graph;
 
@@ -101,17 +100,49 @@ impl ShaderGraphRenderer {
             });
 
             output_target.with_fb_mut(|surface| {
+
                 let _rendered_output = graph.map_to(output_id, 
-                    &mut |node_id, _| {
+                    &mut |node_id, inputs| {
                         if rendered_nodes.contains(&node_id){
-                            return;
+                            return shaders[node_id].tex_rc();
                         }
                         
+                        let named_inputs = graph[node_id].inputs.iter()
+                            .filter_map(|(name, id)|{
+                                let input = &self.graph.graph_ref()[*id];
+
+                                 match &input.value {
+                                    NodeValueTypes::Float(f) => Some(ComputedNodeInput::Float(f)),
+                                    NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
+                                    NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
+                                    _ => {
+                                        match input.typ {
+                                            NodeConnectionTypes::Texture2D => {
+                                                let output_id = graph.graph_ref().connection(input.id)?;
+                                                let connected_node = graph.graph_ref().outputs[output_id].node;
+
+                                                let input_match = inputs.iter()
+                                                    .find(|input| input.0 == connected_node)?;
+
+                                                Some(ComputedNodeInput::Texture(input_match.1.clone()))
+                                            },
+                                            _ => None
+                                        }
+                                    }
+                                }.map(|computed_input| (name.as_str(), computed_input))
+                            });
+                        
+                        // shader_data.update(named_inputs);
+                        
                         let shader_data = &mut shaders[node_id];
-                        shader_data.render(surface);
+                        
+                        shader_data.render(surface, named_inputs);
                         rendered_nodes.push(node_id);
+
+                        shader_data.tex_rc()
                     }
                 );
+
             });
 
             let rendered_node_names: String = rendered_nodes.iter()
@@ -141,7 +172,7 @@ impl ShaderGraphRenderer {
             }
         }
 
-        self.render_shaders(display);
+        self.render_shaders();
 
         egui_glium.paint(display, &mut frame);
 

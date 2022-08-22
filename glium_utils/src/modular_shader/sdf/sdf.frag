@@ -2,11 +2,15 @@
 
 uniform vec2 res;
 
+uniform sampler2D uv;
+
 const float radius = 0.1;
 
 void main() {
-    vec2 coord = (gl_FragCoord.xy)/max(res.x, res.y);
+    vec2 screen_pos = (gl_FragCoord.xy)/max(res.x, res.y);
+    vec2 input_pos = texture2D(uv, screen_pos).xy;
 
+    vec2 coord = input_pos;
     coord = mod(coord-0.5, radius*2);
 
     // coord -= 0.5;

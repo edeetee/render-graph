@@ -1,16 +1,24 @@
-use glium::{Surface, uniform, backend::Facade, framebuffer::SimpleFrameBuffer, uniforms::EmptyUniforms};
-use super::{modular_shader::ModularShader, fullscreen_shader::FullscreenFrag};
+use glium::{uniform, backend::Facade, framebuffer::SimpleFrameBuffer, Surface};
+use super::{fullscreen_shader::FullscreenFrag};
 
 pub struct UvView {
-    fullscreen: FullscreenFrag
+    fullscreen: FullscreenFrag,
 }
 
-impl ModularShader for UvView {
-    fn draw_to(&self, surface: &mut SimpleFrameBuffer<'_>) -> Result<(), glium::DrawError>
+pub struct UvData {
+    pub scale: [f32; 2],
+    pub centered: bool
+}
+
+impl UvView {
+    pub fn draw(&self, surface: &mut impl Surface, scale: &[f32; 2], centered: &bool) -> Result<(), glium::DrawError>
     {
-            self.fullscreen.draw(
+        self.fullscreen.draw(
             surface, 
-            EmptyUniforms
+            uniform! {
+                scale: *scale,
+                centered: *centered
+            }
         )
     }
 }
@@ -18,7 +26,9 @@ impl ModularShader for UvView {
 impl UvView{
     pub fn new(facade: &impl Facade) -> Self {
         Self{
-            fullscreen: FullscreenFrag::new(facade,include_str!("uv.frag"))
+            fullscreen: FullscreenFrag::new(facade,include_str!("uv.frag")),
+            // scale: [1.,1.],
+            // centered: false
         }
     }
 

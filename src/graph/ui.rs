@@ -32,29 +32,39 @@ impl NodeDataTrait for NodeData {
     }
 }
 
+
 impl WidgetValueTrait for NodeValueTypes {
     type Response = GraphResponse;
 
     fn value_widget(&mut self, param_name: &str, ui: &mut egui::Ui) -> Vec<Self::Response> {
         match self {
-            NodeValueTypes::Vec2 { value } => {
+            NodeValueTypes::Vec2 (value) => {
                 ui.label(param_name);
+
                 ui.horizontal(|ui| {
                     ui.label("x");
-                    ui.add(DragValue::new(&mut value[0]));
+                    let x_response = ui.add(DragValue::new(&mut value[0]).speed(0.1));
                     ui.label("y");
-                    ui.add(DragValue::new(&mut value[1]));
-                });
+                    let y_response = ui.add(DragValue::new(&mut value[1]).speed(0.1));
+
+                    x_response.changed() || y_response.changed()
+                }).inner
             }
-            NodeValueTypes::Float { value } => {
+            NodeValueTypes::Float (value) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
-                    ui.add(DragValue::new(value));
-                });
+                    ui.add(DragValue::new(value))
+                }).inner.changed()
             }
-            NodeValueTypes::None => {}
-        }
+            NodeValueTypes::Bool(value) => {
+                ui.horizontal(|ui| {
+                    ui.label(param_name);
+                    ui.checkbox(value, "")
+                }).inner.changed()
+            }
+            NodeValueTypes::None => { false }
+        };
 
-        Vec::new()
+        vec![]
     }
 }

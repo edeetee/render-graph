@@ -6,3 +6,4 @@ Touchdesigner and other node graph programming environments have the tendency to
 
 ## TODO
 - Make systems to define easy way to have common types across nodes so that it works nicely with rust Into<T> system and makes it easy to use graph features/types modularly and simply.
+-Support transparent windows for pretty & clean testing https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/

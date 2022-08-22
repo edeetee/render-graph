@@ -5,7 +5,7 @@ use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, OutputParam, I
 use glium::framebuffer::SimpleFrameBuffer;
 use slotmap::SecondaryMap;
 
-use super::{shader_graph_renderer::EditorState, def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes}, node_shader::NodeShader, trait_impl::AllNodeTypes};
+use super::{shader_graph_processor::EditorState, def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes}, node_shader::NodeShader, logic::AllNodeTypes};
 
 // #[derive(Default)]
 pub struct ShaderGraph(pub(super) EditorState);
@@ -49,14 +49,17 @@ impl ShaderGraph {
     }
 
     ///Call f for each node in correct order, ending on node_id
-    pub fn map_to<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<T>) -> T) -> T{
+    pub fn map_to<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<(NodeId, T)>) -> T) -> T{
         let mut prev_vals = vec![];
 
         //call preceeding nodes first
         for (_, input_id) in &self.0.graph[node_id].inputs {
             if let Some(output_id) = self.0.graph.connection(*input_id){
-                let next_node_id = self.0.graph[output_id].node;
-                prev_vals.push(self.map_to(next_node_id, f));
+
+                let computing_node_id = self.0.graph[output_id].node;
+                let computation_result = self.map_to(computing_node_id, f);
+
+                prev_vals.push((computing_node_id, computation_result));
             }
         }
 

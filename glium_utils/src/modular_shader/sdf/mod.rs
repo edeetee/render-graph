@@ -1,28 +1,46 @@
-use glium::{Surface, uniform, backend::Facade, framebuffer::SimpleFrameBuffer};
-use super::{modular_shader::ModularShader, fullscreen_shader::FullscreenFrag};
+use super::fullscreen_shader::FullscreenFrag;
+use glium::{
+    backend::Facade,
+    framebuffer::SimpleFrameBuffer,
+    uniform,
+    uniforms::{AsUniformValue, Sampler, EmptyUniforms},
+    Surface, program::Uniform,
+};
 
 pub struct SdfView {
     fullscreen: FullscreenFrag,
-    size: [f32; 2]
 }
 
-impl ModularShader for SdfView {
-    fn draw_to(&self, surface: &mut SimpleFrameBuffer<'_>) -> Result<(), glium::DrawError>
+impl SdfView {
+    pub fn draw<'a, T>(
+        &self,
+        surface: &mut impl Surface,
+        uv_source: Option<Sampler<'a, T>>,
+    ) -> Result<(), glium::DrawError>
+    where
+        Sampler<'a, T>: AsUniformValue,
+        T: 'a
     {
-            self.fullscreen.draw(
-            surface, 
-            uniform! {
-                size: self.size,
-            }
-        )
+        match uv_source {
+            Some(uv_source) => self.fullscreen.draw(
+                surface,
+                uniform! {
+                    uv: uv_source,
+                    has_hv: true
+                },
+            ),
+            None => self.fullscreen.draw(surface, uniform! {
+                has_hv: false
+            }),
+        }
     }
 }
 
-impl SdfView{
+impl SdfView {
     pub fn new(facade: &impl Facade) -> Self {
-        Self{
-            fullscreen: FullscreenFrag::new(facade,include_str!("sdf.frag")),
-            size: [512., 512.]
+        Self {
+            fullscreen: FullscreenFrag::new(facade, include_str!("sdf.frag")),
+            // size: [512., 512.]
         }
     }
 
