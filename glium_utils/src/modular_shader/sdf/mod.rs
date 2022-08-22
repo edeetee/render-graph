@@ -25,13 +25,10 @@ impl SdfView {
             Some(uv_source) => self.fullscreen.draw(
                 surface,
                 uniform! {
-                    uv: uv_source,
-                    has_hv: true
+                    uv: uv_source
                 },
             ),
-            None => self.fullscreen.draw(surface, uniform! {
-                has_hv: false
-            }),
+            None => self.fullscreen.draw(surface, EmptyUniforms),
         }
     }
 }
