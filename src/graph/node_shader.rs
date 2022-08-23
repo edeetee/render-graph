@@ -7,37 +7,28 @@ use super::def::{NodeConnectionTypes, NodeData, NodeTypes, NodeValueTypes, Compu
 use egui::TextureId;
 use egui_glium::EguiGlium;
 use egui_node_graph::{InputParam, Node};
-use glium::{backend::Facade, framebuffer::SimpleFrameBuffer, texture::SrgbTexture2d, Surface};
+use glium::{backend::Facade, framebuffer::{SimpleFrameBuffer, RenderBuffer}, texture::SrgbTexture2d, Surface, Texture2d};
 use glium_utils::modular_shader::{sdf::SdfView, uv::{UvView, UvData}};
 use ouroboros::self_referencing;
 
-// pub struct FrameBufferShader<'a>{
-//     modular_shader: ,
-// }
-
 #[self_referencing]
 struct NodeShaderData {
-    tex_rc: Rc<SrgbTexture2d>,
-    tex_id: TextureId,
-
-    #[borrows(tex_rc)]
+    screen_tex: Rc<SrgbTexture2d>,
+    screen_id: TextureId,
+    #[borrows(screen_tex)]
     #[covariant]
-    tex_fb: SimpleFrameBuffer<'this>,
+    screen_fb: SimpleFrameBuffer<'this>,
+
+    render_tex: Rc<Texture2d>,
+    #[borrows(render_tex)]
+    #[covariant]
+    render_fb: SimpleFrameBuffer<'this>,
 }
 
 enum Shader {
     Sdf(SdfView),
     Uv(UvView),
 }
-
-// impl<'a, T> From<&'a Shader> for &'a dyn ModularShader<T> {
-//     fn from(en: &'a Shader) -> Self {
-//         match en {
-//             Shader::Sdf(sdf) => sdf,
-//             Shader::Uv(uv) => uv,
-//         }
-//     }
-// }
 
 impl Shader {
     fn new(template: NodeTypes, facade: &impl Facade) -> Option<Self> {
@@ -114,67 +105,80 @@ impl NodeShader {
         egui_glium: &mut EguiGlium,
         template: NodeTypes,
     ) -> Option<Self> {
-        let tex = SrgbTexture2d::empty_with_format(
+        let mipmaps = glium::texture::MipmapsOption::NoMipmap;
+
+        let screen_tex = Rc::new(SrgbTexture2d::empty_with_format(
             facade,
             glium::texture::SrgbFormat::U8U8U8U8,
-            glium::texture::MipmapsOption::NoMipmap,
+            mipmaps,
             DEFAULT_RES[0].into(),
             DEFAULT_RES[1].into(),
         )
-        .unwrap();
+        .unwrap());
+
+        let render_tex = Rc::new(Texture2d::empty_with_format(
+            facade, 
+            glium::texture::UncompressedFloatFormat::F32F32F32F32, 
+            mipmaps, 
+            DEFAULT_RES[0].into(),
+            DEFAULT_RES[1].into(),
+        ).unwrap());
 
         // tex.write(rect, data)
         // tex.first_layer().main_level().get_texture().
 
-        let tex_rc = Rc::new(tex);
-        let output_texture_egui = egui_glium.painter.register_native_texture(tex_rc.clone());
+        let output_texture_egui = egui_glium.painter.register_native_texture(screen_tex.clone());
 
         let shader = Shader::new(template, facade)?;
 
         Some(Self {
             shader,
             data: NodeShaderDataBuilder {
-                tex_id: output_texture_egui,
-                tex_rc,
-                tex_fb_builder: |tex_rc: &Rc<SrgbTexture2d>| {
-                    let mut fb = SimpleFrameBuffer::new(facade, tex_rc.as_ref()).unwrap();
-                    fb.clear_color(0., 0., 0., 0.);
-                    fb
+                screen_id: output_texture_egui,
+                screen_tex,
+                screen_fb_builder: |screen_tex: &Rc<SrgbTexture2d>| {
+                    SimpleFrameBuffer::new(
+                        facade,
+                        screen_tex.as_ref(),
+                    ).unwrap()
+                },
+                render_tex,
+                render_fb_builder: |render_tex: &Rc<Texture2d>| {
+                    SimpleFrameBuffer::new(facade, render_tex.as_ref()).unwrap()
+                    // fb.clear_color(0., 0., 0., 0.);
+                    // fb
                 },
             }
             .build(),
         })
     }
 
-    pub fn render<'a, 'b>(&mut self, target: &mut SimpleFrameBuffer, named_inputs: impl Iterator<
+    pub fn render<'a, 'b>(&mut self, target: &mut impl Surface, named_inputs: impl Iterator<
         Item = (&'a str, ComputedNodeInput<'b>)>) {
         // self.with_tex_fb_mut(user)
         let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
+        // self.data.borrow_mut()
 
-        self.data.with_tex_fb_mut(|tex_fb| {
-            //fill background from prev
-            // target.fill(tex_fb, filter);
-            let draw_surface = target;
-            let copy_target = tex_fb;
+        self.data.with_render_fb_mut(|fb| {
+            fb.clear_color(0., 0., 0., 0.);
+            self.shader.draw(fb, named_inputs);
 
-            draw_surface.clear_color_and_depth((0., 0., 0., 1.), 0.);
+        });
+ 
+        self.data.borrow_render_fb().fill(self.data.borrow_screen_fb(), filter);
 
-            // draw_surface
-            self.shader.draw(draw_surface, named_inputs);
-                // .as_modular_shader()
-                // .draw_to(draw_surface)
-                // .unwrap();
+        // target.clear_color_and_depth((0., 0., 0., 1.), 0.);
 
-            //copy back to target
-            draw_surface.fill(copy_target, filter);
-        })
+        // // draw_surface
+        // self.shader.draw(target, named_inputs);
+
     }
 
-    pub fn tex_rc(&self) -> Rc<SrgbTexture2d> {
-        self.data.borrow_tex_rc().to_owned()
+    pub fn tex_for_sampling(&self) -> Rc<Texture2d> {
+        self.data.borrow_render_tex().clone()
     }
 
-    pub fn clone_tex_id(&self) -> TextureId {
-        self.data.borrow_tex_id().clone()
+    pub fn clone_screen_tex_id(&self) -> TextureId {
+        self.data.borrow_screen_id().clone()
     }
 }
