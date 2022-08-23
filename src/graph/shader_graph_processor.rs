@@ -36,7 +36,7 @@ impl ShaderGraphProcessor {
         // let is_output_target = node.outputs(&self.graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
         let output_target = OutputTargetBuilder {
-            rb: RenderBuffer::new(facade, DEFAULT_TEXTURE_FORMAT, 512, 512).unwrap(),
+            rb: RenderBuffer::new(facade, glium::texture::UncompressedFloatFormat::F32F32F32F32, 512, 512).unwrap(),
             fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap()
         }.build();
         self.output_targets.insert(node_id, output_target);
@@ -49,7 +49,7 @@ impl ShaderGraphProcessor {
                 if let Some(new_shader) = NodeShader::new(facade, egui_glium, self.graph[node_id].user_data.template){
                     // new_shader.init_inputs(self.graph[node_id].input_ids().map(|input_id| &mut self.graph.[input_id]));
 
-                    self.graph[node_id].user_data.result = Some(new_shader.clone_tex_id());
+                    self.graph[node_id].user_data.result = Some(new_shader.clone_screen_tex_id());
     
                     self.shaders.insert(node_id, new_shader);
     
@@ -104,7 +104,7 @@ impl ShaderGraphProcessor {
                 let _rendered_output = graph.map_to(output_id, 
                     &mut |node_id, inputs| {
                         if rendered_nodes.contains(&node_id){
-                            return shaders[node_id].tex_rc();
+                            return shaders[node_id].tex_for_sampling();
                         }
                         
                         let named_inputs = graph[node_id].inputs.iter()
@@ -132,14 +132,12 @@ impl ShaderGraphProcessor {
                                 }.map(|computed_input| (name.as_str(), computed_input))
                             });
                         
-                        // shader_data.update(named_inputs);
-                        
                         let shader_data = &mut shaders[node_id];
                         
                         shader_data.render(surface, named_inputs);
                         rendered_nodes.push(node_id);
 
-                        shader_data.tex_rc()
+                        shader_data.tex_for_sampling()
                     }
                 );
 

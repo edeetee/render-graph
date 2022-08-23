@@ -44,9 +44,9 @@ impl ShaderGraph {
         &self.0.graph
     }
 
-    pub fn connection(&self, input: InputId) -> Option<OutputId> {
-        self.0.graph.connection(input)
-    }
+    // pub fn connection(&self, input: InputId) -> Option<OutputId> {
+    //     self.0.graph.connection(input)
+    // }
 
     ///Call f for each node in correct order, ending on node_id
     pub fn map_to<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<(NodeId, T)>) -> T) -> T{

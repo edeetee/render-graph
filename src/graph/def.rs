@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use egui::TextureId;
-use glium::texture::SrgbTexture2d;
+use glium::{texture::SrgbTexture2d, Texture2d};
 use strum::{EnumIter, IntoStaticStr};
 
 use super::connection_types::{DEFAULT_TEXTURE2D_INPUT, NodeOutputDef, NodeInputDef};
@@ -31,7 +31,7 @@ pub enum ComputedNodeInput<'a> {
     Vec2(&'a [f32; 2]),
     Float(&'a f32),
     Bool(&'a bool),
-    Texture(Rc<SrgbTexture2d>),
+    Texture(Rc<Texture2d>),
 }
 
 impl From<[f32; 2]> for NodeValueTypes {
