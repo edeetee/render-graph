@@ -3,6 +3,7 @@ use std::ops::{Index, IndexMut};
 use eframe::glow::Shader;
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, OutputParam, InputId, OutputId, Graph};
 use glium::framebuffer::SimpleFrameBuffer;
+use itertools::Itertools;
 use slotmap::SecondaryMap;
 
 use super::{shader_graph_processor::EditorState, def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes}, node_shader::NodeShader, logic::AllNodeTypes};
@@ -48,22 +49,23 @@ impl ShaderGraph {
     //     self.0.graph.connection(input)
     // }
 
+    // pub type ComputedInput<T> = (&String, &NodeId, Option<T>);
+
     ///Call f for each node in correct order, ending on node_id
-    pub fn map_to<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<(NodeId, T)>) -> T) -> T{
-        let mut prev_vals = vec![];
+    pub fn map_with_inputs<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<(&String, &InputParam<NodeConnectionTypes, NodeValueTypes>, Option<T>)>) -> T) -> T{
+        // let inputs = self.0.graph[node_id].inputs;
 
-        //call preceeding nodes first
-        for (_, input_id) in &self.0.graph[node_id].inputs {
-            if let Some(output_id) = self.0.graph.connection(*input_id){
+        let computed_inputs = self.0.graph[node_id].inputs.iter()
+            .map(|(name, input_id)| {
+                //if input is connected, generate the value
 
-                let computing_node_id = self.0.graph[output_id].node;
-                let computation_result = self.map_to(computing_node_id, f);
+                (name, &self.0.graph[*input_id], self.0.graph.connection(*input_id).map(|output_id| {
+                    let computing_node_id = self.0.graph[output_id].node;
+                    self.map_with_inputs(computing_node_id, f)
+                }))
+            }).collect();
 
-                prev_vals.push((computing_node_id, computation_result));
-            }
-        }
-
-        f(node_id, prev_vals)
+        f(node_id, computed_inputs)
     }
 
     pub fn draw(&mut self, ctx: &egui::Context) -> egui_node_graph::GraphResponse<GraphResponse, NodeData> {

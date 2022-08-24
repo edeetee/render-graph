@@ -6,7 +6,7 @@ use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use itertools::Itertools;
 
-use super::{def::{*, self}, node_shader::{NodeShader}, shader_graph::ShaderGraph};
+use super::{def::{*, self}, node_shader::{NodeShader}, graph::ShaderGraph};
 
 pub(crate) type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 
@@ -97,19 +97,16 @@ impl ShaderGraphProcessor {
 
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
-            });
 
-            output_target.with_fb_mut(|surface| {
-
-                let _rendered_output = graph.map_to(output_id, 
+                let _rendered_output = graph.map_with_inputs(output_id, 
                     &mut |node_id, inputs| {
+
                         if rendered_nodes.contains(&node_id){
                             return shaders[node_id].tex_for_sampling();
                         }
-                        
-                        let named_inputs = graph[node_id].inputs.iter()
-                            .filter_map(|(name, id)|{
-                                let input = &self.graph.graph_ref()[*id];
+
+                        let named_inputs = inputs.iter()
+                            .filter_map(|(name, input, texture)|{
 
                                  match &input.value {
                                     NodeValueTypes::Float(f) => Some(ComputedNodeInput::Float(f)),
@@ -118,13 +115,7 @@ impl ShaderGraphProcessor {
                                     _ => {
                                         match input.typ {
                                             NodeConnectionTypes::Texture2D => {
-                                                let output_id = graph.graph_ref().connection(input.id)?;
-                                                let connected_node = graph.graph_ref().outputs[output_id].node;
-
-                                                let input_match = inputs.iter()
-                                                    .find(|input| input.0 == connected_node)?;
-
-                                                Some(ComputedNodeInput::Texture(input_match.1.clone()))
+                                                texture.as_ref().map(|texture| ComputedNodeInput::Texture(texture.clone()))
                                             },
                                             _ => None
                                         }
@@ -134,7 +125,7 @@ impl ShaderGraphProcessor {
                         
                         let shader_data = &mut shaders[node_id];
                         
-                        shader_data.render(surface, named_inputs);
+                        shader_data.render(fb, named_inputs);
                         rendered_nodes.push(node_id);
 
                         shader_data.tex_for_sampling()
@@ -148,7 +139,7 @@ impl ShaderGraphProcessor {
                 .intersperse(", ".to_string())
                 .collect();
 
-            println!("RENDERED {rendered_node_names} to {}", self.graph[output_id].label);
+            // println!("RENDERED {rendered_node_names} to {}", self.graph[output_id].label);
         }
 
     }

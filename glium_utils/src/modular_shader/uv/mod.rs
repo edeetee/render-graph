@@ -1,5 +1,8 @@
+use std::{path::Path, fs::File};
+
+use assets_manager::AssetCache;
 use glium::{uniform, backend::Facade, framebuffer::SimpleFrameBuffer, Surface};
-use super::{fullscreen_shader::FullscreenFrag};
+use super::{fullscreen_shader::FullscreenFrag, modular_shader::{ASSETS, CachedFile}};
 
 pub struct UvView {
     fullscreen: FullscreenFrag,
@@ -23,8 +26,18 @@ impl UvView {
     }
 }
 
+// const MANIFEST: &'static str = concat!(, );
+
 impl UvView{
     pub fn new(facade: &impl Facade) -> Self {
+
+        let shader_file = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("src\\modular_shader\\uv\\uv.frag");
+
+        let mut asset = CachedFile::new(File::open(shader_file).unwrap());
+
+        println!("{}", asset.read());
+
         Self{
             fullscreen: FullscreenFrag::new(facade,include_str!("uv.frag")),
             // scale: [1.,1.],

@@ -18,7 +18,7 @@ impl<U: Uniforms> Uniforms for FullscreenUniforms<U>{
 }
 
 impl FullscreenFrag {
-    pub fn new(facade: &impl Facade, frag: &'static str) -> Self {
+    pub fn new(facade: &impl Facade, frag: &str) -> Self {
         let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),
@@ -29,7 +29,7 @@ impl FullscreenFrag {
         Self::new_with_params(facade, frag, params)
     }
 
-    pub fn new_with_params(facade: &impl Facade, frag: &'static str, params: DrawParameters<'static>) -> Self {
+    pub fn new_with_params(facade: &impl Facade, frag: &str, params: DrawParameters<'static>) -> Self {
         let vert_buffer = new_fullscreen_buffer(facade).unwrap();
     
         let program = Program::from_source(

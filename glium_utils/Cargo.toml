@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 glium = "0.31.0"
 glam = "0.17.3"
+assets_manager = { version = "0.8.3", features = ["hot-reloading"] }
+lazy_static = "1.4.0"

@@ -1,10 +1,9 @@
 use super::fullscreen_shader::FullscreenFrag;
 use glium::{
     backend::Facade,
-    framebuffer::SimpleFrameBuffer,
     uniform,
     uniforms::{AsUniformValue, Sampler, EmptyUniforms},
-    Surface, program::Uniform,
+    Surface,
 };
 
 pub struct SdfView {
