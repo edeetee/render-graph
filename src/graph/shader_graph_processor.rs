@@ -146,6 +146,10 @@ impl ShaderGraphProcessor {
 
     }
 
+    pub fn reload_ifs_shaders(&mut self, ){
+
+    }
+
     pub fn draw(&mut self, display: &Display, egui_glium: &mut EguiGlium){
         let mut frame = display.draw();
         
