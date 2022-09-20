@@ -1,4 +1,4 @@
-use glium::{backend::Facade, Surface};
+use glium::{backend::Facade, Surface, ProgramCreationError};
 
 use super::{isf_shader::IsfShader, def::NodeTypes, connection_types::ComputedInputs};
 
@@ -8,9 +8,11 @@ pub enum NodeShader {
 }
 
 impl NodeShader {
-    pub fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Self> {
+    pub fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Result<Self, ProgramCreationError>> {
         match template {
-            NodeTypes::Isf{file, isf} => Some(NodeShader::Isf(IsfShader::new(facade, file, isf))),
+            NodeTypes::Isf{file, isf} => {
+                Some(IsfShader::new(facade, file, isf).map(NodeShader::Isf))
+            },
             _ => None,
         }
     }

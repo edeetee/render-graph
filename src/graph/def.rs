@@ -5,7 +5,7 @@ use glium::{texture::SrgbTexture2d, Texture2d, uniforms::AsUniformValue};
 use strum::{EnumIter, IntoStaticStr, Display};
 use isf::{Isf, Input, InputType};
 
-use super::{ isf::IsfFile};
+use super::{ isf::IsfPathInfo};
 
 pub struct NodeData {
     pub template: NodeTypes,
@@ -90,7 +90,7 @@ pub enum NodeTypes {
     // Uv,
     Output,
     Isf {
-        file: IsfFile,
+        file: IsfPathInfo,
         isf: Isf,
     }
 }

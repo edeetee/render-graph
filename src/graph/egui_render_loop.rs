@@ -24,6 +24,9 @@ pub fn render_glium() {
     let mut shader_node_graph = ShaderGraphProcessor::new();
 
     event_loop.run(move |ev, _, control_flow| {
+        
+        shader_node_graph.reload_ifs_shaders(&display);
+
         match ev {
             Event::RedrawRequested(_) => {
                 shader_node_graph.draw(&display, &mut egui_glium);

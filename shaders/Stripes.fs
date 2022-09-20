@@ -58,8 +58,8 @@ void main() {
 	//	math goes like..
 	//	mod(((coord+offset) / width),2)
 	
-	
 	vec4 out_color = color2;
+    // out_color = vec4(1.0,0.0,0.0,0.0);
 	float coord = isf_FragNormCoord[0];
 
 	if (vertical)	{

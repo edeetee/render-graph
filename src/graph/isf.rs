@@ -4,7 +4,7 @@ use isf::{Isf, Input, InputType};
 
 use super::{connection_types::NodeInputDef, def::{NodeConnectionTypes, NodeValueTypes}};
 
-pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfFile, Isf)> {
+pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfPathInfo, Isf)> {
     // let files = current_dir()?;
     let shaders_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("shaders");
     
@@ -25,30 +25,34 @@ pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfFile, Isf)> {
         })
 }
 
-#[derive(Clone, PartialEq)]
-pub struct IsfFile{
-    pub name: String,
-    pub path: PathBuf,
-    pub version: SystemTime
+//TODO: single with result
+pub fn parse(){
+
 }
 
-impl AsRef<Path> for IsfFile {
+#[derive(Clone, PartialEq)]
+pub struct IsfPathInfo{
+    pub name: String,
+    pub path: PathBuf
+}
+
+impl AsRef<Path> for IsfPathInfo {
     fn as_ref(&self) -> &Path {
         self.path.as_ref()
     }
 }
 
-impl From<PathBuf> for IsfFile {
+impl From<PathBuf> for IsfPathInfo {
     fn from(path: PathBuf) -> Self {
         Self {
             name: path.file_stem().unwrap().to_str().unwrap().to_string(),
-            version: path.metadata().unwrap().modified().unwrap(),
+            // version: path.metadata().unwrap().modified().unwrap(),
             path,
         }
     }
 }
 
-impl Display for IsfFile {
+impl Display for IsfPathInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.name)
     }
@@ -85,17 +89,15 @@ impl From<&InputType> for NodeValueTypes {
     }
 }
 
-impl TryFrom<&Input> for NodeInputDef {
-    type Error = ();
-
-    fn try_from(input: &Input) -> Result<Self, Self::Error> {
+impl From<&Input> for NodeInputDef {
+    fn from(input: &Input) -> Self {
         let ty = (&input.ty).into();
         let value = (&input.ty).into();
         
-        Ok(Self {
+        Self {
             name: input.name.clone(),
             ty,
             value,
-        })
+        }
     }
 }

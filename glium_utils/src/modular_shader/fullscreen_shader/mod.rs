@@ -1,4 +1,4 @@
-use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, UniformsStorage, AsUniformValue}, uniform, program::Uniform};
+use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, UniformsStorage, AsUniformValue}, uniform, program::Uniform, ProgramCreationError};
 pub struct FullscreenFrag{
     verts: VertexBuffer<VertexAttr>,
     program: Program,
@@ -18,7 +18,7 @@ impl<U: Uniforms> Uniforms for FullscreenUniforms<U>{
 }
 
 impl FullscreenFrag {
-    pub fn new(facade: &impl Facade, frag: &str) -> Self {
+    pub fn new(facade: &impl Facade, frag: &str) -> Result<Self, ProgramCreationError> {
         let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),
@@ -29,28 +29,21 @@ impl FullscreenFrag {
         Self::new_with_params(facade, frag, params)
     }
 
-    pub fn new_with_params(facade: &impl Facade, frag: &str, params: DrawParameters<'static>) -> Self {
+    pub fn new_with_params(facade: &impl Facade, frag: &str, params: DrawParameters<'static>) -> Result<Self, ProgramCreationError> {
         let vert_buffer = new_fullscreen_buffer(facade).unwrap();
     
-        let program = match Program::from_source(
+        let program = Program::from_source(
             facade,
             FULLSCREEN_VERT_SHADER,
             frag,
             None
-        ) {
-            Ok(program) => program,
-            Err(e) => {
-                eprintln!("Error in source:\n{}", frag);
-                eprintln!("Error creating program: {}", e);
-                panic!()
-            }
-        };
+        )?;
 
-        Self{
+        Ok(Self{
             params,
             verts: vert_buffer,
             program
-        }
+        })
     }
 
     pub fn draw(&self, surface: &mut impl Surface, uniforms: impl Uniforms) -> Result<(), DrawError>{

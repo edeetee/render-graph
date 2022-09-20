@@ -1,10 +1,7 @@
-use std::{borrow::{Cow, Borrow}, convert::{TryFrom, TryInto}};
+use std::{convert::{TryInto}};
 
 use egui::{color::{Hsva}};
-use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, InputId, OutputId, NodeTemplateIter, UserResponseTrait};
-use isf::{Input, InputType};
-use itertools::Itertools;
-use strum::IntoEnumIterator;
+use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, NodeTemplateIter, UserResponseTrait};
 
 use super::{def::*, connection_types::{NodeInputDef, NodeOutputDef}, isf::parse_isf_shaders};
 
@@ -19,15 +16,12 @@ impl <'a> From<&'a NodeTypes> for &'a str {
 }
 
 impl NodeTypes {
-    pub fn get_types() -> Vec<NodeTypes> {
+    pub fn get_all() -> Vec<NodeTypes> {
         let shaders = parse_isf_shaders()
             .map(|(file, isf)| NodeTypes::Isf{file, isf});
 
         let mut types = vec![
             NodeTypes::Instances,
-            // NodeTypes::Feedback,
-            // NodeTypes::Sdf,
-            // NodeTypes::Uv,
             NodeTypes::Output,
         ];
         types.extend(shaders);
@@ -45,7 +39,7 @@ impl NodeTypes {
             //     NodeInputDef::new_texture("uv"),
             // ],
             NodeTypes::Isf { isf, .. } => {
-                isf.inputs.iter().filter_map(|input| input.try_into().ok()).collect()
+                isf.inputs.iter().map(NodeInputDef::from).collect()
             }
             _ => vec![NodeInputDef::texture("Texture2D")],
         }
@@ -81,7 +75,7 @@ impl NodeTemplateIter for AllNodeTypes {
     type Item = NodeTypes;
 
     fn all_kinds(&self) -> Vec<Self::Item> {
-        NodeTypes::get_types()
+        NodeTypes::get_all()
     }
 }
 

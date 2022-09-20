@@ -1,7 +1,10 @@
+use std::{time::SystemTime, fs::read_to_string};
+
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId, GraphEditorState, NodeResponse};
 use glium::{backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}};
 use glium_utils::util::DEFAULT_TEXTURE_FORMAT;
+use isf::Isf;
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use itertools::Itertools;
@@ -25,7 +28,8 @@ pub struct ShaderGraphProcessor
     graph: ShaderGraph,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     textures: SecondaryMap<NodeId, NodeTextures>,
-    shaders: SecondaryMap<NodeId, NodeShader>
+    shaders: SecondaryMap<NodeId, NodeShader>,
+    versions: SecondaryMap<NodeId, SystemTime>
 }
 
 impl ShaderGraphProcessor {
@@ -57,9 +61,27 @@ impl ShaderGraphProcessor {
                 
                 let node = &self.graph[node_id];
 
+                let template = &node.user_data.template;
+
+                match template {
+                    NodeTypes::Isf{file, ..} => {
+                        self.versions.insert(node_id, file.path.metadata().unwrap().modified().unwrap());
+                    }
+                    _ => {}
+                }
+
+                // if matches!(template, NodeTypes::Isf { file, .. }) {
+                //     self.versions.insert(node_id, file);
+                // }
+
                 //only add if needed ()
-                if  let Some(shader) = NodeShader::new(&node.user_data.template, facade){
-                    self.shaders.insert(node_id, shader);
+                if let Some(shader) = NodeShader::new(template, facade){
+                    if let Ok(shader) = shader {
+                        self.shaders.insert(node_id, shader);
+                    } else {
+                        eprintln!("Error creating shader for node: {:?}", node_id);
+                    }
+                    // self.shaders.insert(node_id, shader);
                 }
 
                 for input in node.inputs(self.graph.graph_ref()) {
@@ -157,8 +179,30 @@ impl ShaderGraphProcessor {
 
     }
 
-    pub fn reload_ifs_shaders(&mut self, ){
+    pub fn reload_ifs_shaders(&mut self, facade: &impl Facade){
+        for (node_id, version) in self.versions.iter_mut() {
+            let template = &mut self.graph[node_id].user_data.template;
 
+            if let NodeTypes::Isf{file, isf} = template {
+                let new_version = file.path.metadata().unwrap().modified().unwrap();
+
+                if *version < new_version {
+                    println!("Reloading {:?}", file.path);
+                    // let shader = NodeShader::new(template, facade).unwrap();
+                    let new_template = NodeTypes::Isf{file: file.clone(), isf: isf::parse(&read_to_string(&file.path).unwrap()).unwrap()};
+                    // *isf = ;
+                    if let Some(Ok(new_shader)) = NodeShader::new(&new_template, facade){
+                        self.shaders.insert(node_id, new_shader);
+                        *template = new_template;
+                        *version = new_version;
+                    } else {
+                        eprintln!("Error reloading shader for node: {:?}", node_id);
+                    }
+
+                }
+            }
+
+        }
     }
 
     pub fn draw(&mut self, display: &Display, egui_glium: &mut EguiGlium){

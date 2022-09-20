@@ -1,28 +1,37 @@
-use std::{fs::{read_to_string, File}, io::Read};
+use std::{fs::{read_to_string, File}, io::Read, time::SystemTime, path::PathBuf};
 
-use glium::{backend::Facade, uniforms::Uniforms, Surface};
+use glium::{backend::Facade, uniforms::Uniforms, Surface, ProgramCreationError};
 use glium_utils::modular_shader::fullscreen_shader::FullscreenFrag;
 use isf::Isf;
-use itertools::Itertools;
 
-use super::isf::IsfFile;
+use super::isf::IsfPathInfo;
 
 pub struct IsfShader {
-    frag: FullscreenFrag
+    frag: FullscreenFrag,
+    // version: SystemTime,
+    // path: PathBuf
 }
 
 impl IsfShader {
-    pub fn new(facade: &impl Facade, file: &IsfFile, def: &Isf) -> Self {
+    pub fn new(facade: &impl Facade, path: &IsfPathInfo, def: &Isf) -> Result<Self, ProgramCreationError> {
         // let source = read_to_string(file).unwrap();
         let mut source = generate_isf_prefix(def);
         source.push('\n');
-        let mut file = File::open(&file.path).unwrap();
+        let mut file = File::open(&path.path).unwrap();
         file.read_to_string(&mut source).unwrap();
 
-        Self {
-            frag: FullscreenFrag::new(facade, &source)
-        }
+        Ok(Self {
+            frag: FullscreenFrag::new(facade, &source)?,
+            // path: path.path.clone(),
+            // version: file.metadata().unwrap().modified().unwrap()
+        })
     }
+
+    // pub fn is_stale(&self) -> bool {
+    //     let file_version = self.path.metadata().unwrap().modified().unwrap();
+
+    //     self.version < file_version
+    // }
 
     pub fn draw(&self, surface: &mut impl Surface, uniforms: impl Uniforms) {
         self.frag.draw(surface, uniforms).unwrap();
