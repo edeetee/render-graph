@@ -1,25 +1,21 @@
 use std::{
-    borrow::{Borrow, BorrowMut},
     rc::Rc,
 };
 
-use super::{def::{ComputedNodeInput, NodeTypes}, isf_shader::IsfShader, connection_types::ComputedInputs};
+// use super::{def::{ComputedNodeInput, NodeTypes}, shaders::Shader};
 use egui::TextureId;
 use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
-    framebuffer::{RenderBuffer, SimpleFrameBuffer},
+    framebuffer::{SimpleFrameBuffer},
     texture::SrgbTexture2d,
-    Surface, Texture2d,
+    Surface, Texture2d, uniforms::Uniforms,
 };
-use glium_utils::modular_shader::{
-    sdf::SdfView,
-    uv::{UvData, UvView}, fullscreen_shader::FullscreenFrag,
-};
+
 use ouroboros::self_referencing;
 
 #[self_referencing]
-struct NodeShaderData {
+struct NodeTexturesInner {
     screen_tex: Rc<SrgbTexture2d>,
     screen_id: TextureId,
     #[borrows(screen_tex)]
@@ -32,14 +28,8 @@ struct NodeShaderData {
     render_fb: SimpleFrameBuffer<'this>,
 }
 
-pub struct NodeShader {
-    data: NodeShaderData,
-}
-
-const DEFAULT_RES: [u32; 2] = [512, 512];
-
-impl NodeShader {
-    pub fn new(
+impl NodeTexturesInner {
+    pub fn generate(
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
     ) -> Self {
@@ -71,32 +61,54 @@ impl NodeShader {
             .painter
             .register_native_texture(screen_tex.clone());
 
+        NodeTexturesInnerBuilder {
+            screen_id,
+            screen_tex,
+            screen_fb_builder: |tex: &Rc<SrgbTexture2d>| {
+                SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
+            },
+            render_tex,
+            render_fb_builder: |tex: &Rc<Texture2d>| {
+                SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
+            },
+        }
+        .build()
+    }
+}
+
+
+
+pub struct NodeTextures {
+    data: NodeTexturesInner,
+    // shader: Shader,
+}
+
+const DEFAULT_RES: [u32; 2] = [512, 512];
+
+impl NodeTextures {
+    pub fn new(
+        facade: &impl Facade,
+        egui_glium: &mut EguiGlium,
+    ) -> Self {
+
         Self {
-            data: NodeShaderDataBuilder {
-                screen_id,
-                screen_tex,
-                screen_fb_builder: |tex: &Rc<SrgbTexture2d>| {
-                    SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
-                },
-                render_tex,
-                render_fb_builder: |tex: &Rc<Texture2d>| {
-                    SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
-                },
-            }
-            .build(),
+            // shader,
+            data: NodeTexturesInner::generate(facade, egui_glium),
         }
     }
 
-    pub fn render<'a, 'b>(
+    pub fn draw<'a>(
         &mut self,
-        target: &mut impl Surface,
-        f: &mut impl Fn(&mut impl Surface),
+        draw: impl Fn(&mut SimpleFrameBuffer),
+        // uniforms: impl Uniforms,
+        // named_inputs: impl Iterator<Item = (&'a str, ComputedNodeInput)>,
     ) {
         let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
         self.data.with_render_fb_mut(|fb| {
             fb.clear_color(0., 0., 0., 0.);
-            self.shader.draw(fb, inputs);
+            draw(fb);
+            // self.shader.draw(fb, uniforms);
         });
 
         self.data

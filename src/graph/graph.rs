@@ -1,12 +1,8 @@
 use std::ops::{Index, IndexMut};
 
-use eframe::glow::Shader;
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, OutputParam, InputId, OutputId, Graph};
-use glium::framebuffer::SimpleFrameBuffer;
-use itertools::Itertools;
-use slotmap::SecondaryMap;
 
-use super::{shader_graph_processor::EditorState, def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes}, node_shader::NodeShader, logic::AllNodeTypes};
+use super::{shader_graph_processor::EditorState, def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes}, logic::AllNodeTypes};
 
 // #[derive(Default)]
 pub struct ShaderGraph(pub(super) EditorState);

@@ -6,7 +6,7 @@ use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use itertools::Itertools;
 
-use super::{def::{*, self}, node_shader::{NodeShader}, graph::ShaderGraph};
+use super::{def::{*, self}, shaders::{NodeShader}, graph::ShaderGraph, textures::NodeTextures, connection_types::ComputedInputs};
 
 pub(crate) type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 
@@ -24,6 +24,7 @@ pub struct ShaderGraphProcessor
 {
     graph: ShaderGraph,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
+    textures: SecondaryMap<NodeId, NodeTextures>,
     shaders: SecondaryMap<NodeId, NodeShader>
 }
 
@@ -45,29 +46,34 @@ impl ShaderGraphProcessor {
     pub fn node_event(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, event: NodeResponse<def::GraphResponse, NodeData>) {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
+                // let node = &self.graph[node_id];
 
-                if let Some(new_shader) = NodeShader::new(facade, egui_glium, &self.graph[node_id].user_data.template){
-                    // new_shader.init_inputs(self.graph[node_id].input_ids().map(|input_id| &mut self.graph.[input_id]));
+                let textures = NodeTextures::new(facade, egui_glium);
+                // new_shader.init_inputs(self.graph[node_id].input_ids().map(|input_id| &mut self.graph.[input_id]));
 
-                    self.graph[node_id].user_data.result = Some(new_shader.clone_screen_tex_id());
-    
-                    self.shaders.insert(node_id, new_shader);
-    
-                    let node = &self.graph[node_id];
-    
-                    for input in node.inputs(self.graph.graph_ref()) {
-                        if input.typ == NodeConnectionTypes::Texture2D{
-                            let connected_output = self.graph.graph_ref().connection(input.id);
-                            if let Some(output_id) = connected_output {
-                                let connected_node_id = self.graph.graph_ref().outputs[output_id].node;
-    
-                                self.output_targets.remove(connected_node_id);
-                            }
+                self.graph[node_id].user_data.result = Some(textures.clone_screen_tex_id());
+
+                self.textures.insert(node_id, textures);
+                
+                let node = &self.graph[node_id];
+
+                //only add if needed ()
+                if  let Some(shader) = NodeShader::new(&node.user_data.template, facade){
+                    self.shaders.insert(node_id, shader);
+                }
+
+                for input in node.inputs(self.graph.graph_ref()) {
+                    if input.typ == NodeConnectionTypes::Texture2D{
+                        let connected_output = self.graph.graph_ref().connection(input.id);
+                        if let Some(output_id) = connected_output {
+                            let connected_node_id = self.graph.graph_ref()[output_id].node;
+
+                            self.output_targets.remove(connected_node_id);
                         }
                     }
-    
-                    self.add_dangling_output(facade, node_id);
                 }
+
+                self.add_dangling_output(facade, node_id);
             },
 
             //may create new output target
@@ -89,7 +95,7 @@ impl ShaderGraphProcessor {
     }
 
     fn render_shaders(&mut self){
-        let shaders = &mut self.shaders;
+        // let shaders = &mut self.shaders;
         let graph = &self.graph;
 
         for (output_id, output_target) in &mut self.output_targets {
@@ -100,39 +106,44 @@ impl ShaderGraphProcessor {
 
                 let _rendered_output = graph.map_with_inputs(output_id, 
                     &mut |node_id, inputs| {
-
+                        
+                        let texture = &mut self.textures[node_id];
+                        
                         if rendered_nodes.contains(&node_id){
-                            return shaders[node_id].tex_for_sampling();
+                            return self.textures[node_id].tex_for_sampling();
                         }
 
-                        let named_inputs = inputs.iter()
-                            .filter_map(|(name, input, texture)|{
+                        let named_inputs: ComputedInputs = inputs.iter()
+                        .filter_map(|(name, input, texture)|{
 
-                                 match input.value {
-                                    NodeValueTypes::Float(f) => Some(ComputedNodeInput::Float(f)),
-                                    NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
-                                    NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
-                                    NodeValueTypes::Vec4(v) => Some(ComputedNodeInput::Vec4(v)),
-                                    _ => {
-                                        match input.typ {
-                                            NodeConnectionTypes::Texture2D => {
-                                                texture.as_ref().map(|texture| ComputedNodeInput::Texture(texture.clone()))
-                                            },
-                                            _ => None
-                                        }
+                             match input.value {
+                                NodeValueTypes::Float(f) => Some(ComputedNodeInput::Float(f)),
+                                NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
+                                NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
+                                NodeValueTypes::Vec4(v) => Some(ComputedNodeInput::Vec4(v)),
+                                _ => {
+                                    match input.typ {
+                                        NodeConnectionTypes::Texture2D => {
+                                            texture.as_ref().map(|texture| ComputedNodeInput::Texture(texture.clone()))
+                                        },
+                                        _ => None
                                     }
-                                }.map(|computed_input| (name.as_str(), computed_input))
-                            })
-                            .collect();
-                        
-                        let shader_data = &mut shaders[node_id];
-                        
-                        shader_data.render(fb, &named_inputs);
-                        rendered_nodes.push(node_id);
-
-                        shader_data.tex_for_sampling()
+                                }
+                            }.map(|computed_input| (name.as_str(), computed_input))
+                        })
+                        .collect();
+                    
+                    // let shader = &mut self.shaders[node_id];
+                    if let Some(shader) = self.shaders.get(node_id) {
+                        texture.draw(|surface| {
+                            shader.draw(surface, &named_inputs);
+                        });
                     }
-                );
+                    
+                    rendered_nodes.push(node_id);
+                    
+                    texture.tex_for_sampling()
+                });
 
             });
 

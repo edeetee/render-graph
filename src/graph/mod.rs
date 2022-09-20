@@ -2,7 +2,7 @@ mod def;
 mod logic;
 mod ui;
 mod egui_render_loop;
-mod node_shader;
+mod textures;
 mod shader_graph_processor;
 mod graph;
 mod connection_types;
