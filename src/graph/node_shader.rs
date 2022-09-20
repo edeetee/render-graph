@@ -32,34 +32,8 @@ struct NodeShaderData {
     render_fb: SimpleFrameBuffer<'this>,
 }
 
-enum Shader {
-    Isf(IsfShader)
-}
-
-impl Shader {
-    fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Self> {
-        match template {
-            NodeTypes::Isf{file, isf} => Some(Shader::Isf(IsfShader::new(facade, file, isf))),
-            _ => None,
-        }
-    }
-
-    fn draw<'a, 'b>(
-        &self,
-        surface: &mut impl Surface,
-        inputs: &ComputedInputs<'a>,
-    ) {
-        match self {
-            Shader::Isf(isf) => {
-                isf.draw(surface, inputs);
-            }
-        };
-    }
-}
-
 pub struct NodeShader {
     data: NodeShaderData,
-    shader: Shader,
 }
 
 const DEFAULT_RES: [u32; 2] = [512, 512];
@@ -68,8 +42,7 @@ impl NodeShader {
     pub fn new(
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
-        template: &NodeTypes,
-    ) -> Option<Self> {
+    ) -> Self {
         let mipmaps = glium::texture::MipmapsOption::NoMipmap;
 
         let screen_tex = Rc::new(
@@ -98,10 +71,7 @@ impl NodeShader {
             .painter
             .register_native_texture(screen_tex.clone());
 
-        let shader = Shader::new(template, facade)?;
-
-        Some(Self {
-            shader,
+        Self {
             data: NodeShaderDataBuilder {
                 screen_id,
                 screen_tex,
@@ -114,13 +84,13 @@ impl NodeShader {
                 },
             }
             .build(),
-        })
+        }
     }
 
     pub fn render<'a, 'b>(
         &mut self,
         target: &mut impl Surface,
-        inputs: &ComputedInputs<'a>,
+        f: &mut impl Fn(&mut impl Surface),
     ) {
         let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 

@@ -6,31 +6,12 @@ use isf::InputType;
 
 use super::def::{NodeConnectionTypes, NodeValueTypes, NodeTypes, ComputedNodeInput};
 
-// impl From<&NodeValueTypes> for NodeConnectionTypes {
-//     type Error = ();
-
-//     fn try_from(ty: &NodeValueTypes) -> Result<Self, Self::Error> {
-//         match ty {
-//             NodeValueTypes::Texture => Ok(Self::Texture2D),
-//             // NodeValueTypes::Float(_) => Ok(Self::Float),
-//             // NodeValueTypes::Vec2(_) => Ok(Self::Vec2),
-//             _ => Err(()),
-//         }
-//     }
-// }
-
 #[derive(Debug)]
 pub struct NodeInputDef {
     pub name: String,
     pub ty: NodeConnectionTypes,
     pub value: NodeValueTypes,
 }
-
-// pub const DEFAULT_TEXTURE2D_INPUT: NodeInputDef = NodeInputDef {
-//     name: "Image".into(),
-//     ty: NodeConnectionTypes::Texture2D,
-//     value: NodeValueTypes::Texture,
-// };
 
 impl NodeInputDef {
     pub fn texture(name: impl Into<String>) -> Self {

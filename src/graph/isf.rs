@@ -1,4 +1,4 @@
-use std::{env::current_dir, path::{Path, PathBuf}, fs::{read_dir, read_to_string}, ffi::OsStr, convert::{TryFrom, TryInto}, fmt::{Display, Formatter}};
+use std::{env::current_dir, path::{Path, PathBuf}, fs::{read_dir, read_to_string}, ffi::OsStr, convert::{TryFrom, TryInto}, fmt::{Display, Formatter}, time::SystemTime};
 
 use isf::{Isf, Input, InputType};
 
@@ -28,7 +28,8 @@ pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfFile, Isf)> {
 #[derive(Clone, PartialEq)]
 pub struct IsfFile{
     pub name: String,
-    pub path: PathBuf
+    pub path: PathBuf,
+    pub version: SystemTime
 }
 
 impl AsRef<Path> for IsfFile {
@@ -41,6 +42,7 @@ impl From<PathBuf> for IsfFile {
     fn from(path: PathBuf) -> Self {
         Self {
             name: path.file_stem().unwrap().to_str().unwrap().to_string(),
+            version: path.metadata().unwrap().modified().unwrap(),
             path,
         }
     }
