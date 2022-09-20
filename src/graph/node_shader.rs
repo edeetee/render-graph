@@ -3,7 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use super::{def::{ComputedNodeInput, NodeTypes}, isf_shader::IsfShader};
+use super::{def::{ComputedNodeInput, NodeTypes}, isf_shader::IsfShader, connection_types::ComputedInputs};
 use egui::TextureId;
 use egui_glium::EguiGlium;
 use glium::{
@@ -33,16 +33,13 @@ struct NodeShaderData {
 }
 
 enum Shader {
-    // Sdf(SdfView),
-    // Uv(UvView),
     Isf(IsfShader)
 }
 
 impl Shader {
     fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Self> {
         match template {
-            NodeTypes::Isf{file, isf} => Some(Shader::Isf(IsfShader::new(facade, file))),
-            // NodeTypes::Uv => Some(Shader::Uv(UvView::new(facade))),
+            NodeTypes::Isf{file, isf} => Some(Shader::Isf(IsfShader::new(facade, file, isf))),
             _ => None,
         }
     }
@@ -50,50 +47,12 @@ impl Shader {
     fn draw<'a, 'b>(
         &self,
         surface: &mut impl Surface,
-        named_inputs: impl Iterator<Item = (&'a str, ComputedNodeInput<'b>)>,
+        inputs: &ComputedInputs<'a>,
     ) {
         match self {
             Shader::Isf(isf) => {
-                isf.draw(surface, named_inputs.collect::<>());
+                isf.draw(surface, inputs);
             }
-            // Shader::Sdf(sdf) => {
-            //     let mut source_uv = None;
-
-            //     for input in named_inputs {
-            //         match input {
-            //             ("uv", ComputedNodeInput::Texture(tex)) => {
-            //                 source_uv = Some(tex);
-            //             }
-            //             _ => {}
-            //         }
-            //     }
-
-            //     let source_uv_sample = match &source_uv {
-            //         Some(source_uv) => Some(source_uv.sampled()),
-            //         None => None,
-            //     };
-
-            //     sdf.draw(surface, source_uv_sample);
-            // }
-            
-            // Shader::Uv(uv) => {
-            //     let mut scale = &[1., 1.];
-            //     let mut centered = &false;
-
-            //     for input in named_inputs {
-            //         match input {
-            //             ("scale", ComputedNodeInput::Vec2(val)) => {
-            //                 scale = val;
-            //             }
-            //             ("centered", ComputedNodeInput::Bool(val)) => {
-            //                 centered = val;
-            //             }
-            //             _ => {}
-            //         }
-            //     }
-
-            //     uv.draw(surface, scale, centered);
-            // }
         };
     }
 }
@@ -161,13 +120,13 @@ impl NodeShader {
     pub fn render<'a, 'b>(
         &mut self,
         target: &mut impl Surface,
-        named_inputs: impl Iterator<Item = (&'a str, ComputedNodeInput<'b>)>,
+        inputs: &ComputedInputs<'a>,
     ) {
         let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
         self.data.with_render_fb_mut(|fb| {
             fb.clear_color(0., 0., 0., 0.);
-            self.shader.draw(fb, named_inputs);
+            self.shader.draw(fb, inputs);
         });
 
         self.data

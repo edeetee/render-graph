@@ -16,7 +16,7 @@ pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfFile, Isf)> {
             let ext = path.extension()?.to_str()?;
 
             if ext == "fs" {
-                let content = read_to_string(path.clone()).unwrap();
+                let content = read_to_string(&path).unwrap();
                 let isf = isf::parse(&content);
                 return isf.ok().map(|isf| (path.into(), isf))
             }
@@ -40,8 +40,8 @@ impl AsRef<Path> for IsfFile {
 impl From<PathBuf> for IsfFile {
     fn from(path: PathBuf) -> Self {
         Self {
-            path,
             name: path.file_stem().unwrap().to_str().unwrap().to_string(),
+            path,
         }
     }
 }
@@ -52,15 +52,33 @@ impl Display for IsfFile {
     }
 }
 
-impl TryFrom<&InputType> for NodeConnectionTypes {
-    type Error = ();
-
-    fn try_from(ty: &InputType) -> Result<Self, Self::Error> {
+impl From<&InputType> for NodeConnectionTypes {
+    fn from(ty: &InputType) -> Self {
         match ty {
-            InputType::Image => Ok(NodeConnectionTypes::Texture2D),
-            InputType::Float(_) => Ok(NodeConnectionTypes::Float),
-            InputType::Point2d(_) => Ok(NodeConnectionTypes::Texture2D),
-            _ => Err(())
+            InputType::Image => NodeConnectionTypes::Texture2D,
+            // InputType::Float(_) => Ok(NodeConnectionTypes::None),
+            InputType::Point2d(_) => NodeConnectionTypes::Texture2D,
+            _ => NodeConnectionTypes::None
+        }
+    }
+}
+
+impl From<&InputType> for NodeValueTypes {
+    fn from(ty: &InputType) -> Self {
+        match ty {
+            InputType::Float(v) => v.default.unwrap_or_default().into(),
+            InputType::Color(v) => {
+                let mut slice: [f32; 4] = Default::default();
+                if let Some(default) = &v.default{
+                    for (from, to) in default.iter().zip(&mut slice){
+                        *to = *from;
+                    }
+                }
+                slice.into()
+            },
+            InputType::Point2d(v) => v.default.unwrap_or_default().into(),
+            InputType::Bool(v) => v.default.unwrap_or_default().into(),
+            _ => NodeValueTypes::None
         }
     }
 }
@@ -69,13 +87,13 @@ impl TryFrom<&Input> for NodeInputDef {
     type Error = ();
 
     fn try_from(input: &Input) -> Result<Self, Self::Error> {
-        let ty: NodeConnectionTypes = (&input.ty).try_into()?;
-        // let value: NodeValueTypes = 
+        let ty = (&input.ty).into();
+        let value = (&input.ty).into();
         
         Ok(Self {
-            name: input.name,
+            name: input.name.clone(),
             ty,
-            value: input.ty.into(),
+            value,
         })
     }
 }

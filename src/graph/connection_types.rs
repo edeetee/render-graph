@@ -1,41 +1,43 @@
 use std::convert::TryInto;
 
 use clap::builder::BoolValueParser;
+use glium::uniforms::{Uniforms, UniformValue, AsUniformValue};
 use isf::InputType;
 
-use super::def::{NodeConnectionTypes, NodeValueTypes, NodeTypes};
+use super::def::{NodeConnectionTypes, NodeValueTypes, NodeTypes, ComputedNodeInput};
 
-impl TryFrom<&NodeValueTypes> for NodeConnectionTypes {
-    type Error = ();
+// impl From<&NodeValueTypes> for NodeConnectionTypes {
+//     type Error = ();
 
-    fn try_from(ty: &NodeValueTypes) -> Result<Self, Self::Error> {
-        match ty.0 {
-            InputType::Image => Ok(Self::Texture2D),
-            InputType::Float(_) => Ok(Self::Float),
-            InputType::Point2d(_) => Ok(Self::Vec2),
-            _ => Err(()),
-        }
-    }
-}
+//     fn try_from(ty: &NodeValueTypes) -> Result<Self, Self::Error> {
+//         match ty {
+//             NodeValueTypes::Texture => Ok(Self::Texture2D),
+//             // NodeValueTypes::Float(_) => Ok(Self::Float),
+//             // NodeValueTypes::Vec2(_) => Ok(Self::Vec2),
+//             _ => Err(()),
+//         }
+//     }
+// }
 
+#[derive(Debug)]
 pub struct NodeInputDef {
     pub name: String,
     pub ty: NodeConnectionTypes,
     pub value: NodeValueTypes,
 }
 
-pub const DEFAULT_TEXTURE2D_INPUT: NodeInputDef = NodeInputDef {
-    name: "Image".into(),
-    ty: NodeConnectionTypes::Texture2D,
-    value: InputType::Image.into(),
-};
+// pub const DEFAULT_TEXTURE2D_INPUT: NodeInputDef = NodeInputDef {
+//     name: "Image".into(),
+//     ty: NodeConnectionTypes::Texture2D,
+//     value: NodeValueTypes::Texture,
+// };
 
 impl NodeInputDef {
-    pub fn new_texture(name: impl Into<String>) -> Self {
+    pub fn texture(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
             ty: NodeConnectionTypes::Texture2D,
-            value: InputType::Image.into(),
+            value: NodeValueTypes::None,
         }
     }
 }
@@ -59,6 +61,29 @@ impl <S: Into<String>> From<(S, NodeConnectionTypes)> for NodeOutputDef {
         Self {
             name: name.into(),
             ty,
+        }
+    }
+}
+
+pub struct ComputedInputs<'a> {
+    vec: Vec<(&'a str, ComputedNodeInput)>,
+}
+
+impl<'a> Uniforms for &ComputedInputs<'a>{
+    fn visit_values<'b, F: FnMut(&str, UniformValue<'b>)>(&'b self, mut output: F) {
+        for (name, input) in self.vec.iter() {
+            output(name, input.as_uniform_value());
+        }
+    }
+}
+
+impl<'a> FromIterator<(&'a str, ComputedNodeInput)> for ComputedInputs<'a> {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (&'a str, ComputedNodeInput)>,
+    {
+        ComputedInputs {
+            vec: iter.into_iter().collect(),
         }
     }
 }

@@ -108,10 +108,11 @@ impl ShaderGraphProcessor {
                         let named_inputs = inputs.iter()
                             .filter_map(|(name, input, texture)|{
 
-                                 match &input.value {
+                                 match input.value {
                                     NodeValueTypes::Float(f) => Some(ComputedNodeInput::Float(f)),
                                     NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
                                     NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
+                                    NodeValueTypes::Vec4(v) => Some(ComputedNodeInput::Vec4(v)),
                                     _ => {
                                         match input.typ {
                                             NodeConnectionTypes::Texture2D => {
@@ -121,11 +122,12 @@ impl ShaderGraphProcessor {
                                         }
                                     }
                                 }.map(|computed_input| (name.as_str(), computed_input))
-                            });
+                            })
+                            .collect();
                         
                         let shader_data = &mut shaders[node_id];
                         
-                        shader_data.render(fb, named_inputs);
+                        shader_data.render(fb, &named_inputs);
                         rendered_nodes.push(node_id);
 
                         shader_data.tex_for_sampling()

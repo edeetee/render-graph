@@ -32,12 +32,19 @@ impl FullscreenFrag {
     pub fn new_with_params(facade: &impl Facade, frag: &str, params: DrawParameters<'static>) -> Self {
         let vert_buffer = new_fullscreen_buffer(facade).unwrap();
     
-        let program = Program::from_source(
+        let program = match Program::from_source(
             facade,
             FULLSCREEN_VERT_SHADER,
             frag,
             None
-        ).unwrap();
+        ) {
+            Ok(program) => program,
+            Err(e) => {
+                eprintln!("Error in source:\n{}", frag);
+                eprintln!("Error creating program: {}", e);
+                panic!()
+            }
+        };
 
         Self{
             params,
