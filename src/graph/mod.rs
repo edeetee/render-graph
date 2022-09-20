@@ -6,6 +6,8 @@ mod node_shader;
 mod shader_graph_processor;
 mod graph;
 mod connection_types;
+mod isf;
+mod isf_shader;
 
 pub use shader_graph_processor::ShaderGraphProcessor;
 pub use egui_render_loop::render_glium;

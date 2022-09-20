@@ -46,7 +46,7 @@ impl ShaderGraphProcessor {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
 
-                if let Some(new_shader) = NodeShader::new(facade, egui_glium, self.graph[node_id].user_data.template){
+                if let Some(new_shader) = NodeShader::new(facade, egui_glium, &self.graph[node_id].user_data.template){
                     // new_shader.init_inputs(self.graph[node_id].input_ids().map(|input_id| &mut self.graph.[input_id]));
 
                     self.graph[node_id].user_data.result = Some(new_shader.clone_screen_tex_id());
