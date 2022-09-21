@@ -1,4 +1,8 @@
-use std::{fs::read_to_string, time::SystemTime};
+use std::{
+    fmt::Debug,
+    fs::read_to_string,
+    time::{Duration, SystemTime},
+};
 
 use egui_glium::EguiGlium;
 use egui_node_graph::{GraphEditorState, NodeId, NodeResponse};
@@ -7,7 +11,6 @@ use glium::{
     framebuffer::{RenderBuffer, SimpleFrameBuffer},
     Display, Surface,
 };
-
 
 use itertools::Itertools;
 use ouroboros::self_referencing;
@@ -166,7 +169,9 @@ impl ShaderGraphProcessor {
                                 NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
                                 NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
                                 NodeValueTypes::Vec4(v) => Some(ComputedNodeInput::Vec4(v)),
-                                NodeValueTypes::Color(v) => Some(ComputedNodeInput::Vec4(v.to_array())),
+                                NodeValueTypes::Color(v) => {
+                                    Some(ComputedNodeInput::Vec4(v.to_array()))
+                                }
 
                                 //compute elements that don't have values
                                 NodeValueTypes::None => match input.typ {
@@ -209,21 +214,26 @@ impl ShaderGraphProcessor {
 
             if let NodeTypes::Isf { file, isf: _ } = template {
                 let new_version = file.path.metadata().unwrap().modified().unwrap();
+                let diff = new_version.duration_since(*version);
 
-                if *version < new_version {
-                    //iterate version even on error (wait for change to retry)
-                    *version = new_version;
+                if let Ok(diff) = diff {
+                    if 10 < diff.as_millis() {
+                        //iterate version even on error (wait for change to retry)
+                        *version = new_version;
 
-                    let name = file.name.clone();
+                        let name = file.name.clone();
 
-                    match reload_ifs_shader(facade, file.clone()) {
-                        Ok((new_template, new_shader)) => {
-                            self.shaders.insert(node_id, new_shader);
-                            *template = new_template;
-                            println!("Reloaded shader: {}", name);
-                        }
-                        Err(err) => {
-                            eprintln!("Error reloading shader {}: {:?}", file.name, err);
+                        match reload_ifs_shader(facade, file.clone()) {
+                            Ok((new_template, new_shader)) => {
+                                self.shaders.insert(node_id, new_shader);
+                                *template = new_template;
+                                println!("Reloaded shader: {}", name);
+                            }
+                            Err(err) => {
+                                let err_txt = format!("{:#?}", err);
+                                let err_txt = err_txt.replace("\\n", "\n");
+                                eprintln!("Error reloading shader {}: {}", file.name, err_txt);
+                            }
                         }
                     }
                 }
@@ -275,11 +285,30 @@ impl ShaderGraphProcessor {
     }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 enum IsfShaderLoadError {
     IoError(std::io::Error),
     ParseError(isf::ParseError),
     CompileError(glium::program::ProgramCreationError),
+}
+
+impl std::fmt::Debug for IsfShaderLoadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::IoError(arg0) => arg0.fmt(f),
+            Self::ParseError(arg0) => arg0.fmt(f),
+            Self::CompileError(arg0) => {
+                match arg0 {
+                    glium::ProgramCreationError::CompilationError(source, shader_type) => {
+                        // f.debug_struct(&format!()).finish()
+                        // write!()
+                        write!(f, "CompilationError for {shader_type:?} (\n{source})")
+                    }
+                    _ => arg0.fmt(f),
+                }
+            }
+        }
+    }
 }
 
 impl From<std::io::Error> for IsfShaderLoadError {
