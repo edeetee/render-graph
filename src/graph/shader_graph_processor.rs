@@ -1,35 +1,46 @@
-use std::{time::SystemTime, fs::read_to_string};
+use std::{fs::read_to_string, time::SystemTime};
 
 use egui_glium::EguiGlium;
-use egui_node_graph::{NodeId, GraphEditorState, NodeResponse};
-use glium::{backend::Facade, Display, Surface, framebuffer::{SimpleFrameBuffer, RenderBuffer}};
+use egui_node_graph::{GraphEditorState, NodeId, NodeResponse};
+use glium::{
+    backend::Facade,
+    framebuffer::{RenderBuffer, SimpleFrameBuffer},
+    Display, Surface,
+};
 use glium_utils::util::DEFAULT_TEXTURE_FORMAT;
-use isf::Isf;
+use isf::{Isf, ParseError};
+use itertools::Itertools;
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use itertools::Itertools;
 
-use super::{def::{*, self}, shaders::{NodeShader}, graph::ShaderGraph, textures::NodeTextures, connection_types::ComputedInputs};
+use super::{
+    connection_types::ComputedInputs,
+    def::{self, *},
+    graph::ShaderGraph,
+    isf::IsfPathInfo,
+    shaders::NodeShader,
+    textures::NodeTextures,
+};
 
-pub(crate) type EditorState = GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
+pub(crate) type EditorState =
+    GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
 
 #[self_referencing]
-pub struct OutputTarget{
+pub struct OutputTarget {
     rb: RenderBuffer,
 
     #[borrows(rb)]
     #[covariant]
-    fb: SimpleFrameBuffer<'this>
+    fb: SimpleFrameBuffer<'this>,
 }
 
 #[derive(Default)]
-pub struct ShaderGraphProcessor
-{
+pub struct ShaderGraphProcessor {
     graph: ShaderGraph,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     textures: SecondaryMap<NodeId, NodeTextures>,
     shaders: SecondaryMap<NodeId, NodeShader>,
-    versions: SecondaryMap<NodeId, SystemTime>
+    versions: SecondaryMap<NodeId, SystemTime>,
 }
 
 impl ShaderGraphProcessor {
@@ -37,17 +48,29 @@ impl ShaderGraphProcessor {
         Default::default()
     }
 
-    fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId){
+    fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
         // let is_output_target = node.outputs(&self.graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
         let output_target = OutputTargetBuilder {
-            rb: RenderBuffer::new(facade, glium::texture::UncompressedFloatFormat::F32F32F32F32, 512, 512).unwrap(),
-            fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap()
-        }.build();
+            rb: RenderBuffer::new(
+                facade,
+                glium::texture::UncompressedFloatFormat::F32F32F32F32,
+                512,
+                512,
+            )
+            .unwrap(),
+            fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap(),
+        }
+        .build();
         self.output_targets.insert(node_id, output_target);
     }
 
-    pub fn node_event(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, event: NodeResponse<def::GraphResponse, NodeData>) {
+    pub fn node_event(
+        &mut self,
+        facade: &impl Facade,
+        egui_glium: &mut EguiGlium,
+        event: NodeResponse<def::GraphResponse, NodeData>,
+    ) {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
                 // let node = &self.graph[node_id];
@@ -58,14 +81,15 @@ impl ShaderGraphProcessor {
                 self.graph[node_id].user_data.result = Some(textures.clone_screen_tex_id());
 
                 self.textures.insert(node_id, textures);
-                
+
                 let node = &self.graph[node_id];
 
                 let template = &node.user_data.template;
 
                 match template {
-                    NodeTypes::Isf{file, ..} => {
-                        self.versions.insert(node_id, file.path.metadata().unwrap().modified().unwrap());
+                    NodeTypes::Isf { file, .. } => {
+                        self.versions
+                            .insert(node_id, file.path.metadata().unwrap().modified().unwrap());
                     }
                     _ => {}
                 }
@@ -75,7 +99,7 @@ impl ShaderGraphProcessor {
                 // }
 
                 //only add if needed ()
-                if let Some(shader) = NodeShader::new(template, facade){
+                if let Some(shader) = NodeShader::new(template, facade) {
                     if let Ok(shader) = shader {
                         self.shaders.insert(node_id, shader);
                     } else {
@@ -85,7 +109,7 @@ impl ShaderGraphProcessor {
                 }
 
                 for input in node.inputs(self.graph.graph_ref()) {
-                    if input.typ == NodeConnectionTypes::Texture2D{
+                    if input.typ == NodeConnectionTypes::Texture2D {
                         let connected_output = self.graph.graph_ref().connection(input.id);
                         if let Some(output_id) = connected_output {
                             let connected_node_id = self.graph.graph_ref()[output_id].node;
@@ -96,16 +120,17 @@ impl ShaderGraphProcessor {
                 }
 
                 self.add_dangling_output(facade, node_id);
-            },
+            }
 
             //may create new output target
             NodeResponse::DisconnectEvent { output, .. } => {
                 self.add_dangling_output(facade, self.graph.graph_ref().outputs[output].node);
-            },
+            }
 
             NodeResponse::ConnectEventEnded { output, .. } => {
-                self.output_targets.remove(self.graph.graph_ref()[output].node);
-            },
+                self.output_targets
+                    .remove(self.graph.graph_ref()[output].node);
+            }
 
             NodeResponse::DeleteNodeFull { node_id, .. } => {
                 // slotmap may pre destroy this
@@ -116,7 +141,7 @@ impl ShaderGraphProcessor {
         }
     }
 
-    fn render_shaders(&mut self){
+    fn render_shaders(&mut self) {
         // let shaders = &mut self.shaders;
         let graph = &self.graph;
 
@@ -126,89 +151,87 @@ impl ShaderGraphProcessor {
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
 
-                let _rendered_output = graph.map_with_inputs(output_id, 
-                    &mut |node_id, inputs| {
-                        
-                        let texture = &mut self.textures[node_id];
-                        
-                        if rendered_nodes.contains(&node_id){
-                            return self.textures[node_id].tex_for_sampling();
-                        }
+                let _rendered_output = graph.map_with_inputs(output_id, &mut |node_id, inputs| {
+                    let texture = &mut self.textures[node_id];
 
-                        let named_inputs: ComputedInputs = inputs.iter()
-                        .filter_map(|(name, input, texture)|{
+                    if rendered_nodes.contains(&node_id) {
+                        return self.textures[node_id].tex_for_sampling();
+                    }
 
-                             match input.value {
+                    let named_inputs: ComputedInputs = inputs
+                        .iter()
+                        .filter_map(|(name, input, texture)| {
+                            match input.value {
                                 NodeValueTypes::Float(f) => Some(ComputedNodeInput::Float(f)),
                                 NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
                                 NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
                                 NodeValueTypes::Vec4(v) => Some(ComputedNodeInput::Vec4(v)),
-                                _ => {
-                                    match input.typ {
-                                        NodeConnectionTypes::Texture2D => {
-                                            texture.as_ref().map(|texture| ComputedNodeInput::Texture(texture.clone()))
-                                        },
-                                        _ => None
-                                    }
-                                }
-                            }.map(|computed_input| (name.as_str(), computed_input))
+                                _ => match input.typ {
+                                    NodeConnectionTypes::Texture2D => texture
+                                        .as_ref()
+                                        .map(|texture| ComputedNodeInput::Texture(texture.clone())),
+                                    _ => None,
+                                },
+                            }
+                            .map(|computed_input| (name.as_str(), computed_input))
                         })
                         .collect();
-                    
+
                     // let shader = &mut self.shaders[node_id];
                     if let Some(shader) = self.shaders.get(node_id) {
                         texture.draw(|surface| {
                             shader.draw(surface, &named_inputs);
                         });
                     }
-                    
+
                     rendered_nodes.push(node_id);
-                    
+
                     texture.tex_for_sampling()
                 });
-
             });
 
-            let rendered_node_names: String = rendered_nodes.iter()
+            let rendered_node_names: String = rendered_nodes
+                .iter()
                 .map(|node_id| self.graph[*node_id].label.clone())
                 .intersperse(", ".to_string())
                 .collect();
 
             // println!("RENDERED {rendered_node_names} to {}", self.graph[output_id].label);
         }
-
     }
 
-    pub fn reload_ifs_shaders(&mut self, facade: &impl Facade){
+    pub fn reload_ifs_shaders(&mut self, facade: &impl Facade) {
         for (node_id, version) in self.versions.iter_mut() {
             let template = &mut self.graph[node_id].user_data.template;
 
-            if let NodeTypes::Isf{file, isf} = template {
+            if let NodeTypes::Isf { file, isf } = template {
                 let new_version = file.path.metadata().unwrap().modified().unwrap();
 
                 if *version < new_version {
-                    println!("Reloading {:?}", file.path);
-                    // let shader = NodeShader::new(template, facade).unwrap();
-                    let new_template = NodeTypes::Isf{file: file.clone(), isf: isf::parse(&read_to_string(&file.path).unwrap()).unwrap()};
-                    // *isf = ;
-                    if let Some(Ok(new_shader)) = NodeShader::new(&new_template, facade){
-                        self.shaders.insert(node_id, new_shader);
-                        *template = new_template;
-                        *version = new_version;
-                    } else {
-                        eprintln!("Error reloading shader for node: {:?}", node_id);
-                    }
+                    //iterate version even on error (wait for change to retry)
+                    *version = new_version;
 
+                    let name = file.name.clone();
+
+                    match reload_ifs_shader(facade, file.clone()) {
+                        Ok((new_template, new_shader)) => {
+                            self.shaders.insert(node_id, new_shader);
+                            *template = new_template;
+                            println!("Reloaded shader: {}", name);
+                        }
+                        Err(err) => {
+                            eprintln!("Error reloading shader {}: {:?}", file.name, err);
+                        }
+                    }
                 }
             }
-
         }
     }
 
-    pub fn draw(&mut self, display: &Display, egui_glium: &mut EguiGlium){
+    pub fn draw(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
         let mut frame = display.draw();
-        
-        frame.clear_color_and_depth((1.,1.,1.,1.), 0.);
+
+        frame.clear_color_and_depth((1., 1., 1., 1.), 0.);
 
         let mut graph_response = None;
 
@@ -217,7 +240,7 @@ impl ShaderGraphProcessor {
         });
 
         if let Some(response) = graph_response {
-            for event in response.node_responses{
+            for event in response.node_responses {
                 self.node_event(display, egui_glium, event);
             }
         }
@@ -234,7 +257,7 @@ impl ShaderGraphProcessor {
             //     width: 1,
             //     height: 1,
             //     ..Default::default()
-            // };        
+            // };
             // let target_rect = Rect {
 
             // }
@@ -247,4 +270,42 @@ impl ShaderGraphProcessor {
 
         frame.finish().unwrap();
     }
+}
+
+#[derive(Debug)]
+enum IsfShaderLoadError {
+    IoError(std::io::Error),
+    ParseError(isf::ParseError),
+    CompileError(glium::program::ProgramCreationError),
+}
+
+impl From<std::io::Error> for IsfShaderLoadError {
+    fn from(err: std::io::Error) -> Self {
+        IsfShaderLoadError::IoError(err)
+    }
+}
+
+impl From<glium::program::ProgramCreationError> for IsfShaderLoadError {
+    fn from(err: glium::program::ProgramCreationError) -> Self {
+        IsfShaderLoadError::CompileError(err)
+    }
+}
+
+impl From<isf::ParseError> for IsfShaderLoadError {
+    fn from(err: isf::ParseError) -> Self {
+        IsfShaderLoadError::ParseError(err)
+    }
+}
+
+fn reload_ifs_shader(
+    facade: &impl Facade,
+    file: IsfPathInfo,
+) -> Result<(NodeTypes, NodeShader), IsfShaderLoadError> {
+    let new_template = NodeTypes::Isf {
+        isf: isf::parse(&read_to_string(&file.path).unwrap())?,
+        file,
+    };
+    let new_shader = NodeShader::new(&new_template, facade).unwrap()?;
+
+    Ok((new_template, new_shader))
 }

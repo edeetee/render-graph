@@ -45,13 +45,16 @@
             "MIN": 0,
             "NAME": "splitPos",
             "TYPE": "float"
+        },
+        {
+            "DEFAULT": 0,
+            "NAME": "test",
+            "TYPE": "float"
         }
     ],
     "ISFVSN": "2"
 }
 */
-
-
 
 void main() {
 	//	determine if we are on an even or odd line
@@ -71,6 +74,7 @@ void main() {
 	else if(mod(((coord+offset) / width),2.0) < 2.0 * splitPos)	{
 		out_color = color1;
 	}
-	
-	gl_FragColor = out_color;
+    
+    gl_FragColor = out_color;
+	// gl_FragColor = vec4((isf_FragNormCoord * 10), 0.0, 1.0);
 }

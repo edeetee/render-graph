@@ -17,8 +17,15 @@ pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfPathInfo, Isf)> {
 
             if ext == "fs" {
                 let content = read_to_string(&path).unwrap();
-                let isf = isf::parse(&content);
-                return isf.ok().map(|isf| (path.into(), isf))
+                return match isf::parse(&content) {
+                    Ok(isf) => {
+                        Some((path.into(), isf))
+                    },
+                    Err(err) => {
+                        eprintln!("Error parsing isf file ({path:?}): {err}");
+                        None
+                    },
+                }
             }
 
             None
@@ -26,9 +33,9 @@ pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfPathInfo, Isf)> {
 }
 
 //TODO: single with result
-pub fn parse(){
+// pub fn parse(){
 
-}
+// }
 
 #[derive(Clone, PartialEq)]
 pub struct IsfPathInfo{
