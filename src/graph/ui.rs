@@ -1,5 +1,5 @@
 
-use egui::{DragValue, Response};
+use egui::{DragValue, Response, color_picker::{color_edit_button_hsva, color_edit_button_rgba}, Rgba, Slider};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait};
 
 use super::def::*;
@@ -71,10 +71,19 @@ impl WidgetValueTrait for NodeValueTypes {
                     vec![r,g,b,a].iter().any(|resp| resp.changed())
                 }).inner
             }
+            NodeValueTypes::Color(value) => {
+                ui.horizontal(|ui| {
+                    ui.label(param_name);
+                    // let rgba = Rgba::from_rgba_premultiplied(value);
+                    color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
+                    // ui.add()
+                }).inner.changed()
+            }
             NodeValueTypes::Float (value) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
-                    ui.add(DragValue::new(value))
+                    // ui.add(DragValue::new(value))
+                    ui.add(Slider::new(value, 0f32..=1f32).clamp_to_range(false))
                 }).inner.changed()
             }
             NodeValueTypes::Bool(value) => {

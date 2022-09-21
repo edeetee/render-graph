@@ -1,5 +1,6 @@
 use std::{env::current_dir, path::{Path, PathBuf}, fs::{read_dir, read_to_string}, ffi::OsStr, convert::{TryFrom, TryInto}, fmt::{Display, Formatter}, time::SystemTime};
 
+use egui::Rgba;
 use isf::{Isf, Input, InputType};
 
 use super::{connection_types::NodeInputDef, def::{NodeConnectionTypes, NodeValueTypes}};
@@ -79,7 +80,7 @@ impl From<&InputType> for NodeConnectionTypes {
 impl From<&InputType> for NodeValueTypes {
     fn from(ty: &InputType) -> Self {
         match ty {
-            InputType::Float(v) => v.default.unwrap_or_default().into(),
+            InputType::Float(v) => NodeValueTypes::Float(v.default.unwrap_or_default()),
             InputType::Color(v) => {
                 let mut slice: [f32; 4] = Default::default();
                 if let Some(default) = &v.default{
@@ -87,10 +88,11 @@ impl From<&InputType> for NodeValueTypes {
                         *to = *from;
                     }
                 }
-                slice.into()
+                let rgba = Rgba::from_rgba_premultiplied(slice[0], slice[1], slice[2], slice[3]);
+                NodeValueTypes::Color(rgba)
             },
-            InputType::Point2d(v) => v.default.unwrap_or_default().into(),
-            InputType::Bool(v) => v.default.unwrap_or_default().into(),
+            InputType::Point2d(v) => NodeValueTypes::Vec2(v.default.unwrap_or_default()),
+            InputType::Bool(v) => NodeValueTypes::Bool(v.default.unwrap_or_default()),
             _ => NodeValueTypes::None
         }
     }

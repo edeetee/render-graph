@@ -166,7 +166,10 @@ impl ShaderGraphProcessor {
                                 NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
                                 NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
                                 NodeValueTypes::Vec4(v) => Some(ComputedNodeInput::Vec4(v)),
-                                _ => match input.typ {
+                                NodeValueTypes::Color(v) => Some(ComputedNodeInput::Vec4(v.to_array())),
+
+                                //compute elements that don't have values
+                                NodeValueTypes::None => match input.typ {
                                     NodeConnectionTypes::Texture2D => texture
                                         .as_ref()
                                         .map(|texture| ComputedNodeInput::Texture(texture.clone())),

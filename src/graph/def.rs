@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use egui::TextureId;
+use egui::{TextureId, Rgba};
 use glium::{texture::SrgbTexture2d, Texture2d, uniforms::AsUniformValue};
 use strum::{EnumIter, IntoStaticStr, Display};
 use isf::{Isf, Input, InputType};
@@ -35,6 +35,7 @@ pub enum NodeValueTypes {
     Float(f32),
     Bool(bool),
     Vec4([f32; 4]),
+    Color(Rgba),
     None,
 }
 
@@ -58,29 +59,29 @@ impl AsUniformValue for ComputedNodeInput {
     }
 }
 
-impl From<[f32; 4]> for NodeValueTypes {
-    fn from(from: [f32; 4]) -> Self {
-        Self::Vec4(from)
-    }
-}
+// impl From<[f32; 4]> for NodeValueTypes {
+//     fn from(from: [f32; 4]) -> Self {
+//         Self::Vec4(from)
+//     }
+// }
 
-impl From<[f32; 2]> for NodeValueTypes {
-    fn from(from: [f32; 2]) -> Self {
-        Self::Vec2(from)
-    }
-}
+// impl From<[f32; 2]> for NodeValueTypes {
+//     fn from(from: [f32; 2]) -> Self {
+//         Self::Vec2(from)
+//     }
+// }
 
-impl From<f32> for NodeValueTypes {
-    fn from(val: f32) -> Self {
-        Self::Float(val)
-    }
-}
+// impl From<f32> for NodeValueTypes {
+//     fn from(val: f32) -> Self {
+//         Self::Float(val)
+//     }
+// }
 
-impl From<bool> for NodeValueTypes {
-    fn from(val: bool) -> Self {
-        Self::Bool(val)
-    }
-}
+// impl From<bool> for NodeValueTypes {
+//     fn from(val: bool) -> Self {
+//         Self::Bool(val)
+//     }
+// }
 
 #[derive(Clone, PartialEq)]
 pub enum NodeTypes {
