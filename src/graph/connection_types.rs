@@ -1,10 +1,10 @@
-use std::convert::TryInto;
 
-use clap::builder::BoolValueParser;
+
+
 use glium::uniforms::{Uniforms, UniformValue, AsUniformValue};
-use isf::InputType;
 
-use super::def::{NodeConnectionTypes, NodeValueTypes, NodeTypes, ComputedNodeInput};
+
+use super::def::{NodeConnectionTypes, NodeValueTypes, ComputedNodeInput};
 
 #[derive(Debug)]
 pub struct NodeInputDef {

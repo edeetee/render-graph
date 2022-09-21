@@ -22,7 +22,7 @@ struct Args {
 }
 
 fn main() {
-    let args = Args::parse();
+    let _args = Args::parse();
 
     tracing_subscriber::fmt()
         .with_max_level(LevelFilter::TRACE)

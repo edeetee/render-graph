@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, OutputParam, InputId, OutputId, Graph};
+use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph};
 
 use super::{shader_graph_processor::EditorState, def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes}, logic::AllNodeTypes};
 

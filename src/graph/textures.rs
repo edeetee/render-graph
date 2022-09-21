@@ -9,7 +9,7 @@ use glium::{
     backend::Facade,
     framebuffer::{SimpleFrameBuffer},
     texture::SrgbTexture2d,
-    Surface, Texture2d, uniforms::Uniforms,
+    Surface, Texture2d,
 };
 
 use ouroboros::self_referencing;

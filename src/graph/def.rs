@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
 use egui::{TextureId, Rgba};
-use glium::{texture::SrgbTexture2d, Texture2d, uniforms::AsUniformValue};
-use strum::{EnumIter, IntoStaticStr, Display};
-use isf::{Isf, Input, InputType};
+use glium::{Texture2d, uniforms::AsUniformValue};
+use strum::{Display};
+use isf::{Isf};
 
 use super::{ isf::IsfPathInfo};
 

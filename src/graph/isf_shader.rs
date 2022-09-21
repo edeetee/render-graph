@@ -1,4 +1,4 @@
-use std::{fs::{read_to_string, File}, io::Read, time::SystemTime, path::PathBuf};
+use std::{fs::{File}, io::Read};
 
 use glium::{backend::Facade, uniforms::Uniforms, Surface, ProgramCreationError};
 use glium_utils::modular_shader::fullscreen_shader::FullscreenFrag;

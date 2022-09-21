@@ -1,4 +1,4 @@
-use std::{env::current_dir, path::{Path, PathBuf}, fs::{read_dir, read_to_string}, ffi::OsStr, convert::{TryFrom, TryInto}, fmt::{Display, Formatter}, time::SystemTime};
+use std::{path::{Path, PathBuf}, fs::{read_dir, read_to_string}, fmt::{Display, Formatter}};
 
 use egui::Rgba;
 use isf::{Isf, Input, InputType};

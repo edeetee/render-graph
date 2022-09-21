@@ -7,8 +7,8 @@ use glium::{
     framebuffer::{RenderBuffer, SimpleFrameBuffer},
     Display, Surface,
 };
-use glium_utils::util::DEFAULT_TEXTURE_FORMAT;
-use isf::{Isf, ParseError};
+
+
 use itertools::Itertools;
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
@@ -193,7 +193,7 @@ impl ShaderGraphProcessor {
                 });
             });
 
-            let rendered_node_names: String = rendered_nodes
+            let _rendered_node_names: String = rendered_nodes
                 .iter()
                 .map(|node_id| self.graph[*node_id].label.clone())
                 .intersperse(", ".to_string())
@@ -207,7 +207,7 @@ impl ShaderGraphProcessor {
         for (node_id, version) in self.versions.iter_mut() {
             let template = &mut self.graph[node_id].user_data.template;
 
-            if let NodeTypes::Isf { file, isf } = template {
+            if let NodeTypes::Isf { file, isf: _ } = template {
                 let new_version = file.path.metadata().unwrap().modified().unwrap();
 
                 if *version < new_version {
