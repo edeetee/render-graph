@@ -1,7 +1,7 @@
 use glam::Vec3;
 use glium::{
     implement_vertex, index, uniform, Blend, DrawParameters, Program, Smooth, Surface,
-    VertexBuffer, backend::Facade, framebuffer::SimpleFrameBuffer,
+    VertexBuffer, backend::Facade,
 };
 
 #[derive(Copy, Clone)]

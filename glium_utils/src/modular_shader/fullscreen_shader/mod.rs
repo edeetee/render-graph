@@ -1,4 +1,4 @@
-use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, UniformsStorage, AsUniformValue}, uniform, program::Uniform, ProgramCreationError};
+use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError};
 pub struct FullscreenFrag{
     verts: VertexBuffer<VertexAttr>,
     program: Program,

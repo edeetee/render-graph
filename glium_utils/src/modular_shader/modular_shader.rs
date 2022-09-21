@@ -1,7 +1,7 @@
 use std::{path::Path, fs::File, time::SystemTime, io::Read};
 
-use assets_manager::{AssetCache, Asset, loader::{LoadFrom, StringLoader}};
-use glium::{DrawError, framebuffer::SimpleFrameBuffer};
+use assets_manager::{AssetCache};
+
 
 pub struct CachedFile{
     file: File,
