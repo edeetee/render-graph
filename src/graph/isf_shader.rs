@@ -1,10 +1,9 @@
 use std::{fs::{File}, io::Read};
 
 use glium::{backend::Facade, uniforms::Uniforms, Surface, ProgramCreationError};
-use glium_utils::modular_shader::fullscreen_shader::FullscreenFrag;
 use isf::Isf;
 
-use super::isf::IsfPathInfo;
+use super::{isf::IsfPathInfo, fullscreen_shader::FullscreenFrag};
 
 pub struct IsfShader {
     frag: FullscreenFrag,
