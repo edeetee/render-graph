@@ -23,7 +23,8 @@ impl NodeDataTrait for NodeData {
         let me = &graph[node_id];
 
         if let Some(tex_id) = &me.user_data.result {
-            ui.image(*tex_id, [256., 256.]);
+            let size = ui.available_width();
+            ui.image(*tex_id, [size, size]);
         } else {
             ui.label("NO IMAGE AVAILABLE");
         }
@@ -31,12 +32,6 @@ impl NodeDataTrait for NodeData {
         vec![]
     }
 }
-
-// fn labelled_drag<'a>(label: &str, value: &'a mut f32) -> DragValue<'a> {
-//     egui::DragValue::new(value)
-//         .speed(0.01)
-//         .clamp_range(0.0..=1.0)
-// }
 
 impl WidgetValueTrait for NodeValueTypes {
     type Response = GraphResponse;
@@ -90,6 +85,12 @@ impl WidgetValueTrait for NodeValueTypes {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.checkbox(value, "")
+                }).inner.changed()
+            }
+            NodeValueTypes::Text(value) => {
+                ui.horizontal(|ui| {
+                    ui.label(param_name);
+                    ui.text_edit_singleline(value)
                 }).inner.changed()
             }
             NodeValueTypes::None => { false }

@@ -1,10 +1,12 @@
 
 
 
-use glium::uniforms::{Uniforms, UniformValue, AsUniformValue};
+use std::rc::Rc;
+
+use glium::{uniforms::{Uniforms, UniformValue, AsUniformValue}, Texture2d};
 
 
-use super::def::{NodeConnectionTypes, NodeValueTypes, ComputedNodeInput};
+use super::def::{NodeConnectionTypes, NodeValueTypes, ComputedShaderInput};
 
 #[derive(Debug)]
 pub struct NodeInputDef {
@@ -19,6 +21,16 @@ impl NodeInputDef {
             name: name.into(),
             ty: NodeConnectionTypes::Texture2D,
             value: NodeValueTypes::None,
+        }
+    }
+}
+
+impl <S: Into<String>, V: Into<NodeValueTypes>> From<(S, V)> for NodeInputDef {
+    fn from((name, val_ty): (S, V)) -> Self {
+        Self {
+            name: name.into(),
+            ty: NodeConnectionTypes::None,
+            value: val_ty.into(),
         }
     }
 }
@@ -47,7 +59,18 @@ impl <S: Into<String>> From<(S, NodeConnectionTypes)> for NodeOutputDef {
 }
 
 pub struct ComputedInputs<'a> {
-    vec: Vec<(&'a str, ComputedNodeInput)>,
+    vec: Vec<(&'a str, ComputedShaderInput)>,
+}
+
+impl ComputedInputs<'_> {
+    pub fn first_texture(&self) -> Option<Rc<Texture2d>> {
+        self.vec.iter().filter_map(|(_,tex)| {
+            match tex {
+                ComputedShaderInput::Texture(tex) => Some(tex.clone()),
+                _ => None,
+            }
+        }).next()
+    }
 }
 
 impl<'a> Uniforms for &ComputedInputs<'a>{
@@ -58,10 +81,10 @@ impl<'a> Uniforms for &ComputedInputs<'a>{
     }
 }
 
-impl<'a> FromIterator<(&'a str, ComputedNodeInput)> for ComputedInputs<'a> {
+impl<'a> FromIterator<(&'a str, ComputedShaderInput)> for ComputedInputs<'a> {
     fn from_iter<T>(iter: T) -> Self
     where
-        T: IntoIterator<Item = (&'a str, ComputedNodeInput)>,
+        T: IntoIterator<Item = (&'a str, ComputedShaderInput)>,
     {
         ComputedInputs {
             vec: iter.into_iter().collect(),

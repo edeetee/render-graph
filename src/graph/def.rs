@@ -1,11 +1,12 @@
 use std::rc::Rc;
 
 use egui::{TextureId, Rgba};
+use egui_node_graph::GraphEditorState;
 use glium::{Texture2d, uniforms::AsUniformValue};
 use strum::{Display};
 use isf::{Isf};
 
-use super::{ isf::IsfPathInfo};
+use super::{ isf::IsfPathInfo, node_types::NodeTypes};
 
 pub struct NodeData {
     pub template: NodeTypes,
@@ -21,14 +22,6 @@ pub enum NodeConnectionTypes {
     // Float,
 }
 
-// impl From<InputType> for NodeValueTypes {
-//     fn from(ty: InputType) -> Self {
-//         Self(ty)
-//     }
-// }
-
-// pub struct NodeValueTypes(pub InputType);
-
 #[derive(Debug, PartialEq)]
 pub enum NodeValueTypes {
     Vec2([f32; 2]),
@@ -36,10 +29,60 @@ pub enum NodeValueTypes {
     Bool(bool),
     Vec4([f32; 4]),
     Color(Rgba),
+    Text(String),
     None,
 }
 
-pub enum ComputedNodeInput {
+impl From<&str> for NodeValueTypes {
+    fn from(s: &str) -> Self {
+        Self::Text(s.into())
+    }
+}
+
+impl NodeValueTypes {
+    pub fn as_shader_input(&self) -> Option<ComputedShaderInput> {
+        match *self {
+            NodeValueTypes::Vec2(v) => Some(v.into()),
+            NodeValueTypes::Float(v) => Some(v.into()),
+            NodeValueTypes::Bool(v) => Some(v.into()),
+            NodeValueTypes::Vec4(v) => Some(v.into()),
+            NodeValueTypes::Color(v) => Some(v.to_array().into()),
+            _ => None,
+        }
+    }
+}
+
+impl From<[f32; 4]> for ComputedShaderInput {
+    fn from(v: [f32; 4]) -> Self {
+        Self::Vec4(v)
+    }
+}
+
+impl From<[f32; 2]> for ComputedShaderInput {
+    fn from(v: [f32; 2]) -> Self {
+        Self::Vec2(v)
+    }
+}
+
+impl  From<f32> for ComputedShaderInput {
+    fn from(v: f32) -> Self {
+        Self::Float(v)
+    }
+}
+
+impl  From<bool> for ComputedShaderInput {
+    fn from(v: bool) -> Self {
+        Self::Bool(v)
+    }
+}
+
+impl From<Rc<Texture2d>> for ComputedShaderInput {
+    fn from(v: Rc<Texture2d>) -> Self {
+        Self::Texture(v)
+    }
+}
+
+pub enum ComputedShaderInput {
     Vec2([f32; 2]),
     Vec4([f32; 4]),
     Float(f32),
@@ -47,52 +90,15 @@ pub enum ComputedNodeInput {
     Texture(Rc<Texture2d>),
 }
 
-impl AsUniformValue for ComputedNodeInput {
+impl AsUniformValue for ComputedShaderInput {
     fn as_uniform_value(&self) -> glium::uniforms::UniformValue<'_> {
         match self {
-            ComputedNodeInput::Vec2(x) => x.as_uniform_value(),
-            ComputedNodeInput::Vec4(x) => x.as_uniform_value(),
-            ComputedNodeInput::Float(x) => x.as_uniform_value(),
-            ComputedNodeInput::Bool(x) => x.as_uniform_value(),
-            ComputedNodeInput::Texture(x) => x.as_uniform_value(),
+            ComputedShaderInput::Vec2(x) => x.as_uniform_value(),
+            ComputedShaderInput::Vec4(x) => x.as_uniform_value(),
+            ComputedShaderInput::Float(x) => x.as_uniform_value(),
+            ComputedShaderInput::Bool(x) => x.as_uniform_value(),
+            ComputedShaderInput::Texture(x) => x.as_uniform_value(),
         }
-    }
-}
-
-// impl From<[f32; 4]> for NodeValueTypes {
-//     fn from(from: [f32; 4]) -> Self {
-//         Self::Vec4(from)
-//     }
-// }
-
-// impl From<[f32; 2]> for NodeValueTypes {
-//     fn from(from: [f32; 2]) -> Self {
-//         Self::Vec2(from)
-//     }
-// }
-
-// impl From<f32> for NodeValueTypes {
-//     fn from(val: f32) -> Self {
-//         Self::Float(val)
-//     }
-// }
-
-// impl From<bool> for NodeValueTypes {
-//     fn from(val: bool) -> Self {
-//         Self::Bool(val)
-//     }
-// }
-
-#[derive(Clone, PartialEq)]
-pub enum NodeTypes {
-    Instances,
-    // Feedback,
-    // Sdf,
-    // Uv,
-    Output,
-    Isf {
-        file: IsfPathInfo,
-        isf: Isf,
     }
 }
 
@@ -101,3 +107,6 @@ pub enum GraphResponse {}
 
 #[derive(Default)]
 pub struct GraphState {}
+
+pub(crate) type EditorState =
+    GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;

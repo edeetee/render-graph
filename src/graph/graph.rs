@@ -2,7 +2,7 @@ use std::ops::{Index, IndexMut};
 
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph};
 
-use super::{shader_graph_processor::EditorState, def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes}, logic::AllNodeTypes};
+use super::{def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes, EditorState}, node_types::AllNodeTypes};
 
 // #[derive(Default)]
 pub struct ShaderGraph(pub(super) EditorState);
@@ -27,6 +27,8 @@ impl IndexMut<NodeId> for ShaderGraph {
     }
 }
 
+pub type InputData<'a> = (&'a String, &'a InputParam<NodeConnectionTypes, NodeValueTypes>, Option<NodeId>);
+
 impl ShaderGraph {
     // pub fn inputs(&self, node_id: NodeId) -> impl Iterator<Item = &InputParam<NodeConnectionTypes, NodeValueTypes>>{
     //     self.0.graph[node_id].inputs(&self.0.graph)
@@ -48,7 +50,7 @@ impl ShaderGraph {
     // pub type ComputedInput<T> = (&String, &NodeId, Option<T>);
 
     ///Call f for each node in correct order, ending on node_id
-    pub fn map_with_inputs<T>(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<(&String, &InputParam<NodeConnectionTypes, NodeValueTypes>, Option<T>)>) -> T) -> T{
+    pub fn map_with_inputs(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<InputData<'_>>)) {
         // let inputs = self.0.graph[node_id].inputs;
 
         let computed_inputs = self.0.graph[node_id].inputs.iter()
@@ -56,8 +58,13 @@ impl ShaderGraph {
                 //if input is connected, generate the value
 
                 (name, &self.0.graph[*input_id], self.0.graph.connection(*input_id).map(|output_id| {
+                    //we get to process a node!
                     let computing_node_id = self.0.graph[output_id].node;
-                    self.map_with_inputs(computing_node_id, f)
+
+                    //process the node first
+                    self.map_with_inputs(computing_node_id, f);
+
+                    computing_node_id
                 }))
             }).collect();
 

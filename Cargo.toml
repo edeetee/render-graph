@@ -15,6 +15,9 @@ egui_glium = "0.18.0"
 ouroboros = "0.15.0"
 itertools = "0.10.2"
 isf = "0.1.0"
+gl = "0.14.0"
+
+spout_rust = { path = "./spout" }
 
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }

@@ -1,32 +1,32 @@
 use std::{
     fmt::Debug,
     fs::read_to_string,
-    time::{Duration, SystemTime},
+    time::{Duration, SystemTime}, rc::Rc, ops::Deref,
 };
 
 use egui_glium::EguiGlium;
 use egui_node_graph::{GraphEditorState, NodeId, NodeResponse};
 use glium::{
-    backend::Facade,
+    backend::{Facade, Context},
     framebuffer::{RenderBuffer, SimpleFrameBuffer},
-    Display, Surface,
+    Display, Surface, uniforms::AsUniformValue, texture::TextureAny, GlObject,
 };
 
 use itertools::Itertools;
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
+use spout_rust::SpoutSender;
 
 use super::{
     connection_types::ComputedInputs,
     def::{self, *},
-    graph::ShaderGraph,
+    graph::{ShaderGraph, InputData},
     isf::IsfPathInfo,
     shaders::NodeShader,
-    textures::NodeTextures,
+    textures::NodeTextures, node_types::NodeTypes, isf_shader::reload_ifs_shader,
 };
 
-pub(crate) type EditorState =
-    GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
+extern crate gl;
 
 #[self_referencing]
 pub struct OutputTarget {
@@ -44,6 +44,7 @@ pub struct ShaderGraphProcessor {
     textures: SecondaryMap<NodeId, NodeTextures>,
     shaders: SecondaryMap<NodeId, NodeShader>,
     versions: SecondaryMap<NodeId, SystemTime>,
+    spout: SecondaryMap<NodeId, SpoutSender>
 }
 
 impl ShaderGraphProcessor {
@@ -65,6 +66,7 @@ impl ShaderGraphProcessor {
             fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap(),
         }
         .build();
+
         self.output_targets.insert(node_id, output_target);
     }
 
@@ -97,10 +99,6 @@ impl ShaderGraphProcessor {
                     _ => {}
                 }
 
-                // if matches!(template, NodeTypes::Isf { file, .. }) {
-                //     self.versions.insert(node_id, file);
-                // }
-
                 //only add if needed ()
                 if let Some(shader) = NodeShader::new(template, facade) {
                     if let Ok(shader) = shader {
@@ -126,8 +124,10 @@ impl ShaderGraphProcessor {
             }
 
             //may create new output target
-            NodeResponse::DisconnectEvent { output, .. } => {
-                self.add_dangling_output(facade, self.graph.graph_ref().outputs[output].node);
+            NodeResponse::DisconnectEvent { output: output_id, .. } => {
+                if let Some(output) = self.graph.graph_ref().try_get_output(output_id){
+                    self.add_dangling_output(facade, output.node);
+                }
             }
 
             NodeResponse::ConnectEventEnded { output, .. } => {
@@ -154,47 +154,24 @@ impl ShaderGraphProcessor {
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
 
-                let _rendered_output = graph.map_with_inputs(output_id, &mut |node_id, inputs| {
-                    let texture = &mut self.textures[node_id];
+                graph.map_with_inputs(output_id, &mut |node_id, inputs| {
+                    // let texture = &mut self.textures[node_id];
 
+                    //skip early render
                     if rendered_nodes.contains(&node_id) {
-                        return self.textures[node_id].tex_for_sampling();
+                        return;
                     }
 
-                    let named_inputs: ComputedInputs = inputs
-                        .iter()
-                        .filter_map(|(name, input, texture)| {
-                            match input.value {
-                                NodeValueTypes::Float(f) => Some(ComputedNodeInput::Float(f)),
-                                NodeValueTypes::Vec2(v) => Some(ComputedNodeInput::Vec2(v)),
-                                NodeValueTypes::Bool(v) => Some(ComputedNodeInput::Bool(v)),
-                                NodeValueTypes::Vec4(v) => Some(ComputedNodeInput::Vec4(v)),
-                                NodeValueTypes::Color(v) => {
-                                    Some(ComputedNodeInput::Vec4(v.to_array()))
-                                }
-
-                                //compute elements that don't have values
-                                NodeValueTypes::None => match input.typ {
-                                    NodeConnectionTypes::Texture2D => texture
-                                        .as_ref()
-                                        .map(|texture| ComputedNodeInput::Texture(texture.clone())),
-                                    _ => None,
-                                },
-                            }
-                            .map(|computed_input| (name.as_str(), computed_input))
-                        })
-                        .collect();
+                    let named_inputs = compute_inputs(&self.textures, inputs.iter());
 
                     // let shader = &mut self.shaders[node_id];
-                    if let Some(shader) = self.shaders.get(node_id) {
-                        texture.draw(|surface| {
+                    if let Some(shader) = self.shaders.get_mut(node_id) {
+                        self.textures[node_id].draw(|surface| {
                             shader.draw(surface, &named_inputs);
                         });
                     }
 
                     rendered_nodes.push(node_id);
-
-                    texture.tex_for_sampling()
                 });
             });
 
@@ -285,59 +262,17 @@ impl ShaderGraphProcessor {
     }
 }
 
-// #[derive(Debug)]
-enum IsfShaderLoadError {
-    IoError(std::io::Error),
-    ParseError(isf::ParseError),
-    CompileError(glium::program::ProgramCreationError),
-}
+fn compute_inputs<'a>(textures: &SecondaryMap<NodeId, NodeTextures>, inputs: impl Iterator<Item=&'a InputData<'a>>) -> ComputedInputs<'a> {
+    inputs.filter_map(|(name, input, node)| {
 
-impl std::fmt::Debug for IsfShaderLoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::IoError(arg0) => arg0.fmt(f),
-            Self::ParseError(arg0) => arg0.fmt(f),
-            Self::CompileError(arg0) => {
-                match arg0 {
-                    glium::ProgramCreationError::CompilationError(source, shader_type) => {
-                        // f.debug_struct(&format!()).finish()
-                        // write!()
-                        write!(f, "CompilationError for {shader_type:?} (\n{source})")
-                    }
-                    _ => arg0.fmt(f),
-                }
+        input.value.as_shader_input().or_else(|| {
+            match input.typ {
+                NodeConnectionTypes::Texture2D => node.map(|node_id| textures[node_id].tex_for_sampling().clone().into()),
+                _ => None,
             }
-        }
-    }
-}
+        })
 
-impl From<std::io::Error> for IsfShaderLoadError {
-    fn from(err: std::io::Error) -> Self {
-        IsfShaderLoadError::IoError(err)
-    }
-}
-
-impl From<glium::program::ProgramCreationError> for IsfShaderLoadError {
-    fn from(err: glium::program::ProgramCreationError) -> Self {
-        IsfShaderLoadError::CompileError(err)
-    }
-}
-
-impl From<isf::ParseError> for IsfShaderLoadError {
-    fn from(err: isf::ParseError) -> Self {
-        IsfShaderLoadError::ParseError(err)
-    }
-}
-
-fn reload_ifs_shader(
-    facade: &impl Facade,
-    file: IsfPathInfo,
-) -> Result<(NodeTypes, NodeShader), IsfShaderLoadError> {
-    let new_template = NodeTypes::Isf {
-        isf: isf::parse(&read_to_string(&file.path).unwrap())?,
-        file,
-    };
-    let new_shader = NodeShader::new(&new_template, facade).unwrap()?;
-
-    Ok((new_template, new_shader))
+        .map(|computed_input| (name.as_str(), computed_input))
+    })
+    .collect()
 }

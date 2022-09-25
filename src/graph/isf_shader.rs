@@ -1,9 +1,9 @@
-use std::{fs::{File}, io::Read};
+use std::{fs::{File, read_to_string}, io::Read};
 
 use glium::{backend::Facade, uniforms::Uniforms, Surface, ProgramCreationError};
 use isf::Isf;
 
-use super::{isf::IsfPathInfo, fullscreen_shader::FullscreenFrag};
+use super::{isf::IsfPathInfo, fullscreen_shader::FullscreenFrag, node_types::NodeTypes, shaders::NodeShader};
 
 pub struct IsfShader {
     frag: FullscreenFrag,
@@ -75,4 +75,61 @@ fn generate_isf_prefix(def: &Isf) -> String {
     prefix.push('\n');
 
     prefix
+}
+
+// #[derive(Debug)]
+pub enum IsfShaderLoadError {
+    IoError(std::io::Error),
+    ParseError(isf::ParseError),
+    CompileError(glium::program::ProgramCreationError),
+}
+
+impl std::fmt::Debug for IsfShaderLoadError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::IoError(arg0) => arg0.fmt(f),
+            Self::ParseError(arg0) => arg0.fmt(f),
+            Self::CompileError(arg0) => {
+                match arg0 {
+                    glium::ProgramCreationError::CompilationError(source, shader_type) => {
+                        // f.debug_struct(&format!()).finish()
+                        // write!()
+                        write!(f, "CompilationError for {shader_type:?} (\n{source})")
+                    }
+                    _ => arg0.fmt(f),
+                }
+            }
+        }
+    }
+}
+
+impl From<std::io::Error> for IsfShaderLoadError {
+    fn from(err: std::io::Error) -> Self {
+        IsfShaderLoadError::IoError(err)
+    }
+}
+
+impl From<glium::program::ProgramCreationError> for IsfShaderLoadError {
+    fn from(err: glium::program::ProgramCreationError) -> Self {
+        IsfShaderLoadError::CompileError(err)
+    }
+}
+
+impl From<isf::ParseError> for IsfShaderLoadError {
+    fn from(err: isf::ParseError) -> Self {
+        IsfShaderLoadError::ParseError(err)
+    }
+}
+
+pub fn reload_ifs_shader(
+    facade: &impl Facade,
+    file: IsfPathInfo,
+) -> Result<(NodeTypes, NodeShader), IsfShaderLoadError> {
+    let new_template = NodeTypes::Isf {
+        isf: isf::parse(&read_to_string(&file.path).unwrap())?,
+        file,
+    };
+    let new_shader = NodeShader::new(&new_template, facade).unwrap()?;
+
+    Ok((new_template, new_shader))
 }

@@ -8,37 +8,36 @@ use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
     framebuffer::{SimpleFrameBuffer},
-    texture::SrgbTexture2d,
-    Surface, Texture2d,
+    texture::{SrgbTexture2d, Dimensions},
+    Surface, Texture2d, GlObject,
 };
 
 use ouroboros::self_referencing;
 
 #[self_referencing]
-struct NodeTexturesInner {
-    screen_tex: Rc<SrgbTexture2d>,
-    screen_id: TextureId,
-    #[borrows(screen_tex)]
-    #[covariant]
-    screen_fb: SimpleFrameBuffer<'this>,
+struct ScreenTexture {
+    tex: Rc<SrgbTexture2d>,
+    id: TextureId,
 
-    render_tex: Rc<Texture2d>,
-    #[borrows(render_tex)]
+    #[borrows(tex)]
     #[covariant]
-    render_fb: SimpleFrameBuffer<'this>,
+    fb: SimpleFrameBuffer<'this>
 }
 
-impl NodeTexturesInner {
+impl ScreenTexture {
     pub fn generate(
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
     ) -> Self {
-        let mipmaps = glium::texture::MipmapsOption::NoMipmap;
 
-        let screen_tex = Rc::new(
+        let mipmaps = glium::texture::MipmapsOption::NoMipmap;
+        let format = glium::texture::SrgbFormat::U8U8U8U8;
+        let size = Dimensions::Texture2d { width: DEFAULT_RES[0], height: DEFAULT_RES[1] };
+
+        let tex = Rc::new(
             SrgbTexture2d::empty_with_format(
                 facade,
-                glium::texture::SrgbFormat::U8U8U8U8,
+                format,
                 mipmaps,
                 DEFAULT_RES[0].into(),
                 DEFAULT_RES[1].into(),
@@ -46,7 +45,59 @@ impl NodeTexturesInner {
             .unwrap(),
         );
 
-        let render_tex = Rc::new(
+        let id = egui_glium
+            .painter
+            .register_native_texture(tex.clone());
+
+        ScreenTextureBuilder {
+            id,
+            tex,
+            fb_builder: |tex: &Rc<SrgbTexture2d>| {
+                SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
+            },
+        }
+        .build()
+    }
+}
+
+pub struct NodeTextures {
+    screen: ScreenTexture,
+    // pub gl_id: gl::types::GLuint,
+    render: Rc<Texture2d>,
+}
+
+const DEFAULT_RES: [u32; 2] = [512, 512];
+
+impl NodeTextures {
+    pub fn new(
+        facade: &impl Facade,
+        egui_glium: &mut EguiGlium,
+    ) -> Self {
+        let mipmaps = glium::texture::MipmapsOption::NoMipmap;
+        
+        let format = glium::texture::UncompressedFloatFormat::F32F32F32F32;
+        // let gl_format = gl::RGBA32F;
+
+        // let gl_id = unsafe {
+        //     let mut id: gl::types::GLuint = 0;
+        //     gl::GenTextures(1, &mut id as *mut u32);
+        //     gl::BindTexture(gl::TEXTURE_2D, id);
+        //     gl::TexStorage2D(gl::TEXTURE_2D, 0, gl_format, DEFAULT_RES[0] as gl::types::GLsizei, DEFAULT_RES[1] as gl::types::GLsizei);
+
+        //     id
+        // };
+
+        // let render = unsafe{
+        //     let size = Dimensions::Texture2d { width: DEFAULT_RES[0], height: DEFAULT_RES[1] };
+
+        //     Rc::new(
+        //         Texture2d::from_id(facade, format, gl_id, true, mipmaps, size)
+        //     )
+        // };
+
+        // let id = render.as_ref().get_id();
+
+        let render = Rc::new(
             Texture2d::empty_with_format(
                 facade,
                 glium::texture::UncompressedFloatFormat::F32F32F32F32,
@@ -57,70 +108,35 @@ impl NodeTexturesInner {
             .unwrap(),
         );
 
-        let screen_id = egui_glium
-            .painter
-            .register_native_texture(screen_tex.clone());
-
-        NodeTexturesInnerBuilder {
-            screen_id,
-            screen_tex,
-            screen_fb_builder: |tex: &Rc<SrgbTexture2d>| {
-                SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
-            },
-            render_tex,
-            render_fb_builder: |tex: &Rc<Texture2d>| {
-                SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
-            },
-        }
-        .build()
-    }
-}
-
-
-
-pub struct NodeTextures {
-    data: NodeTexturesInner,
-    // shader: Shader,
-}
-
-const DEFAULT_RES: [u32; 2] = [512, 512];
-
-impl NodeTextures {
-    pub fn new(
-        facade: &impl Facade,
-        egui_glium: &mut EguiGlium,
-    ) -> Self {
+        // let gl_id = render.get_id();
 
         Self {
-            // shader,
-            data: NodeTexturesInner::generate(facade, egui_glium),
+            screen: ScreenTexture::generate(facade, egui_glium),
+            render,
+            // gl_id
         }
     }
 
     pub fn draw<'a>(
         &mut self,
-        draw: impl Fn(&mut SimpleFrameBuffer),
-        // uniforms: impl Uniforms,
-        // named_inputs: impl Iterator<Item = (&'a str, ComputedNodeInput)>,
+        mut draw: impl FnMut(&Texture2d),
     ) {
         let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
-        self.data.with_render_fb_mut(|fb| {
-            fb.clear_color(0., 0., 0., 0.);
-            draw(fb);
-            // self.shader.draw(fb, uniforms);
-        });
+        self.render.as_surface().clear_color(0.0, 0.0, 0.0, 0.0);
 
-        self.data
-            .borrow_render_fb()
-            .fill(self.data.borrow_screen_fb(), filter);
+        draw(&self.render);
+        self.render.as_surface().fill(
+            self.screen.borrow_fb(),
+            filter,
+        );
     }
 
     pub fn tex_for_sampling(&self) -> Rc<Texture2d> {
-        self.data.borrow_render_tex().clone()
+        self.render.clone()
     }
 
     pub fn clone_screen_tex_id(&self) -> TextureId {
-        self.data.borrow_screen_id().clone()
+        self.screen.borrow_id().clone()
     }
 }

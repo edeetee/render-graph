@@ -10,6 +10,8 @@ mod isf;
 mod isf_shader;
 mod shaders;
 mod fullscreen_shader;
+mod node_types;
+mod spout_out_shader;
 
 pub use shader_graph_processor::ShaderGraphProcessor;
 pub use egui_render_loop::render_glium;
