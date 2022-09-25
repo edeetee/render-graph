@@ -1,0 +1,3 @@
+[submodule "spout"]
+	path = spout
+	url = https://github.com/corentinguilloteau/spout-rust
