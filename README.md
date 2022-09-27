@@ -1,8 +1,10 @@
 # Shader graph rendering
-I'm trying to make a super minimal shader graph for rust. It is build of glium so that it works on legacy devices (raspberry pi etc)
-I use egui_node_graph for the node graph
+- Minimal
+- Performant
+- Extendable
+- Standardized
 
-Touchdesigner and other node graph programming environments have the tendency to abstract the underlying code away. I want a system that allows the underlying code and graph representation to work together logically and performant.
+Touchdesigner and other node graph programming environments have the tendency to abstract the underlying code away. I want a system that allows the underlying code and graph representation to work together logically, performant and safely.
 
 ## Philosophy
 - Performant (aim to be most performant general purpose extendable node graph renderer)
@@ -16,12 +18,12 @@ Touchdesigner and other node graph programming environments have the tendency to
     - Rust safety
     - Mature api development
 
-
-
-
 ## TODO
 - Make systems to define easy way to have common types across nodes so that it works nicely with rust Into<T> system and makes it easy to use graph features/types modularly and simply.
 -Support transparent windows for pretty & clean testing https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/
-- Only use Srgb textures when node is visible
+- Only use Srgb textures for visible nodes
+- Extend egui_node_graph for zooming etc
 - Dependency graph ala touchdesigner
 - Hot reloading
+- Only use as many textures as required (min 2 required as sampler + render target) per node
+- Investigate bevy integration

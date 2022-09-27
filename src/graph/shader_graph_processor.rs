@@ -9,7 +9,7 @@ use egui_node_graph::{GraphEditorState, NodeId, NodeResponse};
 use glium::{
     backend::{Facade, Context},
     framebuffer::{RenderBuffer, SimpleFrameBuffer},
-    Display, Surface, uniforms::AsUniformValue, texture::TextureAny, GlObject,
+    Display, Surface, uniforms::AsUniformValue, texture::TextureAny, GlObject, Texture2d,
 };
 
 use itertools::Itertools;
@@ -23,7 +23,7 @@ use super::{
     graph::{ShaderGraph, InputData},
     isf::IsfPathInfo,
     shaders::NodeShader,
-    textures::NodeTextures, node_types::NodeTypes, isf_shader::reload_ifs_shader,
+    textures::{NodeTextures, TextureManager}, node_types::NodeTypes, isf_shader::reload_ifs_shader,
 };
 
 extern crate gl;
@@ -41,7 +41,8 @@ pub struct OutputTarget {
 pub struct ShaderGraphProcessor {
     graph: ShaderGraph,
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
-    textures: SecondaryMap<NodeId, NodeTextures>,
+    node_textures: SecondaryMap<NodeId, NodeTextures>,
+    texture_manager: TextureManager,
     shaders: SecondaryMap<NodeId, NodeShader>,
     versions: SecondaryMap<NodeId, SystemTime>,
     spout: SecondaryMap<NodeId, SpoutSender>
@@ -85,7 +86,7 @@ impl ShaderGraphProcessor {
 
                 self.graph[node_id].user_data.result = Some(textures.clone_screen_tex_id());
 
-                self.textures.insert(node_id, textures);
+                self.node_textures.insert(node_id, textures);
 
                 let node = &self.graph[node_id];
 
@@ -144,42 +145,55 @@ impl ShaderGraphProcessor {
         }
     }
 
-    fn render_shaders(&mut self) {
+    fn render_shaders(&mut self, facade: &impl Facade) {
         // let shaders = &mut self.shaders;
         let graph = &self.graph;
 
         for (output_id, output_target) in &mut self.output_targets {
-            let mut rendered_nodes = vec![];
 
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
 
-                graph.map_with_inputs(output_id, &mut |node_id, inputs| {
-                    // let texture = &mut self.textures[node_id];
+                graph.map_with_inputs::<_, Rc<Texture2d>>(output_id, &mut |node_id, inputs| {
 
-                    //skip early render
-                    if rendered_nodes.contains(&node_id) {
-                        return;
-                    }
+                    // let textures = self.texture_manager.input_textures_iter(facade, target);
+                    
+                    let processed_inputs: ComputedInputs = inputs.iter()
+                        .filter_map(|(name,node,maybe_process_input)| {
+                            
+                            //first try process node inputs
+                            let value = maybe_process_input.as_ref().map(|process_input| {
+                                process_input.as_uniform_value()
+                            //else use the value
+                            }).or_else(|| {
+                                node.value.as_shader_input()
+                            });
 
-                    let named_inputs = compute_inputs(&self.textures, inputs.iter());
+                            //structure into named uniform values
+                            value.map(|value| {
+                                (*name, value)
+                            })
+                            
+                        })
+                        .collect();
 
-                    // let shader = &mut self.shaders[node_id];
+                    let target = self.texture_manager.new_target(facade);
+
+                    //Render a shader
                     if let Some(shader) = self.shaders.get_mut(node_id) {
-                        self.textures[node_id].draw(|surface| {
-                            shader.draw(surface, &named_inputs);
-                        });
+                        let mut surface = target.as_surface();
+
+                        surface.clear_color(0., 0., 0., 0.);
+
+                        shader.draw(&target, &processed_inputs);
+
+                        //copy texture result to the node texture view
+                        self.node_textures[node_id].copy_from(&surface);
                     }
 
-                    rendered_nodes.push(node_id);
-                });
+                    target
+                }, &mut SecondaryMap::new());
             });
-
-            let _rendered_node_names: String = rendered_nodes
-                .iter()
-                .map(|node_id| self.graph[*node_id].label.clone())
-                .intersperse(", ".to_string())
-                .collect();
 
             // println!("RENDERED {rendered_node_names} to {}", self.graph[output_id].label);
         }
@@ -235,7 +249,7 @@ impl ShaderGraphProcessor {
             }
         }
 
-        self.render_shaders();
+        self.render_shaders(display);
 
         egui_glium.paint(display, &mut frame);
 
@@ -260,19 +274,4 @@ impl ShaderGraphProcessor {
 
         frame.finish().unwrap();
     }
-}
-
-fn compute_inputs<'a>(textures: &SecondaryMap<NodeId, NodeTextures>, inputs: impl Iterator<Item=&'a InputData<'a>>) -> ComputedInputs<'a> {
-    inputs.filter_map(|(name, input, node)| {
-
-        input.value.as_shader_input().or_else(|| {
-            match input.typ {
-                NodeConnectionTypes::Texture2D => node.map(|node_id| textures[node_id].tex_for_sampling().clone().into()),
-                _ => None,
-            }
-        })
-
-        .map(|computed_input| (name.as_str(), computed_input))
-    })
-    .collect()
 }

@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
-use egui::{TextureId, Rgba};
+use egui::{TextureId, Rgba, Color32};
 use egui_node_graph::GraphEditorState;
-use glium::{Texture2d, uniforms::AsUniformValue};
+use glium::{Texture2d, uniforms::{AsUniformValue, UniformValue}};
 use strum::{Display};
 use isf::{Isf};
 
@@ -40,64 +40,14 @@ impl From<&str> for NodeValueTypes {
 }
 
 impl NodeValueTypes {
-    pub fn as_shader_input(&self) -> Option<ComputedShaderInput> {
-        match *self {
-            NodeValueTypes::Vec2(v) => Some(v.into()),
-            NodeValueTypes::Float(v) => Some(v.into()),
-            NodeValueTypes::Bool(v) => Some(v.into()),
-            NodeValueTypes::Vec4(v) => Some(v.into()),
-            NodeValueTypes::Color(v) => Some(v.to_array().into()),
-            _ => None,
-        }
-    }
-}
-
-impl From<[f32; 4]> for ComputedShaderInput {
-    fn from(v: [f32; 4]) -> Self {
-        Self::Vec4(v)
-    }
-}
-
-impl From<[f32; 2]> for ComputedShaderInput {
-    fn from(v: [f32; 2]) -> Self {
-        Self::Vec2(v)
-    }
-}
-
-impl  From<f32> for ComputedShaderInput {
-    fn from(v: f32) -> Self {
-        Self::Float(v)
-    }
-}
-
-impl  From<bool> for ComputedShaderInput {
-    fn from(v: bool) -> Self {
-        Self::Bool(v)
-    }
-}
-
-impl From<Rc<Texture2d>> for ComputedShaderInput {
-    fn from(v: Rc<Texture2d>) -> Self {
-        Self::Texture(v)
-    }
-}
-
-pub enum ComputedShaderInput {
-    Vec2([f32; 2]),
-    Vec4([f32; 4]),
-    Float(f32),
-    Bool(bool),
-    Texture(Rc<Texture2d>),
-}
-
-impl AsUniformValue for ComputedShaderInput {
-    fn as_uniform_value(&self) -> glium::uniforms::UniformValue<'_> {
+    pub fn as_shader_input(&self) -> Option<UniformValue<'_>> {
         match self {
-            ComputedShaderInput::Vec2(x) => x.as_uniform_value(),
-            ComputedShaderInput::Vec4(x) => x.as_uniform_value(),
-            ComputedShaderInput::Float(x) => x.as_uniform_value(),
-            ComputedShaderInput::Bool(x) => x.as_uniform_value(),
-            ComputedShaderInput::Texture(x) => x.as_uniform_value(),
+            NodeValueTypes::Vec2(v) => Some(v.as_uniform_value()),
+            NodeValueTypes::Float(v) => Some(v.as_uniform_value()),
+            NodeValueTypes::Bool(v) => Some(v.as_uniform_value()),
+            NodeValueTypes::Vec4(v) => Some(v.as_uniform_value()),
+            NodeValueTypes::Color(v) => Some(UniformValue::Vec4(v.to_array())),
+            _ => None,
         }
     }
 }

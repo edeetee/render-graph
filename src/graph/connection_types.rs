@@ -4,9 +4,10 @@
 use std::rc::Rc;
 
 use glium::{uniforms::{Uniforms, UniformValue, AsUniformValue}, Texture2d};
+use rand::distributions::Uniform;
 
 
-use super::def::{NodeConnectionTypes, NodeValueTypes, ComputedShaderInput};
+use super::def::{NodeConnectionTypes, NodeValueTypes};
 
 #[derive(Debug)]
 pub struct NodeInputDef {
@@ -59,14 +60,14 @@ impl <S: Into<String>> From<(S, NodeConnectionTypes)> for NodeOutputDef {
 }
 
 pub struct ComputedInputs<'a> {
-    vec: Vec<(&'a str, ComputedShaderInput)>,
+    vec: Vec<(&'a str, UniformValue<'a>)>,
 }
 
 impl ComputedInputs<'_> {
-    pub fn first_texture(&self) -> Option<Rc<Texture2d>> {
+    pub fn first_texture(&self) -> Option<&Texture2d> {
         self.vec.iter().filter_map(|(_,tex)| {
-            match tex {
-                ComputedShaderInput::Texture(tex) => Some(tex.clone()),
+            match *tex {
+                UniformValue::Texture2d(tex, _) => Some(tex),
                 _ => None,
             }
         }).next()
@@ -76,15 +77,15 @@ impl ComputedInputs<'_> {
 impl<'a> Uniforms for &ComputedInputs<'a>{
     fn visit_values<'b, F: FnMut(&str, UniformValue<'b>)>(&'b self, mut output: F) {
         for (name, input) in self.vec.iter() {
-            output(name, input.as_uniform_value());
+            output(name, *input);
         }
     }
 }
 
-impl<'a> FromIterator<(&'a str, ComputedShaderInput)> for ComputedInputs<'a> {
+impl<'a> FromIterator<(&'a str, UniformValue<'a>)> for ComputedInputs<'a> {
     fn from_iter<T>(iter: T) -> Self
     where
-        T: IntoIterator<Item = (&'a str, ComputedShaderInput)>,
+        T: IntoIterator<Item = (&'a str, UniformValue<'a>)>,
     {
         ComputedInputs {
             vec: iter.into_iter().collect(),

@@ -2,7 +2,6 @@ use glium::{backend::Facade, Surface, ProgramCreationError, Texture2d};
 
 use super::{isf_shader::IsfShader, connection_types::ComputedInputs, node_types::NodeTypes, spout_out_shader::SpoutOutShader};
 
-
 pub enum NodeShader {
     Isf(IsfShader),
     SpoutOut(SpoutOutShader)
@@ -32,7 +31,7 @@ impl NodeShader {
             }
             NodeShader::SpoutOut(spout_out) => {
                 if let Some(in_tex) = inputs.first_texture() {
-                    in_tex.as_surface().fill(&mut texture.as_surface(), glium::uniforms::MagnifySamplerFilter::Nearest);
+                    in_tex.as_surface().fill(&texture.as_surface(), glium::uniforms::MagnifySamplerFilter::Nearest);
                     spout_out.send(texture);
                 }
             }

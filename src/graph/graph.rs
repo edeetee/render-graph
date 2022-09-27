@@ -1,6 +1,7 @@
 use std::ops::{Index, IndexMut};
 
-use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph};
+use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, OutputId};
+use slotmap::SecondaryMap;
 
 use super::{def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes, EditorState}, node_types::AllNodeTypes};
 
@@ -27,7 +28,7 @@ impl IndexMut<NodeId> for ShaderGraph {
     }
 }
 
-pub type InputData<'a> = (&'a String, &'a InputParam<NodeConnectionTypes, NodeValueTypes>, Option<NodeId>);
+pub type InputData<'a, T> = (&'a String, &'a InputParam<NodeConnectionTypes, NodeValueTypes>, T);
 
 impl ShaderGraph {
     // pub fn inputs(&self, node_id: NodeId) -> impl Iterator<Item = &InputParam<NodeConnectionTypes, NodeValueTypes>>{
@@ -49,26 +50,39 @@ impl ShaderGraph {
 
     // pub type ComputedInput<T> = (&String, &NodeId, Option<T>);
 
-    ///Call f for each node in correct order, ending on node_id
-    pub fn map_with_inputs(&self, node_id: NodeId, f: &mut impl FnMut(NodeId, Vec<InputData<'_>>)) {
-        // let inputs = self.0.graph[node_id].inputs;
-
+    ///Call f for each node in correct order, ending on node_id\
+    /// 
+    /// # Type arguments
+    /// OUT: type that may come out of a 
+    pub fn map_with_inputs<F_ON_NODE, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut F_ON_NODE, cache: &mut SecondaryMap<NodeId, OUT>) -> OUT 
+        where F_ON_NODE: FnMut(NodeId, Vec<(&str, &InputParam<NodeConnectionTypes, NodeValueTypes>, Option<OUT>)>) -> OUT
+    {
         let computed_inputs = self.0.graph[node_id].inputs.iter()
             .map(|(name, input_id)| {
                 //if input is connected, generate the value
 
-                (name, &self.0.graph[*input_id], self.0.graph.connection(*input_id).map(|output_id| {
+                let process_input = self.0.graph.connection(*input_id).map(|output_id| {
                     //we get to process a node!
-                    let computing_node_id = self.0.graph[output_id].node;
+                    let input_node_id = self.0.graph[output_id].node;
 
-                    //process the node first
-                    self.map_with_inputs(computing_node_id, f);
+                    //add input to cache if doesn't exist
+                    if !cache.contains_key(input_node_id){
+                        let value = self.map_with_inputs(input_node_id, f_on_node, cache);
+                        cache.insert(input_node_id, value);
+                    }
 
-                    computing_node_id
-                }))
-            }).collect();
+                    cache[input_node_id].clone()
+                });
 
-        f(node_id, computed_inputs)
+                let input_param = self.0.graph.get_input(*input_id);
+
+                (name.as_str(), input_param, process_input)
+            })
+            .collect();
+
+        let result = f_on_node(node_id, computed_inputs);
+
+        result
     }
 
     pub fn draw(&mut self, ctx: &egui::Context) -> egui_node_graph::GraphResponse<GraphResponse, NodeData> {
@@ -95,3 +109,21 @@ impl ShaderGraph {
     }
 }
 
+
+// struct Evaluator<'a, T> {
+//     graph: &'a ShaderGraph,
+//     node_id: NodeId,
+//     cache: SecondaryMap<OutputId, T>
+// }
+
+// impl <'a, T> Evaluator<'a, T> {
+//     fn new(graph: &'a ShaderGraph, node_id: NodeId) -> Self {
+//         Self {
+//             graph,
+//             node_id,
+//             cache: SecondaryMap::new()
+//         }
+//     }
+
+//     fn 
+// }

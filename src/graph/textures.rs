@@ -1,5 +1,5 @@
 use std::{
-    rc::Rc,
+    rc::{Rc, Weak},
 };
 
 // use super::{def::{ComputedNodeInput, NodeTypes}, shaders::Shader};
@@ -8,7 +8,7 @@ use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
     framebuffer::{SimpleFrameBuffer},
-    texture::{SrgbTexture2d, Dimensions},
+    texture::{SrgbTexture2d, Dimensions, UncompressedFloatFormat},
     Surface, Texture2d, GlObject,
 };
 
@@ -32,7 +32,6 @@ impl ScreenTexture {
 
         let mipmaps = glium::texture::MipmapsOption::NoMipmap;
         let format = glium::texture::SrgbFormat::U8U8U8U8;
-        let size = Dimensions::Texture2d { width: DEFAULT_RES[0], height: DEFAULT_RES[1] };
 
         let tex = Rc::new(
             SrgbTexture2d::empty_with_format(
@@ -62,81 +61,130 @@ impl ScreenTexture {
 
 pub struct NodeTextures {
     screen: ScreenTexture,
-    // pub gl_id: gl::types::GLuint,
-    render: Rc<Texture2d>,
+    // render: Texture2d,
 }
 
 const DEFAULT_RES: [u32; 2] = [512, 512];
+const DEFAULT_MIPMAPS: glium::texture::MipmapsOption = glium::texture::MipmapsOption::NoMipmap;
+const FORMAT_RGBA32: UncompressedFloatFormat = glium::texture::UncompressedFloatFormat::F32F32F32F32;
+
+fn new_texture_2d(facade: &impl Facade, width: u32, height: u32) -> Result<Texture2d, glium::texture::TextureCreationError>  {
+    Texture2d::empty_with_format(
+        facade,
+        FORMAT_RGBA32,
+        DEFAULT_MIPMAPS,
+        width,
+        height,
+    )
+}
 
 impl NodeTextures {
     pub fn new(
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
     ) -> Self {
-        let mipmaps = glium::texture::MipmapsOption::NoMipmap;
-        
-        let format = glium::texture::UncompressedFloatFormat::F32F32F32F32;
-        // let gl_format = gl::RGBA32F;
-
-        // let gl_id = unsafe {
-        //     let mut id: gl::types::GLuint = 0;
-        //     gl::GenTextures(1, &mut id as *mut u32);
-        //     gl::BindTexture(gl::TEXTURE_2D, id);
-        //     gl::TexStorage2D(gl::TEXTURE_2D, 0, gl_format, DEFAULT_RES[0] as gl::types::GLsizei, DEFAULT_RES[1] as gl::types::GLsizei);
-
-        //     id
-        // };
-
-        // let render = unsafe{
-        //     let size = Dimensions::Texture2d { width: DEFAULT_RES[0], height: DEFAULT_RES[1] };
-
-        //     Rc::new(
-        //         Texture2d::from_id(facade, format, gl_id, true, mipmaps, size)
-        //     )
-        // };
-
-        // let id = render.as_ref().get_id();
-
-        let render = Rc::new(
-            Texture2d::empty_with_format(
-                facade,
-                glium::texture::UncompressedFloatFormat::F32F32F32F32,
-                mipmaps,
-                DEFAULT_RES[0].into(),
-                DEFAULT_RES[1].into(),
-            )
-            .unwrap(),
-        );
-
-        // let gl_id = render.get_id();
 
         Self {
             screen: ScreenTexture::generate(facade, egui_glium),
-            render,
-            // gl_id
         }
     }
 
-    pub fn draw<'a>(
-        &mut self,
-        mut draw: impl FnMut(&Texture2d),
-    ) {
+    pub fn copy_from(&mut self, surface: &impl Surface){
         let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
-        self.render.as_surface().clear_color(0.0, 0.0, 0.0, 0.0);
-
-        draw(&self.render);
-        self.render.as_surface().fill(
+        surface.fill(
             self.screen.borrow_fb(),
             filter,
         );
-    }
-
-    pub fn tex_for_sampling(&self) -> Rc<Texture2d> {
-        self.render.clone()
     }
 
     pub fn clone_screen_tex_id(&self) -> TextureId {
         self.screen.borrow_id().clone()
     }
 }
+
+
+#[derive(Debug)]
+pub struct TextureManager {
+    textures: Vec<Rc<Texture2d>>,
+    res: [u32; 2]
+}
+
+impl Default for TextureManager {
+    fn default() -> Self {
+        Self {
+            textures: Vec::new(),
+            res: [1920, 1080]
+        }
+    }
+}
+
+//Handles shared references of textures and will allocate new textures as needed
+impl TextureManager {
+    pub fn new_target(&mut self, facade: &impl Facade) -> Rc<Texture2d> {
+        // let tex = new_texture_2d(facade, self.res[0], self.res[1]).unwrap();
+        // self.textures.push(tex.clone());
+        // tex
+        if let Some(unused_tex) = self.textures.iter().filter(|tex| Rc::strong_count(tex) == 1).next(){
+            unused_tex.clone()
+        } else {
+            self.get_new(facade)
+        }
+    }
+
+    fn get_new(&mut self, facade: &impl Facade) -> Rc<Texture2d> {
+        let new_tex = Rc::new(new_texture_2d(facade, self.res[0], self.res[1]).unwrap());
+        self.textures.push(new_tex.clone());
+        println!("New texture allocated inside {self:?}");
+
+        new_tex
+    }
+
+    fn set_res(&mut self, facade: &impl Facade, res: [u32; 2]){
+        self.res = res;
+        for texture in self.textures.iter_mut() {
+            *texture = Rc::new(new_texture_2d(facade, self.res[0], self.res[1]).unwrap());
+        }
+    }
+
+    // fn get_or_set(&mut self, facade: &impl Facade, index: usize) -> &Texture2d {
+    //     if self.textures.get(index).is_none() {
+    //         self.textures.insert(index, new_texture_2d(facade, self.res[0], self.res[1]).unwrap())
+    //     }
+
+    //     &self.textures[index]
+    // }
+}
+
+
+
+// This will infinitely return new textures to be given to inputs for rendering.
+// 
+// - Best used with a zip function
+// - Requires exclusive control of the texture manager
+// - Doesn't use the target texture in iteration
+// struct FramedTextureManager<'a, F: Facade> {
+//     manager: &'a mut TextureManager,
+//     target: &'a Texture2d,
+//     facade: &'a F,
+//     index: usize
+// }
+
+// impl <'a, F: Facade> FramedTextureManager<'a, F>{
+//     pub fn get_texture(&'a mut self) -> &'a Texture2d {
+//         let result = self.manager.get_or_set(self.facade, self.index);
+//         self.index += 1;
+
+//         if result.get_id() != self.target.get_id() {
+//             result
+//         } else {
+//             self.get_texture()
+//         }
+//     }
+// }
+
+// impl <'a, F: Facade> Drop for FramedTextureManager<'a, F>{
+//     fn drop(&mut self) {
+//         todo!()
+//     }
+// }
