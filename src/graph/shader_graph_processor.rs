@@ -1,27 +1,24 @@
 use std::{
-    fmt::Debug,
-    fs::read_to_string,
-    time::{Duration, SystemTime}, rc::Rc, ops::Deref,
+    time::{SystemTime}, rc::Rc,
 };
 
 use egui_glium::EguiGlium;
-use egui_node_graph::{GraphEditorState, NodeId, NodeResponse};
+use egui_node_graph::{NodeId, NodeResponse};
 use glium::{
-    backend::{Facade, Context},
+    backend::{Facade},
     framebuffer::{RenderBuffer, SimpleFrameBuffer},
-    Display, Surface, uniforms::AsUniformValue, texture::TextureAny, GlObject, Texture2d,
+    Display, Surface, uniforms::AsUniformValue, Texture2d,
 };
 
-use itertools::Itertools;
+
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use spout_rust::SpoutSender;
+
 
 use super::{
     connection_types::ComputedInputs,
     def::{self, *},
-    graph::{ShaderGraph, InputData},
-    isf::IsfPathInfo,
+    graph::{ShaderGraph},
     shaders::NodeShader,
     textures::{NodeTextures, TextureManager}, node_types::NodeTypes, isf_shader::reload_ifs_shader,
 };

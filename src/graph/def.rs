@@ -1,12 +1,12 @@
-use std::rc::Rc;
 
-use egui::{TextureId, Rgba, Color32};
+
+use egui::{TextureId, Rgba};
 use egui_node_graph::GraphEditorState;
-use glium::{Texture2d, uniforms::{AsUniformValue, UniformValue}};
+use glium::{uniforms::{AsUniformValue, UniformValue}};
 use strum::{Display};
-use isf::{Isf};
 
-use super::{ isf::IsfPathInfo, node_types::NodeTypes};
+
+use super::{ node_types::NodeTypes};
 
 pub struct NodeData {
     pub template: NodeTypes,

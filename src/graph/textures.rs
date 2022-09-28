@@ -1,5 +1,5 @@
 use std::{
-    rc::{Rc, Weak},
+    rc::{Rc},
 };
 
 // use super::{def::{ComputedNodeInput, NodeTypes}, shaders::Shader};
@@ -8,8 +8,8 @@ use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
     framebuffer::{SimpleFrameBuffer},
-    texture::{SrgbTexture2d, Dimensions, UncompressedFloatFormat},
-    Surface, Texture2d, GlObject,
+    texture::{SrgbTexture2d, UncompressedFloatFormat},
+    Surface, Texture2d,
 };
 
 use ouroboros::self_referencing;

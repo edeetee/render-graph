@@ -1,9 +1,9 @@
 
 
 use egui::{color::{Hsva}};
-use egui_node_graph::{DataTypeTrait, NodeTemplateTrait, Graph, NodeId, NodeTemplateIter, UserResponseTrait};
+use egui_node_graph::{DataTypeTrait, UserResponseTrait};
 
-use super::{def::*, connection_types::{NodeInputDef, NodeOutputDef}, isf::parse_isf_shaders};
+use super::{def::*};
 
 impl DataTypeTrait<GraphState> for NodeConnectionTypes {
     fn data_type_color(&self, _: &GraphState) -> egui::Color32 {

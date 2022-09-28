@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, OutputId};
+use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph};
 use slotmap::SecondaryMap;
 
 use super::{def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes, EditorState}, node_types::AllNodeTypes};
