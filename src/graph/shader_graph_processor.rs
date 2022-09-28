@@ -45,7 +45,6 @@ pub struct ShaderGraphProcessor {
     texture_manager: TextureManager,
     shaders: SecondaryMap<NodeId, NodeShader>,
     versions: SecondaryMap<NodeId, SystemTime>,
-    spout: SecondaryMap<NodeId, SpoutSender>
 }
 
 impl ShaderGraphProcessor {
@@ -100,7 +99,7 @@ impl ShaderGraphProcessor {
                     _ => {}
                 }
 
-                //only add if needed ()
+                //only add if needed ()s
                 if let Some(shader) = NodeShader::new(template, facade) {
                     if let Ok(shader) = shader {
                         self.shaders.insert(node_id, shader);

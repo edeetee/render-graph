@@ -38,8 +38,8 @@ impl ScreenTexture {
                 facade,
                 format,
                 mipmaps,
-                DEFAULT_RES[0].into(),
-                DEFAULT_RES[1].into(),
+                512,
+                512,
             )
             .unwrap(),
         );
@@ -61,10 +61,8 @@ impl ScreenTexture {
 
 pub struct NodeTextures {
     screen: ScreenTexture,
-    // render: Texture2d,
 }
 
-const DEFAULT_RES: [u32; 2] = [512, 512];
 const DEFAULT_MIPMAPS: glium::texture::MipmapsOption = glium::texture::MipmapsOption::NoMipmap;
 const FORMAT_RGBA32: UncompressedFloatFormat = glium::texture::UncompressedFloatFormat::F32F32F32F32;
 
@@ -114,7 +112,8 @@ impl Default for TextureManager {
     fn default() -> Self {
         Self {
             textures: Vec::new(),
-            res: [1920, 1080]
+            // res: [1920, 1080]
+            res: [16, 16]
         }
     }
 }

@@ -30,6 +30,7 @@ impl NodeShader {
                 isf.draw(&mut texture.as_surface(), inputs);
             }
             NodeShader::SpoutOut(spout_out) => {
+                //only send if input exists
                 if let Some(in_tex) = inputs.first_texture() {
                     in_tex.as_surface().fill(&texture.as_surface(), glium::uniforms::MagnifySamplerFilter::Nearest);
                     spout_out.send(texture);

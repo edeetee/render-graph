@@ -8,7 +8,7 @@ pub struct SpoutOutShader {
 
 impl SpoutOutShader {
     pub fn new() -> Self {
-        let spout = SpoutSender::new("SpoutOut");
+        let spout = SpoutSender::new("RustSpoutOut");
         Self {
             spout
         }
