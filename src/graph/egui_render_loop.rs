@@ -16,6 +16,8 @@ pub fn render_glium() {
 
     let display = create_display(&event_loop);
 
+    println!("GL Vendor: {}", display.get_opengl_vendor_string());
+
     let mut egui_glium = EguiGlium::new(&display);
     
     // let (width, height) = display.get_framebuffer_dimensions();

@@ -4,7 +4,7 @@ use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 
 use super::{def::*, connection_types::{NodeInputDef, NodeOutputDef}, isf::parse_isf_shaders};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum NodeTypes {
     Instances,
     // Feedback,

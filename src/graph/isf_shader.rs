@@ -1,6 +1,6 @@
 use std::{fs::{File, read_to_string}, io::Read};
 
-use glium::{backend::Facade, uniforms::Uniforms, Surface, ProgramCreationError};
+use glium::{backend::Facade, uniforms::Uniforms, Surface, ProgramCreationError::{self, LinkingError}};
 use isf::Isf;
 
 use super::{isf::IsfPathInfo, fullscreen_shader::FullscreenFrag, node_types::NodeTypes, shaders::NodeShader};
@@ -12,12 +12,12 @@ pub struct IsfShader {
 }
 
 impl IsfShader {
-    pub fn new(facade: &impl Facade, path: &IsfPathInfo, def: &Isf) -> Result<Self, ProgramCreationError> {
+    pub fn new(facade: &impl Facade, path: &IsfPathInfo, def: &Isf) -> Result<Self, IsfShaderLoadError> {
         // let source = read_to_string(file).unwrap();
         let mut source = generate_isf_prefix(def);
         source.push('\n');
-        let mut file = File::open(&path.path).unwrap();
-        file.read_to_string(&mut source).unwrap();
+        let mut file = File::open(&path.path)?;
+        file.read_to_string(&mut source)?;
 
         Ok(Self {
             frag: FullscreenFrag::new(facade, &source)?,
@@ -38,14 +38,13 @@ impl IsfShader {
 }
 
 const STANDARD_PREFIX: &'static str = r#"
-#version 440
+#version 330 core
 
 precision highp float;
 precision highp int;
 
 const int PASSINDEX = 0;
 uniform vec2 res;
-uniform vec2 RENDERSIZE = res;
 #define RENDERSIZE res;
 vec2 isf_FragNormCoord = gl_FragCoord.xy/RENDERSIZE;
 "#;
@@ -92,10 +91,11 @@ impl std::fmt::Debug for IsfShaderLoadError {
             Self::CompileError(arg0) => {
                 match arg0 {
                     glium::ProgramCreationError::CompilationError(source, shader_type) => {
-                        // f.debug_struct(&format!()).finish()
-                        // write!()
                         write!(f, "CompilationError for {shader_type:?} (\n{source})")
                     }
+                    LinkingError(source) => {
+                        write!(f, "LinkingError (\n{source})")
+                    },
                     _ => arg0.fmt(f),
                 }
             }
@@ -126,7 +126,7 @@ pub fn reload_ifs_shader(
     file: IsfPathInfo,
 ) -> Result<(NodeTypes, NodeShader), IsfShaderLoadError> {
     let new_template = NodeTypes::Isf {
-        isf: isf::parse(&read_to_string(&file.path).unwrap())?,
+        isf: isf::parse(&read_to_string(&file.path)?)?,
         file,
     };
     let new_shader = NodeShader::new(&new_template, facade).unwrap()?;

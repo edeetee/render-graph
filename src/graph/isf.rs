@@ -38,7 +38,7 @@ pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfPathInfo, Isf)> {
 
 // }
 
-#[derive(Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IsfPathInfo{
     pub name: String,
     pub path: PathBuf

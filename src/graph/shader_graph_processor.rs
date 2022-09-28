@@ -98,12 +98,14 @@ impl ShaderGraphProcessor {
 
                 //only add if needed ()s
                 if let Some(shader) = NodeShader::new(template, facade) {
-                    if let Ok(shader) = shader {
-                        self.shaders.insert(node_id, shader);
-                    } else {
-                        eprintln!("Error creating shader for node: {:?}", node_id);
+                    match shader {
+                        Ok(shader) => {
+                            self.shaders.insert(node_id, shader);
+                        }
+                        Err(err) => {
+                            eprintln!("Error {:#?} creating shader for node: {:#?} {:#?}", err, template, node_id);
+                        }
                     }
-                    // self.shaders.insert(node_id, shader);
                 }
 
                 for input in node.inputs(self.graph.graph_ref()) {

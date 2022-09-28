@@ -1,6 +1,6 @@
 use glium::{backend::Facade, Surface, ProgramCreationError, Texture2d};
 
-use super::{isf_shader::IsfShader, connection_types::ComputedInputs, node_types::NodeTypes, spout_out_shader::SpoutOutShader};
+use super::{isf_shader::{IsfShader, IsfShaderLoadError}, connection_types::ComputedInputs, node_types::NodeTypes, spout_out_shader::SpoutOutShader};
 
 pub enum NodeShader {
     Isf(IsfShader),
@@ -8,7 +8,7 @@ pub enum NodeShader {
 }
 
 impl NodeShader {
-    pub fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Result<Self, ProgramCreationError>> {
+    pub fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Result<Self, IsfShaderLoadError>> {
         match template {
             NodeTypes::Isf{file, isf} => {
                 Some(IsfShader::new(facade, file, isf).map(NodeShader::Isf))

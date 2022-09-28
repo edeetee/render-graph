@@ -28,8 +28,6 @@ impl IndexMut<NodeId> for ShaderGraph {
     }
 }
 
-pub type InputData<'a, T> = (&'a String, &'a InputParam<NodeConnectionTypes, NodeValueTypes>, T);
-
 impl ShaderGraph {
     // pub fn inputs(&self, node_id: NodeId) -> impl Iterator<Item = &InputParam<NodeConnectionTypes, NodeValueTypes>>{
     //     self.0.graph[node_id].inputs(&self.0.graph)
@@ -54,8 +52,8 @@ impl ShaderGraph {
     /// 
     /// # Type arguments
     /// OUT: type that may come out of a 
-    pub fn map_with_inputs<F_ON_NODE, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut F_ON_NODE, cache: &mut SecondaryMap<NodeId, OUT>) -> OUT 
-        where F_ON_NODE: FnMut(NodeId, Vec<(&str, &InputParam<NodeConnectionTypes, NodeValueTypes>, Option<OUT>)>) -> OUT
+    pub fn map_with_inputs<FOnNode, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut FOnNode, cache: &mut SecondaryMap<NodeId, OUT>) -> OUT 
+        where FOnNode: FnMut(NodeId, Vec<(&str, &InputParam<NodeConnectionTypes, NodeValueTypes>, Option<OUT>)>) -> OUT
     {
         let computed_inputs = self.0.graph[node_id].inputs.iter()
             .map(|(name, input_id)| {
