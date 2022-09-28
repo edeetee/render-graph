@@ -1,5 +1,5 @@
 use std::{
-    time::{SystemTime}, rc::Rc,
+    time::{SystemTime}, rc::Rc, ops::Mul,
 };
 
 use egui_glium::EguiGlium;
@@ -138,6 +138,7 @@ impl ShaderGraphProcessor {
                 // slotmap may pre destroy this
                 self.output_targets.remove(node_id);
                 self.shaders.remove(node_id);
+                self.versions.remove(node_id);
             }
             _ => {}
         }
@@ -235,9 +236,24 @@ impl ShaderGraphProcessor {
 
         frame.clear_color_and_depth((1., 1., 1., 1.), 0.);
 
+
+        for event in &egui_glium.egui_winit.egui_input().events {
+            match event {
+                egui::Event::Scroll(pos) => {
+                    self.graph.0.pan_zoom.pan += *pos;
+                },
+                eframe::egui::Event::Zoom(zoom) => {
+                    dbg!(self.graph.0.pan_zoom.zoom, zoom);
+                    self.graph.0.pan_zoom.zoom *= zoom;
+                },
+                _ => {}
+            }
+        }
+
         let mut graph_response = None;
 
         let _needs_repaint = egui_glium.run(display, |ctx| {
+            // ctx.tex_manager()
             graph_response = Some(self.graph.draw(ctx));
         });
 

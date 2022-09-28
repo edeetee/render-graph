@@ -66,7 +66,7 @@ pub struct NodeTextures {
 const DEFAULT_MIPMAPS: glium::texture::MipmapsOption = glium::texture::MipmapsOption::NoMipmap;
 const FORMAT_RGBA32: UncompressedFloatFormat = glium::texture::UncompressedFloatFormat::F32F32F32F32;
 
-fn new_texture_2d(facade: &impl Facade, width: u32, height: u32) -> Result<Texture2d, glium::texture::TextureCreationError>  {
+pub fn new_texture_2d(facade: &impl Facade, width: u32, height: u32) -> Result<Texture2d, glium::texture::TextureCreationError>  {
     Texture2d::empty_with_format(
         facade,
         FORMAT_RGBA32,
@@ -112,8 +112,8 @@ impl Default for TextureManager {
     fn default() -> Self {
         Self {
             textures: Vec::new(),
-            // res: [1920, 1080]
-            res: [16, 16]
+            res: [1920, 1080]
+            // res: [16, 16]
         }
     }
 }

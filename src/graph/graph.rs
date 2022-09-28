@@ -92,6 +92,8 @@ impl ShaderGraph {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            // ui.
+            // self.0.pan_zoom.
             let graph_resp = self.0.draw_graph_editor(ui, AllNodeTypes);
 
             // let output = self.output_targets.iter().next()

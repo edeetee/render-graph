@@ -12,6 +12,15 @@ pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfPathInfo, Isf)> {
     read_dir(shaders_dir)
         .unwrap()
         .into_iter()
+        // .flat_map(|f| {
+        //     let dir_entry = f.unwrap();
+
+        //     if dir_entry.file_type().unwrap().is_dir() {
+        //         read_dir(dir_entry.path()).unwrap().into_iter()
+        //     } else {
+        //         std::iter::once(f)
+        //     }
+        // })
         .filter_map(|file| {
             let path  = file.unwrap().path();
             let ext = path.extension()?.to_str()?;

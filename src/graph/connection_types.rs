@@ -74,7 +74,7 @@ impl ComputedInputs<'_> {
     }
 }
 
-impl<'a> Uniforms for &ComputedInputs<'a>{
+impl<'a> Uniforms for ComputedInputs<'a>{
     fn visit_values<'b, F: FnMut(&str, UniformValue<'b>)>(&'b self, mut output: F) {
         for (name, input) in self.vec.iter() {
             output(name, *input);

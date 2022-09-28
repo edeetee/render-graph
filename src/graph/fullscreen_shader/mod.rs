@@ -5,12 +5,12 @@ pub struct FullscreenFrag{
     params: DrawParameters<'static>
 }
 
-struct FullscreenUniforms<U: Uniforms> {
+struct FullscreenUniforms<'a, U: Uniforms> {
     res: [f32; 2],
-    inner: U
+    inner: &'a U
 }
 
-impl<U: Uniforms> Uniforms for FullscreenUniforms<U>{
+impl<U: Uniforms> Uniforms for FullscreenUniforms<'_, U>{
     fn visit_values<'a, F: FnMut(&str, glium::uniforms::UniformValue<'a>)>(&'a self, mut output: F) {
         output("res", self.res.as_uniform_value());
         self.inner.visit_values(output);
@@ -46,7 +46,7 @@ impl FullscreenFrag {
         })
     }
 
-    pub fn draw(&self, surface: &mut impl Surface, uniforms: impl Uniforms) -> Result<(), DrawError>{
+    pub fn draw(&self, surface: &mut impl Surface, uniforms: &impl Uniforms) -> Result<(), DrawError>{
         let dim = surface.get_dimensions();
 
         let extra_uniforms = FullscreenUniforms {

@@ -19,6 +19,8 @@ pub fn render_glium() {
     println!("GL Vendor: {}", display.get_opengl_vendor_string());
 
     let mut egui_glium = EguiGlium::new(&display);
+
+    // egui_glium.egui_winit.egui_input().events
     
     // let (width, height) = display.get_framebuffer_dimensions();
     // let render_buffer = RenderBuffer::new(&display, DEFAULT_TEXTURE_FORMAT, width, height).unwrap();
@@ -31,12 +33,14 @@ pub fn render_glium() {
 
         match ev {
             Event::RedrawRequested(_) => {
+                // egui_glium.egui_winit.take_egui_input(window)
                 shader_node_graph.draw(&display, &mut egui_glium);
             },
             Event::RedrawEventsCleared => {
                 display.gl_window().window().request_redraw();
             }
             Event::WindowEvent { event: window_ev, .. } => {
+                // egui_glium.egui_winit.
                 let egui_consumed_event = egui_glium.on_event(&window_ev);
 
                 if !egui_consumed_event {

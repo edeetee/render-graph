@@ -45,11 +45,6 @@
             "MIN": 0,
             "NAME": "splitPos",
             "TYPE": "float"
-        },
-        {
-            "DEFAULT": 0,
-            "NAME": "test",
-            "TYPE": "float"
         }
     ],
     "ISFVSN": "2"
