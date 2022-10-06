@@ -1,15 +1,13 @@
-use std::{
-    rc::{Rc},
-};
+use std::rc::Rc;
 
 // use super::{def::{ComputedNodeInput, NodeTypes}, shaders::Shader};
 use egui::TextureId;
 use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
-    framebuffer::{SimpleFrameBuffer},
-    texture::{SrgbTexture2d, UncompressedFloatFormat},
-    Surface, Texture2d,
+    framebuffer::SimpleFrameBuffer,
+    Surface,
+    texture::{SrgbTexture2d, UncompressedFloatFormat}, Texture2d,
 };
 
 use ouroboros::self_referencing;
@@ -154,36 +152,3 @@ impl TextureManager {
     //     &self.textures[index]
     // }
 }
-
-
-
-// This will infinitely return new textures to be given to inputs for rendering.
-// 
-// - Best used with a zip function
-// - Requires exclusive control of the texture manager
-// - Doesn't use the target texture in iteration
-// struct FramedTextureManager<'a, F: Facade> {
-//     manager: &'a mut TextureManager,
-//     target: &'a Texture2d,
-//     facade: &'a F,
-//     index: usize
-// }
-
-// impl <'a, F: Facade> FramedTextureManager<'a, F>{
-//     pub fn get_texture(&'a mut self) -> &'a Texture2d {
-//         let result = self.manager.get_or_set(self.facade, self.index);
-//         self.index += 1;
-
-//         if result.get_id() != self.target.get_id() {
-//             result
-//         } else {
-//             self.get_texture()
-//         }
-//     }
-// }
-
-// impl <'a, F: Facade> Drop for FramedTextureManager<'a, F>{
-//     fn drop(&mut self) {
-//         todo!()
-//     }
-// }

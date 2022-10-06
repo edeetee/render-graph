@@ -1,9 +1,11 @@
 use std::{fs::{File, read_to_string}, io::Read, rc::Rc, time::Instant};
 
-use glium::{backend::Facade, uniforms::{Uniforms, UniformValue, AsUniformValue}, Surface, ProgramCreationError::{self, LinkingError}, Texture2d};
+use glium::{backend::Facade, ProgramCreationError::{self, LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
 use isf::{Isf, Pass};
+use crate::fullscreen_shader::FullscreenFrag;
+use crate::textures::new_texture_2d;
 
-use super::{isf::IsfPathInfo, fullscreen_shader::FullscreenFrag, node_types::NodeTypes, shaders::NodeShader, textures::new_texture_2d};
+use crate::isf::meta::IsfPathInfo;
 
 pub struct IsfShader {
     frag: FullscreenFrag,
@@ -101,15 +103,12 @@ impl <U: Uniforms> Uniforms for IsfUniforms<'_, U> {
 
 pub fn reload_ifs_shader(
     facade: &impl Facade,
-    file: IsfPathInfo,
-) -> Result<(NodeTypes, NodeShader), IsfShaderLoadError> {
-    let new_template = NodeTypes::Isf {
-        isf: isf::parse(&read_to_string(&file.path)?)?,
-        file,
-    };
-    let new_shader = NodeShader::new(&new_template, facade).unwrap()?;
+    file: &IsfPathInfo,
+) -> Result<(Isf, IsfShader), IsfShaderLoadError> {
+    let isf = isf::parse(&read_to_string(&file.path)?)?;
+    let shader = IsfShader::new(facade, file, &isf)?;
 
-    Ok((new_template, new_shader))
+    Ok((isf, shader))
 }
 
 
@@ -125,7 +124,9 @@ uniform vec2 res;
 vec2 isf_FragNormCoord = gl_FragCoord.xy/RENDERSIZE;
 
 #define IMG_PIXEL(sampler,coord) texture2D(sampler,coord)
-#define IMG_THIS_PIXEL(sampler) texture2D(sampler,isf_FragNormCoord)
+
+#define IMG_THIS_PIXEL(sampler) IMG_THIS_NORM_PIXEL(sampler)
+#define IMG_THIS_NORM_PIXEL(sampler) texture2D(sampler,isf_FragNormCoord)
 "#;
 
 fn generate_isf_prefix(def: &Isf) -> String {

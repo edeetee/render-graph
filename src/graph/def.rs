@@ -1,7 +1,7 @@
 
 
 use egui::{TextureId, Rgba};
-use egui_node_graph::GraphEditorState;
+use egui_node_graph::{GraphEditorState, UserResponseTrait};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
 use strum::{Display};
 
@@ -54,6 +54,8 @@ impl NodeValueTypes {
 
 #[derive(Debug, Clone)]
 pub enum GraphResponse {}
+
+impl UserResponseTrait for GraphResponse {}
 
 #[derive(Default)]
 pub struct GraphState {}

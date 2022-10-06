@@ -1,17 +1,13 @@
 mod def;
-mod logic;
 mod ui;
 mod egui_render_loop;
-mod textures;
 mod shader_graph_processor;
 mod graph;
-mod connection_types;
-mod isf;
-mod isf_shader;
-mod shaders;
-mod fullscreen_shader;
+mod conection_def;
+mod node_shader;
 mod node_types;
 mod spout_out_shader;
+mod from_isf;
 
 pub use shader_graph_processor::ShaderGraphProcessor;
 pub use egui_render_loop::render_glium;

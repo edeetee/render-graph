@@ -1,6 +1,6 @@
 
-use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider};
-use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait};
+use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva};
+use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
 
 use super::def::*;
 
@@ -30,6 +30,21 @@ impl NodeDataTrait for NodeData {
         }
         
         vec![]
+    }
+}
+
+impl DataTypeTrait<GraphState> for NodeConnectionTypes {
+    fn data_type_color(&self, _: &GraphState) -> egui::Color32 {
+        let hue = match self {
+            NodeConnectionTypes::Texture2D => 0.7,
+            NodeConnectionTypes::None => 0.0,
+        };
+
+        Hsva::new(hue, 1., 1., 1.).into()
+    }
+
+    fn name(&self) -> std::borrow::Cow<str> {
+        self.to_string().into()
     }
 }
 

@@ -1,6 +1,7 @@
-use glium::{backend::Facade, Surface, ProgramCreationError, Texture2d};
+use glium::{backend::Facade, Surface, ProgramCreationError, Texture2d, uniforms::{UniformValue, Uniforms}};
 
-use super::{isf_shader::{IsfShader, IsfShaderLoadError}, connection_types::ComputedInputs, node_types::NodeTypes, spout_out_shader::SpoutOutShader};
+use super::{node_types::NodeTypes, spout_out_shader::SpoutOutShader};
+use crate::isf::shader::{IsfShader, IsfShaderLoadError};
 
 pub enum NodeShader {
     Isf(IsfShader),
@@ -37,5 +38,39 @@ impl NodeShader {
                 }
             }
         };
+    }
+}
+
+pub struct ComputedInputs<'a> {
+    vec: Vec<(&'a str, UniformValue<'a>)>,
+}
+
+impl ComputedInputs<'_> {
+    pub fn first_texture(&self) -> Option<&Texture2d> {
+        self.vec.iter().filter_map(|(_,tex)| {
+            match *tex {
+                UniformValue::Texture2d(tex, _) => Some(tex),
+                _ => None,
+            }
+        }).next()
+    }
+}
+
+impl<'a> Uniforms for ComputedInputs<'a>{
+    fn visit_values<'b, F: FnMut(&str, UniformValue<'b>)>(&'b self, mut output: F) {
+        for (name, input) in self.vec.iter() {
+            output(name, *input);
+        }
+    }
+}
+
+impl<'a> FromIterator<(&'a str, UniformValue<'a>)> for ComputedInputs<'a> {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (&'a str, UniformValue<'a>)>,
+    {
+        ComputedInputs {
+            vec: iter.into_iter().collect(),
+        }
     }
 }

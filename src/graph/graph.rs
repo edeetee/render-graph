@@ -1,9 +1,10 @@
 use std::ops::{Index, IndexMut};
 
-use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph};
+use egui::Ui;
+use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, NodeTemplateTrait};
 use slotmap::SecondaryMap;
 
-use super::{def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes, EditorState}, node_types::AllNodeTypes};
+use super::{def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes, EditorState}, node_types::{AllNodeTypes, NodeTypes}};
 
 // #[derive(Default)]
 pub struct ShaderGraph(pub(super) EditorState);
@@ -29,24 +30,9 @@ impl IndexMut<NodeId> for ShaderGraph {
 }
 
 impl ShaderGraph {
-    // pub fn inputs(&self, node_id: NodeId) -> impl Iterator<Item = &InputParam<NodeConnectionTypes, NodeValueTypes>>{
-    //     self.0.graph[node_id].inputs(&self.0.graph)
-    //     // if self.graph.0.graph.connections[self.graph.0.graph[node_id].input_ids().next().unwrap()]
-    // }
-
-    // pub fn outputs(&self, node_id: NodeId) -> impl Iterator<Item = &OutputParam<NodeConnectionTypes>>{
-    //     self.0.graph[node_id].outputs(&self.0.graph)
-    //     // if self.graph.0.graph.connections[self.graph.0.graph[node_id].input_ids().next().unwrap()]
-    // }
     pub fn graph_ref(&self) -> &Graph<NodeData, NodeConnectionTypes, NodeValueTypes> {
         &self.0.graph
     }
-
-    // pub fn connection(&self, input: InputId) -> Option<OutputId> {
-    //     self.0.graph.connection(input)
-    // }
-
-    // pub type ComputedInput<T> = (&String, &NodeId, Option<T>);
 
     ///Call f for each node in correct order, ending on node_id\
     /// 
@@ -84,46 +70,32 @@ impl ShaderGraph {
     }
 
     pub fn draw(&mut self, ctx: &egui::Context) -> egui_node_graph::GraphResponse<GraphResponse, NodeData> {
-        egui::TopBottomPanel::top("top").show(ctx, |ui| {
-            ui.heading("Hello World!");
-            egui::menu::bar(ui, |ui| {
-                egui::widgets::global_dark_light_mode_switch(ui);
-            })
-        });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // ui.
-            // self.0.pan_zoom.
+            egui::widgets::global_dark_light_mode_switch(ui);
+
             let graph_resp = self.0.draw_graph_editor(ui, AllNodeTypes);
 
-            // let output = self.output_targets.iter().next()
-            //     .map(|(output_node_id, _)| self.shaders.get(output_node_id))
-            //     .flatten();
-
-            // if let Some(cache) = output {
-            //     ui.image(cache.clone_tex_id(), [512., 512.]);
-            // }
 
             graph_resp
         }).inner
     }
 }
 
+struct CustomNodeSelector {}
 
-// struct Evaluator<'a, T> {
-//     graph: &'a ShaderGraph,
-//     node_id: NodeId,
-//     cache: SecondaryMap<OutputId, T>
-// }
+impl CustomNodeSelector {
+    fn draw(&self, graph: &mut EditorState, ui: &mut Ui) -> Option<NodeTypes> {
+        let all_kinds = NodeTypes::get_all();
 
-// impl <'a, T> Evaluator<'a, T> {
-//     fn new(graph: &'a ShaderGraph, node_id: NodeId) -> Self {
-//         Self {
-//             graph,
-//             node_id,
-//             cache: SecondaryMap::new()
-//         }
-//     }
+        for kind in all_kinds {
+            let kind_name = kind.node_finder_label().to_string();
+            if ui.selectable_label(false, kind_name).clicked() {
+                return Some(kind);
+            }
 
-//     fn 
-// }
+        }
+
+        None
+    }
+}

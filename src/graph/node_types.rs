@@ -1,15 +1,11 @@
 use isf::{Isf};
-use super::{ isf::IsfPathInfo};
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
-
-use super::{def::*, connection_types::{NodeInputDef, NodeOutputDef}, isf::parse_isf_shaders};
+use super::{def::*, conection_def::{NodeInputDef, NodeOutputDef}};
+use crate::isf::meta::{parse_isf_shaders, IsfPathInfo};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum NodeTypes {
     Instances,
-    // Feedback,
-    // Sdf,
-    // Uv,
     SpoutIn,
     SpoutOut,
     Output,
@@ -48,13 +44,6 @@ impl NodeTypes {
 
     pub fn get_input_types(&self) -> Vec<NodeInputDef> {
         match self {
-            // NodeTypes::Uv => vec![
-            //     ("scale", [1., 1.]).into(),
-            //     ("centered", false).into(),
-            // ],
-            // NodeTypes::Sdf => vec![
-            //     NodeInputDef::new_texture("uv"),
-            // ],
             NodeTypes::Isf { isf, .. } => {
                 isf.inputs.iter().map(NodeInputDef::from).collect()
             }

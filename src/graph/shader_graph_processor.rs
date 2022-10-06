@@ -1,27 +1,28 @@
 use std::{
-    time::{SystemTime}, rc::Rc, ops::Mul,
+    ops::Mul, rc::Rc, time::SystemTime,
 };
 
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId, NodeResponse};
 use glium::{
-    backend::{Facade},
-    framebuffer::{RenderBuffer, SimpleFrameBuffer},
-    Display, Surface, uniforms::AsUniformValue, Texture2d,
+    backend::Facade,
+    Display,
+    framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface, Texture2d, uniforms::AsUniformValue,
 };
 
 
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-
+use crate::textures::{NodeTextures, TextureManager};
 
 use super::{
-    connection_types::ComputedInputs,
     def::{self, *},
-    graph::{ShaderGraph},
-    shaders::NodeShader,
-    textures::{NodeTextures, TextureManager}, node_types::NodeTypes, isf_shader::reload_ifs_shader,
+    graph::ShaderGraph,
+    node_types::NodeTypes,
+    node_shader::ComputedInputs, node_shader::NodeShader,
 };
+
+use crate::isf::shader::reload_ifs_shader;
 
 extern crate gl;
 
@@ -202,7 +203,7 @@ impl ShaderGraphProcessor {
         for (node_id, version) in self.versions.iter_mut() {
             let template = &mut self.graph[node_id].user_data.template;
 
-            if let NodeTypes::Isf { file, isf: _ } = template {
+            if let NodeTypes::Isf { file, isf: old_isf } = template {
                 let new_version = file.path.metadata().unwrap().modified().unwrap();
                 let diff = new_version.duration_since(*version);
 
@@ -213,10 +214,10 @@ impl ShaderGraphProcessor {
 
                         let name = file.name.clone();
 
-                        match reload_ifs_shader(facade, file.clone()) {
-                            Ok((new_template, new_shader)) => {
-                                self.shaders.insert(node_id, new_shader);
-                                *template = new_template;
+                        match reload_ifs_shader(facade, &file) {
+                            Ok((new_isf, new_shader)) => {
+                                self.shaders.insert(node_id, NodeShader::Isf(new_shader));
+                                *old_isf = new_isf;
                                 println!("Reloaded shader: {}", name);
                             }
                             Err(err) => {
@@ -236,19 +237,9 @@ impl ShaderGraphProcessor {
 
         frame.clear_color_and_depth((1., 1., 1., 1.), 0.);
 
-
-        for event in &egui_glium.egui_winit.egui_input().events {
-            match event {
-                egui::Event::Scroll(pos) => {
-                    self.graph.0.pan_zoom.pan += *pos;
-                },
-                eframe::egui::Event::Zoom(zoom) => {
-                    dbg!(self.graph.0.pan_zoom.zoom, zoom);
-                    self.graph.0.pan_zoom.zoom *= zoom;
-                },
-                _ => {}
-            }
-        }
+        // self.graph.0.pan_zoom.zoom *= zoom;
+        self.graph.0.pan_zoom.pan += egui_glium.egui_ctx.input().scroll_delta;
+        self.graph.0.pan_zoom.zoom *= egui_glium.egui_ctx.input().zoom_delta();
 
         let mut graph_response = None;
 
