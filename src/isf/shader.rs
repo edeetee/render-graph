@@ -1,6 +1,6 @@
-use std::{fs::{File, read_to_string}, io::Read, rc::Rc, time::Instant};
+use std::{fs::{File, read_to_string}, io::Read, time::Instant};
 
-use glium::{backend::Facade, ProgramCreationError::{self, LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
+use glium::{backend::Facade, ProgramCreationError::{LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
 use isf::{Isf, Pass};
 use crate::fullscreen_shader::FullscreenFrag;
 use crate::textures::new_texture_2d;
@@ -66,7 +66,7 @@ impl IsfShader {
         } else {
             let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
-            for (pass, tex) in &self.passes {
+            for (_pass, tex) in &self.passes {
                 uniforms.pass_index += 1;
                 self.frag.draw(surface, &uniforms).unwrap();
                 surface.fill(&tex.as_surface(), filter);

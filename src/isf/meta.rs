@@ -1,7 +1,7 @@
 use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path, PathBuf}};
 
-use egui::Rgba;
-use isf::{Input, InputType, Isf};
+
+use isf::{Isf};
 use strum::Display;
 
 pub fn default_isf_path() -> PathBuf {

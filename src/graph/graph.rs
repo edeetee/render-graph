@@ -1,6 +1,6 @@
 use std::{ops::{Index, IndexMut}, fs::read_dir, path::{Path, PathBuf}, fmt::Display};
 
-use egui::{Ui, Pos2};
+
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, NodeTemplateTrait};
 use slotmap::SecondaryMap;
 
@@ -127,7 +127,7 @@ impl ShaderGraph {
                 responses.push(egui_node_graph::NodeResponse::CreatedNode(new_node_id));
             }
 
-            if(ui.ui_contains_pointer()){
+            if ui.ui_contains_pointer() {
                 self.0.pan_zoom.pan += ctx.input().scroll_delta;
                 self.0.pan_zoom.zoom *= ctx.input().zoom_delta();
             }

@@ -1,5 +1,5 @@
 use std::{
-    ops::Mul, rc::Rc, time::SystemTime,
+    rc::Rc, time::SystemTime,
 };
 
 use egui_glium::EguiGlium;

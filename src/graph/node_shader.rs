@@ -1,4 +1,4 @@
-use glium::{backend::Facade, Surface, ProgramCreationError, Texture2d, uniforms::{UniformValue, Uniforms}};
+use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms}};
 
 use super::{node_types::NodeTypes, spout_out_shader::SpoutOutShader};
 use crate::isf::shader::{IsfShader, IsfShaderLoadError};
