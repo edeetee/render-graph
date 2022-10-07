@@ -1688,7 +1688,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rpi-rust"
+name = "render-graph"
 version = "0.1.0"
 dependencies = [
  "eframe",

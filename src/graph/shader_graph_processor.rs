@@ -38,9 +38,10 @@ pub struct OutputTarget {
 #[derive(Default)]
 pub struct ShaderGraphProcessor {
     graph: ShaderGraph,
+    texture_manager: TextureManager,
+
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     node_textures: SecondaryMap<NodeId, NodeTextures>,
-    texture_manager: TextureManager,
     shaders: SecondaryMap<NodeId, NodeShader>,
     versions: SecondaryMap<NodeId, SystemTime>,
 }
@@ -109,6 +110,7 @@ impl ShaderGraphProcessor {
                     }
                 }
 
+                //remove output target if not needed
                 for input in node.inputs(self.graph.graph_ref()) {
                     if input.typ == NodeConnectionTypes::Texture2D {
                         let connected_output = self.graph.graph_ref().connection(input.id);
@@ -136,10 +138,10 @@ impl ShaderGraphProcessor {
             }
 
             NodeResponse::DeleteNodeFull { node_id, .. } => {
-                // slotmap may pre destroy this
                 self.output_targets.remove(node_id);
                 self.shaders.remove(node_id);
                 self.versions.remove(node_id);
+                self.node_textures.remove(node_id);
             }
             _ => {}
         }
@@ -236,10 +238,6 @@ impl ShaderGraphProcessor {
         let mut frame = display.draw();
 
         frame.clear_color_and_depth((1., 1., 1., 1.), 0.);
-
-        // self.graph.0.pan_zoom.zoom *= zoom;
-        self.graph.0.pan_zoom.pan += egui_glium.egui_ctx.input().scroll_delta;
-        self.graph.0.pan_zoom.zoom *= egui_glium.egui_ctx.input().zoom_delta();
 
         let mut graph_response = None;
 

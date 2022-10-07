@@ -112,22 +112,7 @@ pub fn reload_ifs_shader(
 }
 
 
-const STANDARD_PREFIX: &'static str = r#"
-#version 120
-
-precision highp float;
-precision highp int;
-
-const int PASSINDEX = 0;
-uniform vec2 res;
-#define RENDERSIZE res;
-vec2 isf_FragNormCoord = gl_FragCoord.xy/RENDERSIZE;
-
-#define IMG_PIXEL(sampler,coord) texture2D(sampler,coord)
-
-#define IMG_THIS_PIXEL(sampler) IMG_THIS_NORM_PIXEL(sampler)
-#define IMG_THIS_NORM_PIXEL(sampler) texture2D(sampler,isf_FragNormCoord)
-"#;
+const STANDARD_PREFIX: &'static str = include_str!("prefix.glsl");
 
 fn generate_isf_prefix(def: &Isf) -> String {
     let mut prefix = String::new();

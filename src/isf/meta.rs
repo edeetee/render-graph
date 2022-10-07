@@ -2,48 +2,67 @@ use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path
 
 use egui::Rgba;
 use isf::{Input, InputType, Isf};
+use strum::Display;
 
-pub fn parse_isf_shaders() -> impl Iterator<Item = (IsfPathInfo, Isf)> {
-    // let files = current_dir()?;
-    let shaders_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("shaders");
-    
-    read_dir(shaders_dir)
+pub fn default_isf_path() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("shaders")
+}
+
+pub fn parse_isf_shaders(path: impl AsRef<Path>) -> impl Iterator<Item = (IsfPathInfo, Isf)> {    
+    read_dir(path)
         .unwrap()
         .into_iter()
-        // .flat_map(|f| {
-        //     let dir_entry = f.unwrap();
-
-        //     if dir_entry.file_type().unwrap().is_dir() {
-        //         read_dir(dir_entry.path()).unwrap().into_iter()
-        //     } else {
-        //         std::iter::once(f)
-        //     }
-        // })
         .filter_map(|file| {
             let path  = file.unwrap().path();
-            let ext = path.extension()?.to_str()?;
 
-            if ext == "fs" {
-                let content = read_to_string(&path).unwrap();
-                return match isf::parse(&content) {
-                    Ok(isf) => {
-                        Some((path.into(), isf))
-                    },
-                    Err(err) => {
+            match try_read_isf(path.clone()) {
+                Ok(isf) => {
+                    Some(isf)
+                },
+                Err(err) => {
+                    if matches!(err, IsfReadError::ParseError(_)) {
                         eprintln!("Error parsing isf_meta file ({path:?}): {err}");
-                        None
-                    },
-                }
+                    }
+                    None
+                },
             }
-
-            None
         })
 }
 
-//TODO: single with result
-// pub fn parse(){
+pub fn try_read_isf(path: PathBuf) -> Result<(IsfPathInfo, Isf), IsfReadError> {
+    let ext = path.extension()
+        .map(|ext| ext.to_str())
+        .flatten()
+        .ok_or(IsfReadError::InvalidExt)?;
 
-// }
+    if ext == "fs" {
+        let content = read_to_string(&path)?;
+        let isf = isf::parse(&content)?;
+
+        Ok((path.into(), isf))
+    } else {
+        Err(IsfReadError::InvalidExt)
+    }
+}
+
+#[derive(Display)]
+pub enum IsfReadError {
+    IoError(std::io::Error),
+    InvalidExt,
+    ParseError(isf::ParseError),
+}
+
+impl From<std::io::Error> for IsfReadError {
+    fn from(err: std::io::Error) -> Self {
+        IsfReadError::IoError(err)
+    }
+}
+
+impl From<isf::ParseError> for IsfReadError {
+    fn from(err: isf::ParseError) -> Self {
+        IsfReadError::ParseError(err)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IsfPathInfo{

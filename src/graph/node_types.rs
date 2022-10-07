@@ -1,7 +1,7 @@
 use isf::{Isf};
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use super::{def::*, conection_def::{NodeInputDef, NodeOutputDef}};
-use crate::isf::meta::{parse_isf_shaders, IsfPathInfo};
+use crate::isf::meta::{parse_isf_shaders, IsfPathInfo, default_isf_path};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum NodeTypes {
@@ -29,7 +29,8 @@ impl <'a> From<&'a NodeTypes> for &'a str {
 
 impl NodeTypes {
     pub fn get_all() -> Vec<NodeTypes> {
-        let shaders = parse_isf_shaders()
+        let path = default_isf_path();
+        let shaders = parse_isf_shaders(&path)
             .map(|(file, isf)| NodeTypes::Isf{file, isf});
 
         let mut types = vec![
