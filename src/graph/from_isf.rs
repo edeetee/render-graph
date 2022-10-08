@@ -2,21 +2,21 @@ use core::convert::From;
 use core::default::Default;
 use egui::Rgba;
 use isf::{Input, InputType, InputValues};
-use super::conection_def::NodeInputDef;
-use super::def::{NodeConnectionTypes, NodeValueTypes, NodeValueData};
+use super::conection_def::InputDef;
+use super::def::{ConnectionType, UiValue, ValueData};
 
-impl From<&InputType> for NodeConnectionTypes {
+impl From<&InputType> for ConnectionType {
     fn from(ty: &InputType) -> Self {
         match ty {
-            InputType::Image => NodeConnectionTypes::Texture2D,
+            InputType::Image => ConnectionType::Texture2D,
             // InputType::Float(_) => Ok(NodeConnectionTypes::None),
             // InputType::Point2d(_) => NodeConnectionTypes::Texture2D,
-            _ => NodeConnectionTypes::None
+            _ => ConnectionType::None
         }
     }
 }
 
-impl <T: Default + Copy> From<&InputValues<T>> for NodeValueData<T> {
+impl <T: Default + Copy> From<&InputValues<T>> for ValueData<T> {
     fn from(value: &InputValues<T>) -> Self {
         Self {
             value: value.identity.or(value.default).unwrap_or_default(),
@@ -40,35 +40,42 @@ fn rgba_from_vec(input: &Vec<f32>) -> Rgba {
     Rgba::from_rgba_premultiplied(slice[0], slice[1], slice[2], slice[3])
 }
 
-impl From<&InputType> for NodeValueTypes {
+impl From<&InputType> for UiValue {
     fn from(ty: &InputType) -> Self {
         match ty {
-            InputType::Float(v) => NodeValueTypes::Float(v.into()),
+            InputType::Float(v) => UiValue::Float(v.into()),
             InputType::Color(v) => {
 
                 let default = vec![];
 
-                let data = NodeValueData{
+                let data = ValueData{
                     value: rgba_from_vec(v.default.as_ref().unwrap_or(&default)),
                     min: v.min.as_ref().map(rgba_from_vec),
                     max: v.max.as_ref().map(rgba_from_vec),
                     default: v.default.as_ref().map(rgba_from_vec)
                 };
 
-                NodeValueTypes::Color(data)
+                UiValue::Color(data)
             },
-            InputType::Point2d(v) => NodeValueTypes::Vec2(v.into()),
-            InputType::Bool(v) => NodeValueTypes::Bool(NodeValueData::new_default(v.default.unwrap_or_default())),
-            InputType::Long(v) => NodeValueTypes::Long((&v.input_values).into()),
+            InputType::Point2d(v) => UiValue::Vec2(v.into()),
+            InputType::Bool(v) => UiValue::Bool(ValueData::new_default(v.default.unwrap_or_default())),
+            InputType::Long(v) => UiValue::Long(
+                ValueData {
+                    value: v.default.unwrap_or_default(),
+                    min: v.min.or_else(|| v.values.iter().min().copied()),
+                    max: v.max.or_else(|| v.values.iter().max().copied()),
+                    default: v.default
+                }
+            ),
             
-            InputType::Event => NodeValueTypes::Bool(NodeValueData::new_default(false)),
+            InputType::Event => UiValue::Bool(ValueData::new_default(false)),
 
-            InputType::Image | InputType::Audio(_) | InputType::AudioFft(_) => NodeValueTypes::None,
+            InputType::Image | InputType::Audio(_) | InputType::AudioFft(_) => UiValue::None,
         }
     }
 }
 
-impl From<&Input> for NodeInputDef {
+impl From<&Input> for InputDef {
     fn from(input: &Input) -> Self {
         let ty = (&input.ty).into();
         let value = (&input.ty).into();

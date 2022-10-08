@@ -1,41 +1,41 @@
 
 
-use super::def::{NodeConnectionTypes, NodeValueTypes};
+use super::def::{ConnectionType, UiValue};
 
 #[derive(Debug)]
-pub struct NodeInputDef {
+pub struct InputDef {
     pub name: String,
-    pub ty: NodeConnectionTypes,
-    pub value: NodeValueTypes,
+    pub ty: ConnectionType,
+    pub value: UiValue,
 }
 
-impl NodeInputDef {
+impl InputDef {
     pub fn texture(name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
-            ty: NodeConnectionTypes::Texture2D,
-            value: NodeValueTypes::None,
+            ty: ConnectionType::Texture2D,
+            value: UiValue::None,
         }
     }
 }
 
-impl <S: Into<String>, V: Into<NodeValueTypes>> From<(S, V)> for NodeInputDef {
+impl <S: Into<String>, V: Into<UiValue>> From<(S, V)> for InputDef {
     fn from((name, val_ty): (S, V)) -> Self {
         Self {
             name: name.into(),
-            ty: NodeConnectionTypes::None,
+            ty: ConnectionType::None,
             value: val_ty.into(),
         }
     }
 }
 
-pub struct NodeOutputDef {
+pub struct OutputDef {
     pub name: String,
-    pub ty: NodeConnectionTypes,
+    pub ty: ConnectionType,
 }
 
-impl From<NodeConnectionTypes> for NodeOutputDef {
-    fn from(ty: NodeConnectionTypes) -> Self {
+impl From<ConnectionType> for OutputDef {
+    fn from(ty: ConnectionType) -> Self {
         Self {
             name: ty.to_string(),
             ty,
@@ -43,8 +43,8 @@ impl From<NodeConnectionTypes> for NodeOutputDef {
     }
 }
 
-impl <S: Into<String>> From<(S, NodeConnectionTypes)> for NodeOutputDef {
-    fn from((name, ty): (S, NodeConnectionTypes)) -> Self {
+impl <S: Into<String>> From<(S, ConnectionType)> for OutputDef {
+    fn from((name, ty): (S, ConnectionType)) -> Self {
         Self {
             name: name.into(),
             ty,

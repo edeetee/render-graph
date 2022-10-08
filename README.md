@@ -6,8 +6,6 @@ I am developing this for the use case of live generative visual performances, wh
 
 ![screenshot](media/screenshot.jpg)
 
-
-
 I come from Touchdesigner, a mature node graph system that has a tendency to crash when you push its boundaries.
 
 ## Features
@@ -25,7 +23,13 @@ API is very much unstable at the moment. If you are interested in contributing, 
 -Support transparent windows for pretty & clean testing https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/
 - Only use Srgb textures for visible nodes
 - Extend egui_node_graph for zooming etc
-- Dependency resolution ala touchdesigner
+- Dependency resolution ala touchdesigner (only cook what is required)
 - Hot reloading
 - Investigate bevy integration
 - Full ISF spec
+- Serialization of the graph / files etc
+- Animation of parameters
+- ISF Meta chain (more complex interface for handling racks + isf standard effects/transitions)
+- Continue reducing dependencies between structs
+- Support an SDF workflow
+- Support different texture sizes (options per node)

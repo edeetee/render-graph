@@ -112,7 +112,7 @@ impl ShaderGraphProcessor {
 
                 //remove output target if not needed
                 for input in node.inputs(self.graph.graph_ref()) {
-                    if input.typ == NodeConnectionTypes::Texture2D {
+                    if input.typ == ConnectionType::Texture2D {
                         let connected_output = self.graph.graph_ref().connection(input.id);
                         if let Some(output_id) = connected_output {
                             let connected_node_id = self.graph.graph_ref()[output_id].node;
@@ -255,25 +255,6 @@ impl ShaderGraphProcessor {
         self.render_shaders(display);
 
         egui_glium.paint(display, &mut frame);
-
-        if let Some((_, first_output)) = self.output_targets.iter_mut().next() {
-            let fb = first_output.borrow_fb();
-
-            // fb.fill(&frame, )
-            // let source_rec = Rect{
-            //     width: 1,
-            //     height: 1,
-            //     ..Default::default()
-            // };
-            // let target_rect = Rect {
-
-            // }
-            // let source_rect = Rect::(Pos2::ZERO, [1.,1.].into());
-            // let target_rect = Rect::from_two_pos([0.5, 0.5].into(), [1., 1.].into());
-            let filter = glium::uniforms::MagnifySamplerFilter::Linear;
-            frame.fill(fb, filter);
-            // frame.blit_buffers_from_simple_framebuffer(&fb, &source_rect, &target_rect, filter, BlitMask::color());
-        }
 
         frame.finish().unwrap();
     }

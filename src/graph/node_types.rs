@@ -1,6 +1,6 @@
 use isf::{Isf};
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
-use super::{def::*, conection_def::{NodeInputDef, NodeOutputDef}};
+use super::{def::*, conection_def::{InputDef, OutputDef}};
 use crate::isf::meta::{parse_isf_shaders, IsfPathInfo, default_isf_path};
 
 #[derive(Clone, PartialEq, Debug)]
@@ -43,24 +43,24 @@ impl NodeTypes {
         types
     }
 
-    pub fn get_input_types(&self) -> Vec<NodeInputDef> {
+    pub fn get_input_types(&self) -> Vec<InputDef> {
         match self {
             NodeTypes::Isf { isf, .. } => {
-                isf.inputs.iter().map(NodeInputDef::from).collect()
+                isf.inputs.iter().map(InputDef::from).collect()
             }
             NodeTypes::SpoutOut => vec![
                 ("name", "RustSpout").into(),
-                NodeInputDef::texture("texture"),
+                InputDef::texture("texture"),
             ],
-            _ => vec![NodeInputDef::texture("Texture2D")],
+            _ => vec![InputDef::texture("Texture2D")],
         }
     }
 
-    pub fn get_output_types(&self) -> Vec<NodeOutputDef> {
+    pub fn get_output_types(&self) -> Vec<OutputDef> {
         match self {
             NodeTypes::Output => vec![],
             NodeTypes::SpoutOut => vec![],
-            _ => vec![NodeConnectionTypes::Texture2D.into()],
+            _ => vec![ConnectionType::Texture2D.into()],
         }
     }
 }
@@ -75,8 +75,8 @@ impl NodeTemplateIter for AllNodeTypes {
 
 impl NodeTemplateTrait for NodeTypes {
     type NodeData = NodeData;
-    type DataType = NodeConnectionTypes;
-    type ValueType = NodeValueTypes;
+    type DataType = ConnectionType;
+    type ValueType = UiValue;
 
     fn node_finder_label(&self) -> &str {
         self.into()
@@ -96,8 +96,8 @@ impl NodeTemplateTrait for NodeTypes {
         node_id: NodeId
     ) {
         for input in self.get_input_types() {
-            let connection = input.ty != NodeConnectionTypes::None;
-            let value = input.value != NodeValueTypes::None;
+            let connection = input.ty != ConnectionType::None;
+            let value = input.value != UiValue::None;
 
             let kind = match (connection, value) {
                 (true, true) => egui_node_graph::InputParamKind::ConnectionOrConstant,

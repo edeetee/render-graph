@@ -6,7 +6,7 @@ use slotmap::SecondaryMap;
 
 use crate::{isf::meta::{default_isf_path, try_read_isf}, tree_view::Tree};
 
-use super::{def::{GraphState, NodeData, GraphResponse, NodeConnectionTypes, NodeValueTypes, EditorState}, node_types::{AllNodeTypes, NodeTypes}};
+use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeTypes}};
 
 // #[derive(Default)]
 pub struct ShaderGraph(pub(super) EditorState);
@@ -32,7 +32,7 @@ impl IndexMut<NodeId> for ShaderGraph {
 }
 
 impl ShaderGraph {
-    pub fn graph_ref(&self) -> &Graph<NodeData, NodeConnectionTypes, NodeValueTypes> {
+    pub fn graph_ref(&self) -> &Graph<NodeData, ConnectionType, UiValue> {
         &self.0.graph
     }
 
@@ -41,7 +41,7 @@ impl ShaderGraph {
     /// # Type arguments
     /// OUT: type that may come out of a 
     pub fn map_with_inputs<FOnNode, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut FOnNode, cache: &mut SecondaryMap<NodeId, OUT>) -> OUT 
-        where FOnNode: FnMut(NodeId, Vec<(&str, &InputParam<NodeConnectionTypes, NodeValueTypes>, Option<OUT>)>) -> OUT
+        where FOnNode: FnMut(NodeId, Vec<(&str, &InputParam<ConnectionType, UiValue>, Option<OUT>)>) -> OUT
     {
         let computed_inputs = self.0.graph[node_id].inputs.iter()
             .map(|(name, input_id)| {
@@ -96,7 +96,7 @@ impl ShaderGraph {
         egui::SidePanel::left("tree_view").show(ctx, |ui| {
             ui.heading("Node Types");
             egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.set_min_width(256.0);
+                ui.set_min_width(128.0);
                 for tree in vec![local_tree, standard_tree] {
                     if let Some(selected_item) = tree.draw(ui) {
                         // dbg!(selected_item);
@@ -129,7 +129,8 @@ impl ShaderGraph {
 
             if ui.ui_contains_pointer() {
                 self.0.pan_zoom.pan += ctx.input().scroll_delta;
-                self.0.pan_zoom.zoom *= ctx.input().zoom_delta();
+                // self.0.pan_zoom.zoom *= ctx.input().zoom_delta();
+                // dbg!(self.0.pan_zoom.zoom);
             }
 
             let mut graph_resp = self.0.draw_graph_editor(ui, AllNodeTypes);

@@ -75,7 +75,7 @@ struct IsfUniforms<'a, U: Uniforms> {
     frame_index: u32,
     time_delta: f32,
     time: f32,
-    pass_index: u32,
+    pass_index: i32,
     passes: &'a Vec<(Pass, Texture2d)>,
     inner: &'a U,
 }

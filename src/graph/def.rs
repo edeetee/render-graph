@@ -16,7 +16,7 @@ pub struct NodeData {
 }
 
 #[derive(PartialEq, Eq, Display, Clone, Copy, Debug)]
-pub enum NodeConnectionTypes {
+pub enum ConnectionType {
     // FrameBuffer,
     Texture2D,
     None
@@ -25,14 +25,14 @@ pub enum NodeConnectionTypes {
 }
 
 #[derive(Debug)]
-pub struct NodeValueData<T> {
+pub struct ValueData<T> {
     pub value: T,
     pub min: Option<T>,
     pub max: Option<T>,
     pub default: Option<T>
 }
 
-impl <T> NodeValueData<T> {
+impl <T> ValueData<T> {
     ///Set default and value
     pub fn new_default(value: T) -> Self
         where T: Clone
@@ -44,69 +44,43 @@ impl <T> NodeValueData<T> {
             default: Some(value)
         }
     }
-
-    ///return the range between min and max.
-    ///If no min and max, returns None
-    pub fn range(&self) -> Option<<T as Sub>::Output>
-        where T: Sub + Copy
-    {
-        match self {
-            Self { min: Some(min), max: Some(max), .. } => Some(*max - *min),
-            _ => None
-        }
-    }
-
-    // pub fn range(&self) -> Option<T>
-    //     where T: 
-    // {
-
-    // }
 }
 
-fn slice_diff<const A: usize>(a: &[f32; A], b: &[f32; A]) -> [f32; A] {
-    let mut out = [f32::default(); A];
-    for i in 0..4 {
-        out[i] =  (a[i] - b[i]).abs();
-    }
-    
-    out
-}
-
-impl <T: PartialEq> PartialEq for NodeValueData<T>{
+impl <T: PartialEq> PartialEq for ValueData<T>{
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub enum NodeValueTypes {
-    Vec2(NodeValueData<[f32; 2]>),
-    Float(NodeValueData<f32>),
-    Long(NodeValueData<i32>),
-    Bool(NodeValueData<bool>),
-    Vec4(NodeValueData<[f32; 4]>),
-    Color(NodeValueData<Rgba>),
-    Text(NodeValueData<String>),
+pub enum UiValue {
+    Vec2(ValueData<[f32; 2]>),
+    Float(ValueData<f32>),
+    Long(ValueData<i32>),
+    Bool(ValueData<bool>),
+    Vec4(ValueData<[f32; 4]>),
+    Color(ValueData<Rgba>),
+    Text(ValueData<String>),
     None,
 }
 
-impl From<&str> for NodeValueTypes {
+impl From<&str> for UiValue {
     fn from(s: &str) -> Self {
-        Self::Text(NodeValueData::new_default(s.into()))
+        Self::Text(ValueData::new_default(s.into()))
     }
 }
 
-impl NodeValueTypes {
+impl UiValue {
     pub fn as_shader_input(&self) -> Option<UniformValue<'_>> {
         match self {
-            NodeValueTypes::Vec2(v) => Some(v.value.as_uniform_value()),
-            NodeValueTypes::Float(v) => Some(v.value.as_uniform_value()),
-            NodeValueTypes::Bool(v) => Some(v.value.as_uniform_value()),
-            NodeValueTypes::Vec4(v) => Some(v.value.as_uniform_value()),
-            NodeValueTypes::Color(v) => Some(UniformValue::Vec4(v.value.to_array())),
-            NodeValueTypes::Long(v) => Some(v.value.as_uniform_value()),
+            UiValue::Vec2(v) => Some(v.value.as_uniform_value()),
+            UiValue::Float(v) => Some(v.value.as_uniform_value()),
+            UiValue::Bool(v) => Some(v.value.as_uniform_value()),
+            UiValue::Vec4(v) => Some(v.value.as_uniform_value()),
+            UiValue::Color(v) => Some(UniformValue::Vec4(v.value.to_array())),
+            UiValue::Long(v) => Some(v.value.as_uniform_value()),
 
-            NodeValueTypes::Text(_) | NodeValueTypes::None => None,
+            UiValue::Text(_) | UiValue::None => None,
         }
     }
 }
@@ -120,4 +94,4 @@ impl UserResponseTrait for GraphResponse {}
 pub struct GraphState {}
 
 pub(crate) type EditorState =
-    GraphEditorState<NodeData, NodeConnectionTypes, NodeValueTypes, NodeTypes, GraphState>;
+    GraphEditorState<NodeData, ConnectionType, UiValue, NodeTypes, GraphState>;
