@@ -11,6 +11,7 @@ I come from Touchdesigner, a mature node graph system that has a tendency to cra
 ## Features
 - Spout (Windows texture sharing)
 - ISF shader support
+- Texture sharing
 
 ## Contributing
 
