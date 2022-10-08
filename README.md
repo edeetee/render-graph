@@ -1,29 +1,27 @@
-# Shader graph rendering
-- Minimal
-- Performant
-- Extendable
-- Standardized
+# Shader graph renderer
 
-Touchdesigner and other node graph programming environments have the tendency to abstract the underlying code away. I want a system that allows the underlying code and graph representation to work together logically, performant and safely.
+A node graph renderer written in rust utilising [egui_node_graph](https://github.com/setzer22/egui_node_graph) for the graph view.
 
-## Philosophy
-- Performant (aim to be most performant general purpose extendable node graph renderer)
-- Clear
-    - Clear and minimal interface for nodes
-    - Easy to imagine process
-    - Good for beginner rustaceans
-    - Thin (low abstraction)
-- Extendable (Everything can be done at compile or during interactive session with safety)
-- Stable
-    - Rust safety
-    - Mature api development
+I am developing this for the use case of live generative visual performances, where I want to do performant experimentation without the possibility of crashes.
+
+![screenshot](media/screenshot.jpg)
+
+
+
+I come from Touchdesigner, a mature node graph system that has a tendency to crash when you push its boundaries.
+
+## Features
+- Spout (Windows texture sharing)
+- ISF shader support
+
+---
 
 ## TODO
 - Make systems to define easy way to have common types across nodes so that it works nicely with rust Into<T> system and makes it easy to use graph features/types modularly and simply.
 -Support transparent windows for pretty & clean testing https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/
 - Only use Srgb textures for visible nodes
 - Extend egui_node_graph for zooming etc
-- Dependency graph ala touchdesigner
+- Dependency resolution ala touchdesigner
 - Hot reloading
-- Only use as many textures as required (min 2 required as sampler + render target) per node
 - Investigate bevy integration
+- Full ISF spec
