@@ -91,9 +91,9 @@ impl ShaderGraphProcessor {
                 let template = &node.user_data.template;
 
                 match template {
-                    NodeTypes::Isf { file, .. } => {
+                    NodeTypes::Isf { info } => {
                         self.versions
-                            .insert(node_id, file.path.metadata().unwrap().modified().unwrap());
+                            .insert(node_id, info.path.metadata().unwrap().modified().unwrap());
                     }
                     _ => {}
                 }
@@ -205,8 +205,8 @@ impl ShaderGraphProcessor {
         for (node_id, version) in self.versions.iter_mut() {
             let template = &mut self.graph[node_id].user_data.template;
 
-            if let NodeTypes::Isf { file, isf: old_isf } = template {
-                let new_version = file.path.metadata().unwrap().modified().unwrap();
+            if let NodeTypes::Isf { info } = template {
+                let new_version = info.path.metadata().unwrap().modified().unwrap();
                 let diff = new_version.duration_since(*version);
 
                 if let Ok(diff) = diff {
@@ -214,18 +214,18 @@ impl ShaderGraphProcessor {
                         //iterate version even on error (wait for change to retry)
                         *version = new_version;
 
-                        let name = file.name.clone();
+                        let name = info.name.clone();
 
-                        match reload_ifs_shader(facade, &file) {
-                            Ok((new_isf, new_shader)) => {
+                        match reload_ifs_shader(facade, &info) {
+                            Ok((new_info, new_shader)) => {
                                 self.shaders.insert(node_id, NodeShader::Isf(new_shader));
-                                *old_isf = new_isf;
+                                *info = new_info;
                                 println!("Reloaded shader: {}", name);
                             }
                             Err(err) => {
                                 let err_txt = format!("{:#?}", err);
                                 let err_txt = err_txt.replace("\\n", "\n");
-                                eprintln!("Error reloading shader {}: {}", file.name, err_txt);
+                                eprintln!("Error reloading shader {}: {}", info.name, err_txt);
                             }
                         }
                     }

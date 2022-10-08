@@ -1,7 +1,9 @@
+use std::path::PathBuf;
+
 use isf::{Isf};
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use super::{def::*, conection_def::{InputDef, OutputDef}};
-use crate::isf::meta::{parse_isf_shaders, IsfPathInfo, default_isf_path};
+use crate::isf::meta::{parse_isf_shaders, IsfInfo, default_isf_path};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum NodeTypes {
@@ -10,8 +12,7 @@ pub enum NodeTypes {
     SpoutOut,
     Output,
     Isf {
-        file: IsfPathInfo,
-        isf: Isf,
+        info: IsfInfo
     }
 }
 
@@ -22,7 +23,7 @@ impl <'a> From<&'a NodeTypes> for &'a str {
             NodeTypes::SpoutOut => "SpoutOut",
             NodeTypes::Instances => "Instances",
             NodeTypes::Output => "Output",
-            NodeTypes::Isf{file, ..} => file.name.as_str()
+            NodeTypes::Isf{info} => info.name.as_str()
         }
     }
 }
@@ -31,7 +32,7 @@ impl NodeTypes {
     pub fn get_all() -> Vec<NodeTypes> {
         let path = default_isf_path();
         let shaders = parse_isf_shaders(&path)
-            .map(|(file, isf)| NodeTypes::Isf{file, isf});
+            .map(|info| NodeTypes::Isf{info});
 
         let mut types = vec![
             // NodeTypes::Instances,
@@ -45,8 +46,8 @@ impl NodeTypes {
 
     pub fn get_input_types(&self) -> Vec<InputDef> {
         match self {
-            NodeTypes::Isf { isf, .. } => {
-                isf.inputs.iter().map(InputDef::from).collect()
+            NodeTypes::Isf { info } => {
+                info.def.inputs.iter().map(InputDef::from).collect()
             }
             NodeTypes::SpoutOut => vec![
                 ("name", "RustSpout").into(),

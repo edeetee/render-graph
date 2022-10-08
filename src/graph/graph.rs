@@ -2,18 +2,22 @@ use std::{ops::{Index, IndexMut}, fs::read_dir, path::{Path, PathBuf}, fmt::Disp
 
 
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, NodeTemplateTrait};
+use isf::{Isf, InputType};
 use slotmap::SecondaryMap;
 
-use crate::{isf::meta::{default_isf_path, try_read_isf}, tree_view::Tree};
+use crate::{isf::meta::{default_isf_path, parse_isf_shaders, IsfInfo}, tree_view::Tree};
 
-use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeTypes}};
+use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeTypes}, node_tree_ui::TreeState};
 
 // #[derive(Default)]
-pub struct ShaderGraph(pub(super) EditorState);
+pub struct ShaderGraph(pub(super) EditorState, TreeState);
 
 impl Default for ShaderGraph {
     fn default() -> Self {
-        Self(GraphEditorState::new(1.0, GraphState::default()))
+        Self(
+            GraphEditorState::new(1.0, GraphState::default()),
+            TreeState::default()
+        )
     }
 }
 
@@ -88,31 +92,23 @@ impl ShaderGraph {
 
     pub fn draw(&mut self, ctx: &egui::Context) -> egui_node_graph::GraphResponse<GraphResponse, NodeData> {
 
-        let local_tree = load_isf_tree(&default_isf_path());
-        let standard_tree = load_isf_tree(Path::new("C:\\ProgramData\\ISF"));
-
         let mut new_node_ty = None;
 
         egui::SidePanel::left("tree_view").show(ctx, |ui| {
-            ui.heading("Node Types");
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.set_min_width(128.0);
-                for tree in vec![local_tree, standard_tree] {
-                    if let Some(selected_item) = tree.draw(ui) {
-                        // dbg!(selected_item);
-                        match try_read_isf(selected_item.path.clone()){
-                            Ok((path_info, isf)) => {
-                                new_node_ty = Some(NodeTypes::Isf { file: path_info, isf });
-                                
-                            },
-                            Err(e) => {
-                                println!("{e}");
-                            }
-                        }
-                        // self.add
+
+            if let Some(selected_item) = self.1.draw(ui) {
+
+                match IsfInfo::new_from_path(&selected_item.path){
+                    Ok(info) => {
+                        new_node_ty = Some(NodeTypes::Isf { info });
+                        
+                    },
+                    Err(e) => {
+                        println!("{e}");
                     }
                 }
-            });
+            }
+
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -136,51 +132,8 @@ impl ShaderGraph {
             let mut graph_resp = self.0.draw_graph_editor(ui, AllNodeTypes);
 
             graph_resp.node_responses.append(&mut responses);
-            
-            // responses.append(&mut );
 
             graph_resp
         }).inner
-    }
-}
-
-
-struct TreePath {
-    name: String,
-    path: PathBuf
-}
-
-impl TreePath {
-    fn new(path: PathBuf) -> Self {
-        let name = path.file_name().unwrap().to_str().unwrap().to_string();
-
-        Self {
-            name,
-            path
-        }
-    }
-}
-
-impl Display for TreePath {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.name)
-    }
-}
-
-fn load_isf_tree(path: &Path) -> Tree<TreePath> {
-    let info = TreePath::new(path.clone().to_path_buf());
-
-    if path.is_dir() {
-        let branch_inner = read_dir(path)
-            .unwrap()
-            .into_iter()
-            .map(|dir| {
-                load_isf_tree(&dir.unwrap().path())
-            })
-            .collect();
-
-        Tree::Branch(info, branch_inner)
-    } else {
-        Tree::Leaf(info)
     }
 }

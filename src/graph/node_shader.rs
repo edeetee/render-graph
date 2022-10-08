@@ -11,8 +11,8 @@ pub enum NodeShader {
 impl NodeShader {
     pub fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Result<Self, IsfShaderLoadError>> {
         match template {
-            NodeTypes::Isf{file, isf} => {
-                Some(IsfShader::new(facade, file, isf).map(NodeShader::Isf))
+            NodeTypes::Isf{info} => {
+                Some(IsfShader::new(facade, info).map(NodeShader::Isf))
             },
             NodeTypes::SpoutOut => {
                 Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new())))
