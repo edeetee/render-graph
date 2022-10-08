@@ -1,6 +1,6 @@
-use std::{fs::{File, read_to_string}, io::Read, time::Instant};
+use std::{fs::{File}, io::Read, time::Instant};
 
-use glium::{backend::Facade, ProgramCreationError::{LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}, ReadError};
+use glium::{backend::Facade, ProgramCreationError::{LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
 use isf::{Isf, Pass};
 use crate::fullscreen_shader::FullscreenFrag;
 use crate::textures::new_texture_2d;
