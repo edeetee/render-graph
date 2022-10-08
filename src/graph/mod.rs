@@ -1,5 +1,5 @@
 mod def;
-mod ui;
+mod node_ui;
 mod egui_render_loop;
 mod shader_graph_processor;
 mod graph;

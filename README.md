@@ -14,6 +14,10 @@ I come from Touchdesigner, a mature node graph system that has a tendency to cra
 - Spout (Windows texture sharing)
 - ISF shader support
 
+## Contributing
+
+API is very much unstable at the moment. If you are interested in contributing, please make an issue and so I can stabilise the api surface required.
+
 ---
 
 ## TODO

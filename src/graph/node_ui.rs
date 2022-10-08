@@ -1,4 +1,6 @@
 
+use std::ops::{Sub, RangeInclusive};
+
 use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
 
@@ -48,61 +50,96 @@ impl DataTypeTrait<GraphState> for NodeConnectionTypes {
     }
 }
 
+fn horizontal_drags<const A: usize>(
+    ui: &mut egui::Ui, 
+    labels: &[&str; A],
+    data: &mut NodeValueData<[f32; A]>
+) -> egui::InnerResponse<bool> {
+
+    ui.horizontal(|ui| {
+        let mut any_changed = false;
+
+        for i in 0..A {
+            ui.label(labels[i].to_string());
+
+            let speed = 0.1 * match data {
+                NodeValueData{
+                    min: Some(min),
+                    max: Some(max),
+                    ..
+                } => {
+                    (max[i]-min[i]).abs()
+                }
+                _ => {
+                    1.0
+                }
+            };
+
+            let range = default_range_f32(
+                &data.min.map(|min| min[i]), 
+                &data.max.map(|max| max[i])
+            );
+
+            let drag_value_ui = DragValue::new(&mut data.value[i])
+                .speed(speed)
+                .clamp_range(range);
+
+            if ui.add(drag_value_ui).changed() {
+                any_changed = true;
+            }
+        }
+
+        any_changed
+    })
+}
+
+fn default_range_f32(min: &Option<f32>, max: &Option<f32>) -> RangeInclusive<f32>{
+    min.unwrap_or(0.0)..=max.unwrap_or(1.0)
+}
+
+fn default_range_i32(min: &Option<i32>, max: &Option<i32>) -> RangeInclusive<i32>{
+    min.unwrap_or(0)..=max.unwrap_or(1)
+}
+
 impl WidgetValueTrait for NodeValueTypes {
     type Response = GraphResponse;
 
     fn value_widget(&mut self, param_name: &str, ui: &mut egui::Ui) -> Vec<Self::Response> {
-        match self {
-            NodeValueTypes::Vec2 (value) => {
+        let _changed = match self {
+            NodeValueTypes::Vec2 (data) => {
                 ui.label(param_name);
-
-                ui.horizontal(|ui| {
-                    ui.label("x");
-                    let x_response = ui.add(DragValue::new(&mut value[0]).speed(0.1));
-                    ui.label("y");
-                    let y_response = ui.add(DragValue::new(&mut value[1]).speed(0.1));
-
-                    x_response.changed() || y_response.changed()
-                }).inner
+                horizontal_drags(ui, &["x", "y"], data).inner
             }
-            NodeValueTypes::Vec4(value) => {
+            NodeValueTypes::Vec4(data) => {
                 ui.label(param_name);
-
-                ui.horizontal(|ui| {
-                    ui.label("r");
-                    let r = &ui.add(DragValue::new(&mut value[0]).speed(0.1));
-                    ui.label("g");
-                    let g = &ui.add(DragValue::new(&mut value[1]).speed(0.1));
-                    ui.label("b");
-                    let b = &ui.add(DragValue::new(&mut value[2]).speed(0.1));
-                    ui.label("a");
-                    let a = &ui.add(DragValue::new(&mut value[3]).speed(0.1));
-
-                    vec![r,g,b,a].iter().any(|resp| resp.changed())
-                }).inner
+                horizontal_drags(ui, &["r", "g", "b", "a"], data).inner
             }
-            NodeValueTypes::Color(value) => {
+            NodeValueTypes::Color(NodeValueData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
-                    // let rgba = Rgba::from_rgba_premultiplied(value);
                     color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
-                    // ui.add()
                 }).inner.changed()
             }
-            NodeValueTypes::Float (value) => {
+            NodeValueTypes::Float (NodeValueData { value, min, max, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     // ui.add(DragValue::new(value))
-                    ui.add(Slider::new(value, 0f32..=1f32).clamp_to_range(false))
+                    ui.add(Slider::new(value, default_range_f32(min, max)).clamp_to_range(false))
                 }).inner.changed()
             }
-            NodeValueTypes::Bool(value) => {
+            NodeValueTypes::Long(NodeValueData { value, min, max, .. }) => {
+                ui.horizontal(|ui| {
+                    ui.label(param_name);
+                    ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
+                }).inner.changed()
+            },
+            NodeValueTypes::Bool(NodeValueData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.checkbox(value, "")
                 }).inner.changed()
             }
-            NodeValueTypes::Text(value) => {
+            NodeValueTypes::Text(NodeValueData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.text_edit_singleline(value)

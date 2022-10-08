@@ -3,9 +3,13 @@
 precision highp float;
 precision highp int;
 
-const int PASSINDEX = 0;
+uniform int PASSINDEX = 0;
 uniform vec2 res;
-#define RENDERSIZE res;
+uniform int FRAMEINDEX = 0;
+uniform float FRAMEDELTA = 0.0;
+uniform float TIME = 0.0;
+
+vec2 RENDERSIZE = res;
 vec2 isf_FragNormCoord = gl_FragCoord.xy/RENDERSIZE;
 
 #define IMG_PIXEL(sampler,coord) texture2D(sampler,coord*textureSize(sampler, 0))

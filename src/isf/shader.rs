@@ -41,12 +41,6 @@ impl IsfShader {
         })
     }
 
-    // pub fn is_stale(&self) -> bool {
-    //     let file_version = self.path.metadata().unwrap().modified().unwrap();
-
-    //     self.version < file_version
-    // }
-
     pub fn draw(&mut self, surface: &mut impl Surface, uniforms: &impl Uniforms) {
         let now = Instant::now();
         let time_delta = now - self.prev_frame_inst;
