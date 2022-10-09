@@ -189,7 +189,7 @@ impl ShaderGraphProcessor {
                         shader.draw(&target, &processed_inputs);
 
                         let (w, h) = surface.get_dimensions();
-                        let size = (w/10, h/10);
+                        let size = (w/4, h/4);
 
                         // node.user_data.
                         // self.node_textures[node_id].borrow_mut()

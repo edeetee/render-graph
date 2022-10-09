@@ -39,9 +39,6 @@ impl ScreenTexture {
         size: (u32, u32),
     ) -> Self {
 
-        let mipmaps = glium::texture::MipmapsOption::NoMipmap;
-        let format = glium::texture::SrgbFormat::U8U8U8U8;
-
         let tex = Rc::new(new_texture_srgb_2d(facade, size).unwrap());
 
         let id = egui_glium
@@ -101,7 +98,7 @@ impl UiTexture {
     }
 
     pub fn copy_from(&mut self, surface: &impl Surface){
-        let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
+        let filter = glium::uniforms::MagnifySamplerFilter::Linear;
 
         surface.fill(
             self.screen.borrow_fb(),
