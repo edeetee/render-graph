@@ -1,5 +1,5 @@
 use std::{
-    rc::Rc, time::SystemTime,
+    rc::Rc, time::SystemTime, borrow::BorrowMut, cell::RefCell,
 };
 
 use egui_glium::EguiGlium;
@@ -13,7 +13,7 @@ use glium::{
 
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use crate::textures::{NodeTextures, TextureManager};
+use crate::textures::{UiTexture, TextureManager};
 
 use super::{
     def::{self, *},
@@ -41,7 +41,7 @@ pub struct ShaderGraphProcessor {
     texture_manager: TextureManager,
 
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
-    node_textures: SecondaryMap<NodeId, NodeTextures>,
+    node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
     shaders: SecondaryMap<NodeId, NodeShader>,
     versions: SecondaryMap<NodeId, SystemTime>,
 }
@@ -77,16 +77,13 @@ impl ShaderGraphProcessor {
     ) {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
-                // let node = &self.graph[node_id];
-
-                let textures = NodeTextures::new(facade, egui_glium);
-                // new_shader.init_inputs(self.graph[node_id].input_ids().map(|input_id| &mut self.graph.[input_id]));
-
-                self.graph[node_id].user_data.result = Some(textures.clone_screen_tex_id());
-
+                // self.node_textures.insert(node_id, textures);
+                let textures = Rc::new(RefCell::new(UiTexture::new(facade, egui_glium, (256, 256))));
+                self.graph[node_id].user_data.texture = Rc::downgrade(&textures);
                 self.node_textures.insert(node_id, textures);
 
                 let node = &self.graph[node_id];
+                
 
                 let template = &node.user_data.template;
 
@@ -147,22 +144,24 @@ impl ShaderGraphProcessor {
         }
     }
 
-    fn render_shaders(&mut self, facade: &impl Facade) {
+    ///Processes each shader in the output_targets list from start to end
+    /// Generates ui textures
+    /// processes inputs
+    fn render_shaders(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium) {
         // let shaders = &mut self.shaders;
-        let graph = &self.graph;
+        // let graph = &self.graph;
 
         for (output_id, output_target) in &mut self.output_targets {
 
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
 
-                graph.map_with_inputs::<_, Rc<Texture2d>>(output_id, &mut |node_id, inputs| {
+                self.graph.map_with_inputs::<_, Rc<Texture2d>>(output_id, &mut |node_id, inputs| {
 
                     // let textures = self.texture_manager.input_textures_iter(facade, target);
                     
                     let processed_inputs: ComputedInputs = inputs.iter()
                         .filter_map(|(name,node,maybe_process_input)| {
-                            
                             //first try process node inputs
                             let value = maybe_process_input.as_ref().map(|process_input| {
                                 process_input.as_uniform_value()
@@ -189,8 +188,14 @@ impl ShaderGraphProcessor {
 
                         shader.draw(&target, &processed_inputs);
 
-                        //copy texture result to the node texture view
-                        self.node_textures[node_id].copy_from(&surface);
+                        let (w, h) = surface.get_dimensions();
+                        let size = (w/10, h/10);
+
+                        // node.user_data.
+                        // self.node_textures[node_id].borrow_mut()
+                        let mut texture = (*self.node_textures[node_id]).borrow_mut();
+                        texture.update_size(facade, egui_glium, size);
+                        texture.copy_from(&surface);
                     }
 
                     target
@@ -252,7 +257,7 @@ impl ShaderGraphProcessor {
             }
         }
 
-        self.render_shaders(display);
+        self.render_shaders(display, egui_glium);
 
         egui_glium.paint(display, &mut frame);
 

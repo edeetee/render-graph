@@ -7,7 +7,7 @@ use glium::{
     backend::Facade,
     framebuffer::SimpleFrameBuffer,
     Surface,
-    texture::{SrgbTexture2d, UncompressedFloatFormat}, Texture2d,
+    texture::{SrgbTexture2d, UncompressedFloatFormat, Dimensions}, Texture2d,
 };
 
 use ouroboros::self_referencing;
@@ -22,25 +22,27 @@ struct ScreenTexture {
     fb: SimpleFrameBuffer<'this>
 }
 
+pub fn new_texture_srgb_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Result<SrgbTexture2d, glium::texture::TextureCreationError>  {
+    SrgbTexture2d::empty_with_format(
+        facade,
+        glium::texture::SrgbFormat::U8U8U8U8,
+        DEFAULT_MIPMAPS,
+        width,
+        height,
+    )
+}
+
 impl ScreenTexture {
     pub fn generate(
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
+        size: (u32, u32),
     ) -> Self {
 
         let mipmaps = glium::texture::MipmapsOption::NoMipmap;
         let format = glium::texture::SrgbFormat::U8U8U8U8;
 
-        let tex = Rc::new(
-            SrgbTexture2d::empty_with_format(
-                facade,
-                format,
-                mipmaps,
-                512,
-                512,
-            )
-            .unwrap(),
-        );
+        let tex = Rc::new(new_texture_srgb_2d(facade, size).unwrap());
 
         let id = egui_glium
             .painter
@@ -57,14 +59,14 @@ impl ScreenTexture {
     }
 }
 
-pub struct NodeTextures {
+pub struct UiTexture {
     screen: ScreenTexture,
 }
 
 const DEFAULT_MIPMAPS: glium::texture::MipmapsOption = glium::texture::MipmapsOption::NoMipmap;
 const FORMAT_RGBA32: UncompressedFloatFormat = glium::texture::UncompressedFloatFormat::F32F32F32F32;
 
-pub fn new_texture_2d(facade: &impl Facade, width: u32, height: u32) -> Result<Texture2d, glium::texture::TextureCreationError>  {
+pub fn new_texture_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Result<Texture2d, glium::texture::TextureCreationError>  {
     Texture2d::empty_with_format(
         facade,
         FORMAT_RGBA32,
@@ -74,14 +76,27 @@ pub fn new_texture_2d(facade: &impl Facade, width: u32, height: u32) -> Result<T
     )
 }
 
-impl NodeTextures {
+impl UiTexture {
     pub fn new(
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
+        size: (u32, u32)
     ) -> Self {
 
         Self {
-            screen: ScreenTexture::generate(facade, egui_glium),
+            screen: ScreenTexture::generate(facade, egui_glium, size),
+        }
+    }
+
+    pub fn update_size(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, size: (u32, u32)) {
+        if self.screen.borrow_tex().dimensions() != size {
+            let new_screen = ScreenTexture::generate(facade, egui_glium, size);
+
+            println!("Updating texture size from {:?} to {:?}", self.screen.borrow_tex().dimensions(), size);
+        
+            egui_glium.painter.replace_native_texture(*self.screen.borrow_id(), new_screen.borrow_tex().clone());
+
+            self.screen = new_screen;
         }
     }
 
@@ -94,23 +109,28 @@ impl NodeTextures {
         );
     }
 
+    pub fn size(&self) -> (u32, u32) {
+        self.screen.borrow_tex().dimensions()
+    }
+
     pub fn clone_screen_tex_id(&self) -> TextureId {
         self.screen.borrow_id().clone()
     }
 }
 
 
+
 #[derive(Debug)]
 pub struct TextureManager {
     textures: Vec<Rc<Texture2d>>,
-    res: [u32; 2]
+    res: (u32, u32)
 }
 
 impl Default for TextureManager {
     fn default() -> Self {
         Self {
             textures: Vec::new(),
-            res: [1920, 1080]
+            res: (1920, 1080)
             // res: [16, 16]
         }
     }
@@ -130,17 +150,17 @@ impl TextureManager {
     }
 
     fn get_new(&mut self, facade: &impl Facade) -> Rc<Texture2d> {
-        let new_tex = Rc::new(new_texture_2d(facade, self.res[0], self.res[1]).unwrap());
+        let new_tex = Rc::new(new_texture_2d(facade, self.res).unwrap());
         self.textures.push(new_tex.clone());
         println!("New texture allocated inside {self:?}");
 
         new_tex
     }
 
-    fn set_res(&mut self, facade: &impl Facade, res: [u32; 2]){
+    fn set_res(&mut self, facade: &impl Facade, res: (u32, u32)){
         self.res = res;
         for texture in self.textures.iter_mut() {
-            *texture = Rc::new(new_texture_2d(facade, self.res[0], self.res[1]).unwrap());
+            *texture = Rc::new(new_texture_2d(facade, self.res).unwrap());
         }
     }
 

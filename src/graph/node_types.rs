@@ -1,6 +1,8 @@
 
 
 
+use std::rc::Weak;
+
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use super::{def::*, conection_def::{InputDef, OutputDef}};
 use crate::isf::meta::{parse_isf_shaders, IsfInfo, default_isf_path};
@@ -88,7 +90,7 @@ impl NodeTemplateTrait for NodeTypes {
     }
 
     fn user_data(&self) -> Self::NodeData {
-        NodeData { template: self.clone(), result: None }
+        NodeData { template: self.clone(), texture: Weak::default() }
     }
 
     fn build_node(

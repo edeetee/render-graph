@@ -24,9 +24,13 @@ impl NodeDataTrait for NodeData {
     {
         let me = &graph[node_id];
 
-        if let Some(tex_id) = &me.user_data.result {
-            let size = ui.available_width();
-            ui.image(*tex_id, [size, size]);
+        if let Some(tex) = &me.user_data.texture.upgrade() {
+            let width = ui.available_width();
+            let tex = tex.borrow();
+            let (tex_w, tex_h) = tex.size();
+            let height = tex_h as f32 * width / tex_w as f32;
+
+            ui.image(tex.clone_screen_tex_id(), [width, height]);
         } else {
             ui.label("NO IMAGE AVAILABLE");
         }

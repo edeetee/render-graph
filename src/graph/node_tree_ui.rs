@@ -61,16 +61,19 @@ impl Default for TreeState {
 impl TreeState {
     pub fn draw(&mut self, ui: &mut egui::Ui) -> Option<&TreeItem> {
         let mut new_item = None;
+        let mut search_changed = false;
 
         ui.heading("Node Types");
+
+        search_changed |= ui.text_edit_singleline(&mut self.filter.text).changed();
+        ui.horizontal(|ui| {
+            ui.label("Image In");
+            search_changed |= ui.toggle_value(&mut self.filter.image_inputs, "Some").clicked();
+            search_changed |= ui.toggle_value(&mut self.filter.no_image_inputs, "None").clicked();
+        });
+
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.set_min_width(128.0);
-
-            let mut search_changed = false;
-
-            search_changed |= ui.text_edit_singleline(&mut self.filter.text).changed();
-            search_changed |= ui.toggle_value(&mut self.filter.image_inputs, "Inputs Only").clicked();
-            search_changed |= ui.toggle_value(&mut self.filter.no_image_inputs, "No Inputs Only").clicked();
 
             for tree in &mut self.trees {
                 if search_changed {

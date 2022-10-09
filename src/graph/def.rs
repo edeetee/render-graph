@@ -2,17 +2,26 @@
 
 
 
+use std::{rc::{Rc, Weak}, cell::RefCell};
+
 use egui::{TextureId, Rgba};
 use egui_node_graph::{GraphEditorState, UserResponseTrait};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
 use strum::{Display};
 
 
+use crate::textures::UiTexture;
+
 use super::{ node_types::NodeTypes};
+
+// pub struct TexInfo {
+//     pub id: TextureId,
+//     pub size: (u32, u32),
+// }
 
 pub struct NodeData {
     pub template: NodeTypes,
-    pub result: Option<TextureId>, // pub texture_cache: Option<ShaderData>
+    pub texture: Weak<RefCell<UiTexture>>, // pub texture_cache: Option<ShaderData>
 }
 
 #[derive(PartialEq, Eq, Display, Clone, Copy, Debug)]

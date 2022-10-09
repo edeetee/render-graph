@@ -24,7 +24,7 @@ impl IsfShader {
         file.read_to_string(&mut source)?;
 
         let passes = isf.def.passes.iter().map(|pass| {
-            (pass.clone(), new_texture_2d(facade, 1, 1).unwrap())
+            (pass.clone(), new_texture_2d(facade, (256, 256)).unwrap())
         })
         .collect();
 

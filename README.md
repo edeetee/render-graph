@@ -11,6 +11,7 @@ I come from Touchdesigner, a mature node graph system that has a tendency to cra
 ## Features
 - Spout (Windows texture sharing)
 - ISF shader support
+    - Hot reloading
 - Texture sharing
 
 ## Contributing
@@ -21,16 +22,16 @@ API is very much unstable at the moment. If you are interested in contributing, 
 
 ## TODO
 - Make systems to define easy way to have common types across nodes so that it works nicely with rust Into<T> system and makes it easy to use graph features/types modularly and simply.
--Support transparent windows for pretty & clean testing https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/
+- Transparent windows https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/
 - Only use Srgb textures for visible nodes
 - Extend egui_node_graph for zooming etc
 - Dependency resolution ala touchdesigner (only cook what is required)
-- Hot reloading
-- Investigate bevy integration
+- Hot reloading rust code
+- Bevy / rend3 integration
 - Full ISF spec
 - Serialization of the graph / files etc
 - Animation of parameters
-- ISF Meta chain (more complex interface for handling racks + isf standard effects/transitions)
+- ISF Meta ops (more complex interface for handling racks + isf standard effects/transitions)
 - Continue reducing dependencies between structs
 - Support an SDF workflow
 - Support different texture sizes (options per node)
