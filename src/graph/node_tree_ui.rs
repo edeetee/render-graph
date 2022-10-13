@@ -77,7 +77,7 @@ impl TreeState {
 
             for tree in &mut self.trees {
                 if search_changed {
-                    dbg!(&self.filter);
+                    // dbg!(&self.filter);
                     tree.map_mut(&mut |item| {
                         item.visible = self.filter.filter_item(item);
                     });

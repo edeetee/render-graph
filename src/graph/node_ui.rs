@@ -149,7 +149,7 @@ impl WidgetValueTrait for UiValue {
                     ui.text_edit_singleline(value)
                 }).inner.changed()
             }
-            UiValue::None => { false }
+            UiValue::None => { ui.label(param_name); false }
         };
 
         vec![]

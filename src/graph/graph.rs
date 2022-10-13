@@ -76,6 +76,8 @@ impl ShaderGraph {
     }
 
     pub fn add_node(&mut self, node_kind: NodeTypes, position: egui::Pos2) -> NodeId {
+        println!("Adding node {node_kind:#?}");
+
         let new_node = self.0.graph.add_node(
             node_kind.node_graph_label(),
             node_kind.user_data(),
