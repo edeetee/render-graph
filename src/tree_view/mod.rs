@@ -2,17 +2,17 @@ use std::fmt::Display;
 use egui::Ui;
 
 #[derive(Hash)]
-pub enum Tree<T> {
-    Leaf(T),
-    Branch(T, Vec<Tree<T>>),
+pub enum Tree<Leaf, Branch> {
+    Leaf(Leaf),
+    Branch(Branch, Vec<Tree<Leaf, Branch>>),
 }
 
-impl<T: Display> Tree<T> {
-    pub fn map_mut(&mut self, f: &mut impl FnMut(&mut T)) {
+impl<Leaf: Display, Branch: Display> Tree<Leaf, Branch> {
+    pub fn map_mut(&mut self, f: &mut impl FnMut(&mut Leaf)) {
         match self {
             Tree::Leaf(item) => f(item),
             Tree::Branch(item, children) => {
-                f(item);
+                // f(item);
                 for child in children {
                     child.map_mut(f);
                 }
@@ -20,7 +20,7 @@ impl<T: Display> Tree<T> {
         }
     }
 
-    pub fn draw(&self, ui: &mut Ui, filter: &impl Fn(&T) -> bool) -> Option<&T> {
+    pub fn draw(&self, ui: &mut Ui, filter: &impl Fn(&Leaf) -> bool) -> Option<&Leaf> {
         // let all_kinds = NodeTypes::get_all();
         match self {
             Tree::Leaf(leaf) => {

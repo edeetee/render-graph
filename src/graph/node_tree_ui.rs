@@ -2,6 +2,8 @@ use std::{path::{Path, PathBuf}, fmt::Display, fs::read_dir};
 
 use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}};
 
+use super::{node_types::NodeType, def::ConnectionType};
+
 
 
 
@@ -23,43 +25,47 @@ impl Default for FilterState {
 }
 
 impl FilterState {
-    fn filter_item(&self, item: &TreeItem) -> bool {
+    fn filter_item(&self, item: &LeafItem) -> bool {
         let text_pass = self.text.is_empty() || 
-            item.name.to_lowercase().contains(&self.text.to_lowercase());
+            item.ty.get_name().to_lowercase().contains(&self.text.to_lowercase());
 
-        let isf_pass = match item.isf {
-            Some(ref isf) => {
-                let has_inputs = isf.def.inputs.iter().any(|x| x.ty == isf::InputType::Image);
+        let image_input_pass = {
+            let has_inputs = item.ty.get_input_types().iter().any(|x| x.ty == ConnectionType::Texture2D);
 
-                (!self.image_inputs || has_inputs) && (!self.no_image_inputs || !has_inputs)
-            },
-            None => true,
+            (!self.image_inputs || has_inputs) && (!self.no_image_inputs || !has_inputs)
         };
 
-        text_pass && isf_pass && item.isf.is_some()
+        text_pass && image_input_pass
     }
 }
 
 pub struct TreeState{
     filter: FilterState,
-    trees: Vec<Tree<TreeItem>>
+    trees: Vec<Tree<LeafItem, BranchItem>>
 }
 
 impl Default for TreeState {
     fn default() -> Self {
-        Self {
-            trees: vec![default_isf_path().as_ref(), Path::new("C:\\ProgramData\\ISF")]
-                .into_iter()
-                .map(load_isf_tree)
-                .collect(),
+        let default_nodes = NodeType::get_builtin()
+            .into_iter()
+            .map(LeafItem::new)
+            .map(Tree::Leaf);
 
+        let isf_path = default_isf_path();
+
+        let isf_nodes = vec![isf_path.as_ref(), Path::new("C:\\ProgramData\\ISF")]
+            .into_iter()
+            .filter_map(load_isf_tree);
+
+        Self {
+            trees: default_nodes.chain(isf_nodes).collect(),
             filter: FilterState::default()
         }
     }
 }
 
 impl TreeState {
-    pub fn draw(&mut self, ui: &mut egui::Ui) -> Option<&TreeItem> {
+    pub fn draw(&mut self, ui: &mut egui::Ui) -> Option<&LeafItem> {
         let mut new_item = None;
         let mut search_changed = false;
 
@@ -96,48 +102,59 @@ impl TreeState {
     }
 }
 
-pub struct TreeItem {
-    pub name: String,
-    pub path: PathBuf,
+pub struct LeafItem {
     visible: bool,
-    pub isf: Option<IsfInfo>
+    pub ty: NodeType
 }
 
-impl TreeItem {
-    fn new(path: PathBuf) -> Self {
-        let name = path.file_name().unwrap().to_str().unwrap().to_string();
-
-        let isf = IsfInfo::new_from_path(&path).ok();
-
+impl LeafItem {
+    fn new(ty: NodeType) -> Self {
         Self {
-            name,
-            path,
             visible: true,
-            isf
+            ty
         }
+    }
+
+    fn new_from_isf(isf_path: PathBuf) -> Option<Self> {
+        let info = IsfInfo::new_from_path(&isf_path).ok()?;
+
+        Some(Self::new(NodeType::Isf { info }))
     }
 }
 
-impl Display for TreeItem {
+impl Display for LeafItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.ty)
+    }
+}
+
+pub struct BranchItem {
+    pub name: String,
+}
+
+impl Display for BranchItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
     }
 }
 
-fn load_isf_tree(path: &Path) -> Tree<TreeItem> {
-    let info = TreeItem::new(path.clone().to_path_buf());
-
+fn load_isf_tree(path: &Path) -> Option<Tree<LeafItem, BranchItem>> {
     if path.is_dir() {
         let branch_inner = read_dir(path)
             .unwrap()
             .into_iter()
-            .map(|dir| {
+            .filter_map(|dir| {
                 load_isf_tree(&dir.unwrap().path())
             })
             .collect();
 
-        Tree::Branch(info, branch_inner)
+        let info = BranchItem {
+            name: path.file_name().unwrap().to_str().unwrap().to_string(),
+        };
+
+        Some(Tree::Branch(info, branch_inner))
     } else {
-        Tree::Leaf(info)
+        let info = LeafItem::new_from_isf(path.clone().to_path_buf())?;
+        Some(Tree::Leaf(info))
     }
 }

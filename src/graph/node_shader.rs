@@ -1,6 +1,6 @@
 use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms}};
 
-use super::{node_types::NodeTypes, spout_out_shader::SpoutOutShader};
+use super::{node_types::NodeType, spout_out_shader::SpoutOutShader};
 use crate::isf::shader::{IsfShader, IsfShaderLoadError};
 
 pub enum NodeShader {
@@ -9,12 +9,12 @@ pub enum NodeShader {
 }
 
 impl NodeShader {
-    pub fn new(template: &NodeTypes, facade: &impl Facade) -> Option<Result<Self, IsfShaderLoadError>> {
+    pub fn new(template: &NodeType, facade: &impl Facade) -> Option<Result<Self, IsfShaderLoadError>> {
         match template {
-            NodeTypes::Isf{info} => {
+            NodeType::Isf{info} => {
                 Some(IsfShader::new(facade, info).map(NodeShader::Isf))
             },
-            NodeTypes::SpoutOut => {
+            NodeType::SpoutOut => {
                 Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new())))
             },
             _ => None,

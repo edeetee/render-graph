@@ -7,7 +7,7 @@ use slotmap::SecondaryMap;
 
 use crate::{isf::meta::{IsfInfo}};
 
-use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeTypes}, node_tree_ui::TreeState};
+use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
 
 // #[derive(Default)]
 pub struct ShaderGraph(pub(super) EditorState, TreeState);
@@ -75,8 +75,8 @@ impl ShaderGraph {
         result
     }
 
-    pub fn add_node(&mut self, node_kind: NodeTypes, position: egui::Pos2) -> NodeId {
-        println!("Adding node {node_kind:#?}");
+    pub fn add_node(&mut self, node_kind: &NodeType, position: egui::Pos2) -> NodeId {
+        // println!("Adding node {node_kind:#?}");
 
         let new_node = self.0.graph.add_node(
             node_kind.node_graph_label(),
@@ -99,16 +99,7 @@ impl ShaderGraph {
         egui::SidePanel::left("tree_view").show(ctx, |ui| {
 
             if let Some(selected_item) = self.1.draw(ui) {
-
-                match IsfInfo::new_from_path(&selected_item.path){
-                    Ok(info) => {
-                        new_node_ty = Some(NodeTypes::Isf { info });
-                        
-                    },
-                    Err(e) => {
-                        println!("{e}");
-                    }
-                }
+                new_node_ty = Some(selected_item.ty.clone());
             }
 
         });
@@ -121,7 +112,7 @@ impl ShaderGraph {
 
             if let Some(node_ty) = new_node_ty {
                 let pos = editor_rect.left_top() - self.0.pan_zoom.pan;
-                let new_node_id = self.add_node(node_ty, pos);
+                let new_node_id = self.add_node(&node_ty, pos);
                 responses.push(egui_node_graph::NodeResponse::CreatedNode(new_node_id));
             }
 

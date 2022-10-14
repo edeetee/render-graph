@@ -18,7 +18,7 @@ use crate::textures::{UiTexture, TextureManager};
 use super::{
     def::{self, *},
     graph::ShaderGraph,
-    node_types::NodeTypes,
+    node_types::NodeType,
     node_shader::ComputedInputs, node_shader::NodeShader,
 };
 
@@ -88,7 +88,7 @@ impl ShaderGraphProcessor {
                 let template = &node.user_data.template;
 
                 match template {
-                    NodeTypes::Isf { info } => {
+                    NodeType::Isf { info } => {
                         self.versions
                             .insert(node_id, info.path.metadata().unwrap().modified().unwrap());
                     }
@@ -210,7 +210,7 @@ impl ShaderGraphProcessor {
         for (node_id, version) in self.versions.iter_mut() {
             let template = &mut self.graph[node_id].user_data.template;
 
-            if let NodeTypes::Isf { info } = template {
+            if let NodeType::Isf { info } = template {
                 let new_version = info.path.metadata().unwrap().modified().unwrap();
                 let diff = new_version.duration_since(*version);
 

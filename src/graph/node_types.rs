@@ -1,14 +1,14 @@
 
 
 
-use std::rc::Weak;
+use std::{rc::Weak, fmt::Display};
 
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use super::{def::*, conection_def::{InputDef, OutputDef}};
 use crate::isf::meta::{parse_isf_shaders, IsfInfo, default_isf_path};
 
 #[derive(Clone, PartialEq, Debug)]
-pub enum NodeTypes {
+pub enum NodeType {
     Instances,
     SpoutIn,
     SpoutOut,
@@ -18,40 +18,44 @@ pub enum NodeTypes {
     }
 }
 
-impl <'a> From<&'a NodeTypes> for &'a str {
-    fn from(ty: &'a NodeTypes) -> Self {
-        match ty {
-            NodeTypes::SpoutIn => "SpoutIn",
-            NodeTypes::SpoutOut => "SpoutOut",
-            NodeTypes::Instances => "Instances",
-            NodeTypes::Output => "Output",
-            NodeTypes::Isf{info} => info.name.as_str()
-        }
+impl Display for NodeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.get_name())
     }
 }
 
-impl NodeTypes {
-    pub fn get_all() -> Vec<NodeTypes> {
-        let path = default_isf_path();
-        let shaders = parse_isf_shaders(&path)
-            .map(|info| NodeTypes::Isf{info});
+impl NodeType {
+    pub fn get_name(&self) -> &str {
+        match self {
+            NodeType::SpoutIn => "SpoutIn",
+            NodeType::SpoutOut => "SpoutOut",
+            NodeType::Instances => "Instances",
+            NodeType::Output => "Output",
+            NodeType::Isf{info} => info.name.as_str()
+        }
+    }
+
+    pub fn get_builtin() -> Vec<NodeType> {
+        // let path = default_isf_path();
+        // let shaders = parse_isf_shaders(&path)
+        //     .map(|info| NodeType::Isf{info});
 
         let mut types = vec![
             // NodeTypes::Instances,
             // NodeTypes::Output,
-            NodeTypes::SpoutOut
+            NodeType::SpoutOut
         ];
-        types.extend(shaders);
+        // types.extend(shaders);
 
         types
     }
 
     pub fn get_input_types(&self) -> Vec<InputDef> {
         match self {
-            NodeTypes::Isf { info } => {
+            NodeType::Isf { info } => {
                 info.def.inputs.iter().map(InputDef::from).collect()
             }
-            NodeTypes::SpoutOut => vec![
+            NodeType::SpoutOut => vec![
                 ("name", "RustSpout").into(),
                 InputDef::texture("texture"),
             ],
@@ -61,28 +65,28 @@ impl NodeTypes {
 
     pub fn get_output_types(&self) -> Vec<OutputDef> {
         match self {
-            NodeTypes::Output => vec![],
-            NodeTypes::SpoutOut => vec![],
+            NodeType::Output => vec![],
+            NodeType::SpoutOut => vec![],
             _ => vec![ConnectionType::Texture2D.into()],
         }
     }
 }
 pub struct AllNodeTypes;
 impl NodeTemplateIter for AllNodeTypes {
-    type Item = NodeTypes;
+    type Item = NodeType;
 
     fn all_kinds(&self) -> Vec<Self::Item> {
-        NodeTypes::get_all()
+        NodeType::get_builtin()
     }
 }
 
-impl NodeTemplateTrait for NodeTypes {
+impl NodeTemplateTrait for NodeType {
     type NodeData = NodeData;
     type DataType = ConnectionType;
     type ValueType = UiValue;
 
     fn node_finder_label(&self) -> &str {
-        self.into()
+        self.get_name()
     }
 
     fn node_graph_label(&self) -> String {

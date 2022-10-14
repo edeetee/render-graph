@@ -12,7 +12,7 @@ use strum::{Display};
 
 use crate::textures::UiTexture;
 
-use super::{ node_types::NodeTypes};
+use super::{ node_types::NodeType};
 
 // pub struct TexInfo {
 //     pub id: TextureId,
@@ -20,7 +20,7 @@ use super::{ node_types::NodeTypes};
 // }
 
 pub struct NodeData {
-    pub template: NodeTypes,
+    pub template: NodeType,
     pub texture: Weak<RefCell<UiTexture>>, // pub texture_cache: Option<ShaderData>
 }
 
@@ -103,4 +103,4 @@ impl UserResponseTrait for GraphResponse {}
 pub struct GraphState {}
 
 pub(crate) type EditorState =
-    GraphEditorState<NodeData, ConnectionType, UiValue, NodeTypes, GraphState>;
+    GraphEditorState<NodeData, ConnectionType, UiValue, NodeType, GraphState>;
