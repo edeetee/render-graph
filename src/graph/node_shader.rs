@@ -1,11 +1,14 @@
-use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms}};
+use std::rc::Rc;
 
-use super::{node_types::NodeType, spout_out_shader::SpoutOutShader};
-use crate::isf::shader::{IsfShader, IsfShaderLoadError};
+use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue}};
+
+use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph::{ProcessedInputs}};
+use crate::{isf::shader::{IsfShader, IsfShaderLoadError}, obj_shader::ObjRenderer};
 
 pub enum NodeShader {
     Isf(IsfShader),
-    SpoutOut(SpoutOutShader)
+    SpoutOut(SpoutOutShader),
+    Obj(ObjRenderer)
 }
 
 impl NodeShader {
@@ -17,18 +20,23 @@ impl NodeShader {
             NodeType::SpoutOut => {
                 Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new())))
             },
-            _ => None,
+            NodeType::ObjRender => {
+                Some(Ok(NodeShader::Obj(ObjRenderer::new(facade).unwrap())))
+            },
         }
     }
 
-    pub fn draw<'a, 'b>(
+    pub fn render<'a, 'b>(
         &mut self,
         texture: &Texture2d,
-        inputs: &ComputedInputs<'a>,
+        inputs: ShaderInputs<'a>,
     ) {
         match self {
             NodeShader::Isf(isf) => {
-                isf.draw(&mut texture.as_surface(), inputs);
+                isf.draw(&mut texture.as_surface(), &inputs);
+            }
+            NodeShader::Obj(obj) => {
+                obj.draw(&mut texture.as_surface()).unwrap();
             }
             NodeShader::SpoutOut(spout_out) => {
                 //only send if input exists
@@ -41,36 +49,35 @@ impl NodeShader {
     }
 }
 
-pub struct ComputedInputs<'a> {
-    vec: Vec<(&'a str, UniformValue<'a>)>,
+pub struct ShaderInputs<'a> {
+    node_inputs: &'a ProcessedInputs<'a, Rc<Texture2d>>,
 }
 
-impl ComputedInputs<'_> {
+impl ShaderInputs<'_> {
     pub fn first_texture(&self) -> Option<&Texture2d> {
-        self.vec.iter().filter_map(|(_,tex)| {
-            match *tex {
-                UniformValue::Texture2d(tex, _) => Some(tex),
-                _ => None,
-            }
+        self.node_inputs.iter().filter_map(|(_,_,tex)| {
+            tex.as_ref().map(Rc::as_ref)
         }).next()
     }
 }
 
-impl<'a> Uniforms for ComputedInputs<'a>{
+impl<'a> Uniforms for ShaderInputs<'a>{
     fn visit_values<'b, F: FnMut(&str, UniformValue<'b>)>(&'b self, mut output: F) {
-        for (name, input) in self.vec.iter() {
-            output(name, *input);
+        for (name, input, tex) in self.node_inputs {
+            let option_val = tex.as_ref()
+                .map(Rc::as_ref)
+                .map(Texture2d::as_uniform_value)
+                .or_else(|| input.value.as_shader_input());
+
+            if let Some(val) = option_val {
+                output(name, val);
+            }
         }
     }
 }
 
-impl<'a> FromIterator<(&'a str, UniformValue<'a>)> for ComputedInputs<'a> {
-    fn from_iter<T>(iter: T) -> Self
-    where
-        T: IntoIterator<Item = (&'a str, UniformValue<'a>)>,
-    {
-        ComputedInputs {
-            vec: iter.into_iter().collect(),
-        }
+impl <'a> From<&'a ProcessedInputs<'a, Rc<Texture2d>>> for ShaderInputs<'a> {
+    fn from(inputs: &'a ProcessedInputs<'a, Rc<Texture2d>>) -> Self {
+        ShaderInputs { node_inputs: inputs }
     }
 }

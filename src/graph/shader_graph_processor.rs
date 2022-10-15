@@ -19,7 +19,7 @@ use super::{
     def::{self, *},
     graph::ShaderGraph,
     node_types::NodeType,
-    node_shader::ComputedInputs, node_shader::NodeShader,
+    node_shader::ShaderInputs, node_shader::NodeShader,
 };
 
 use crate::isf::shader::reload_ifs_shader;
@@ -83,7 +83,6 @@ impl ShaderGraphProcessor {
                 self.node_textures.insert(node_id, textures);
 
                 let node = &self.graph[node_id];
-                
 
                 let template = &node.user_data.template;
 
@@ -156,27 +155,7 @@ impl ShaderGraphProcessor {
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
 
-                self.graph.map_with_inputs::<_, Rc<Texture2d>>(output_id, &mut |node_id, inputs| {
-
-                    // let textures = self.texture_manager.input_textures_iter(facade, target);
-                    
-                    let processed_inputs: ComputedInputs = inputs.iter()
-                        .filter_map(|(name,node,maybe_process_input)| {
-                            //first try process node inputs
-                            let value = maybe_process_input.as_ref().map(|process_input| {
-                                process_input.as_uniform_value()
-                            //else use the value
-                            }).or_else(|| {
-                                node.value.as_shader_input()
-                            });
-
-                            //structure into named uniform values
-                            value.map(|value| {
-                                (*name, value)
-                            })
-                            
-                        })
-                        .collect();
+                self.graph.map_with_inputs(output_id, &mut |node_id, inputs| {
 
                     let target = self.texture_manager.new_target(facade);
 
@@ -186,7 +165,7 @@ impl ShaderGraphProcessor {
 
                         surface.clear_color(0., 0., 0., 0.);
 
-                        shader.draw(&target, &processed_inputs);
+                        shader.render(&target, ShaderInputs::from(&inputs));
 
                         let (w, h) = surface.get_dimensions();
                         let size = (w/4, h/4);

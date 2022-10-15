@@ -1,8 +1,10 @@
-use std::{ops::{Index, IndexMut}};
+use std::{ops::{Index, IndexMut}, rc::Rc};
 
 
+use eframe::glow::Texture;
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, NodeTemplateTrait};
 
+use glium::Texture2d;
 use slotmap::SecondaryMap;
 
 use crate::{isf::meta::{IsfInfo}};
@@ -35,6 +37,8 @@ impl IndexMut<NodeId> for ShaderGraph {
     }
 }
 
+pub type ProcessedInputs<'a, OUT> = Vec<(&'a str, &'a InputParam<ConnectionType, UiValue>, Option<OUT>)>;
+
 impl ShaderGraph {
     pub fn graph_ref(&self) -> &Graph<NodeData, ConnectionType, UiValue> {
         &self.0.graph
@@ -45,7 +49,7 @@ impl ShaderGraph {
     /// # Type arguments
     /// OUT: type that may come out of a 
     pub fn map_with_inputs<FOnNode, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut FOnNode, cache: &mut SecondaryMap<NodeId, OUT>) -> OUT 
-        where FOnNode: FnMut(NodeId, Vec<(&str, &InputParam<ConnectionType, UiValue>, Option<OUT>)>) -> OUT
+        where FOnNode: FnMut(NodeId, ProcessedInputs<'_, OUT>) -> OUT
     {
         let computed_inputs = self.0.graph[node_id].inputs.iter()
             .map(|(name, input_id)| {
