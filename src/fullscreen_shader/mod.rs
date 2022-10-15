@@ -1,4 +1,5 @@
 use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError};
+use wgpu::Device;
 pub struct FullscreenFrag{
     verts: VertexBuffer<VertexAttr>,
     program: Program,
@@ -18,7 +19,7 @@ impl<U: Uniforms> Uniforms for FullscreenUniforms<'_, U>{
 }
 
 impl FullscreenFrag {
-    pub fn new(facade: &impl Facade, frag: &str) -> Result<Self, ProgramCreationError> {
+    pub fn new(device: &Device, frag: &str) -> Result<Self, ProgramCreationError> {
         let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),
@@ -29,8 +30,13 @@ impl FullscreenFrag {
         Self::new_with_params(facade, frag, params)
     }
 
-    pub fn new_with_params(facade: &impl Facade, frag: &str, params: DrawParameters<'static>) -> Result<Self, ProgramCreationError> {
+    pub fn new_with_params(device: &Device, frag: &str, params: DrawParameters<'static>) -> Result<Self, ProgramCreationError> {
         let vert_buffer = new_fullscreen_buffer(facade).unwrap();
+
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor{
+            label: Some("fullscreen vert"),
+            source: wgpu::ShaderSource::Wgsl(include_str!("fullscreen.vert").into())
+        });
     
         let program = Program::from_source(
             facade,

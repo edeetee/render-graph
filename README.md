@@ -1,3 +1,6 @@
+# WGPU Support
+Blocking due to inability to support spout
+
 # Shader graph renderer
 
 A node graph renderer written in rust utilising [egui_node_graph](https://github.com/setzer22/egui_node_graph) for the graph view.

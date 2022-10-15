@@ -6,12 +6,15 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glium = "0.31.0"
+# glium = "0.31.0"
+wgpu = "0.13.0"
+egui-wgpu = "0.19.0"
+
 rand = "0.8.5"
 egui_node_graph = "0.3.0"
-egui = "0.18.1"
-eframe = "0.18.0"
-egui_glium = "0.18.0"
+egui = "0.19.0"
+eframe = "0.19.0"
+# egui_glium = "0.18.0"
 ouroboros = "0.15.0"
 itertools = "0.10.2"
 isf = "0.1.0"

@@ -1,22 +1,22 @@
-use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms}};
+use wgpu::Device;
 
 use super::{node_types::NodeType, spout_out_shader::SpoutOutShader};
 use crate::isf::shader::{IsfShader, IsfShaderLoadError};
 
 pub enum NodeShader {
     Isf(IsfShader),
-    SpoutOut(SpoutOutShader)
+    // SpoutOut(SpoutOutShader)
 }
 
 impl NodeShader {
-    pub fn new(template: &NodeType, facade: &impl Facade) -> Option<Result<Self, IsfShaderLoadError>> {
+    pub fn new(template: &NodeType, device: &Device) -> Option<Result<Self, IsfShaderLoadError>> {
         match template {
             NodeType::Isf{info} => {
-                Some(IsfShader::new(facade, info).map(NodeShader::Isf))
+                Some(IsfShader::new(device, info).map(NodeShader::Isf))
             },
-            NodeType::SpoutOut => {
-                Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new())))
-            },
+            // NodeType::SpoutOut => {
+            //     Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new())))
+            // },
             _ => None,
         }
     }
@@ -30,13 +30,13 @@ impl NodeShader {
             NodeShader::Isf(isf) => {
                 isf.draw(&mut texture.as_surface(), inputs);
             }
-            NodeShader::SpoutOut(spout_out) => {
-                //only send if input exists
-                if let Some(in_tex) = inputs.first_texture() {
-                    in_tex.as_surface().fill(&texture.as_surface(), glium::uniforms::MagnifySamplerFilter::Nearest);
-                    spout_out.send(texture);
-                }
-            }
+            // NodeShader::SpoutOut(spout_out) => {
+            //     //only send if input exists
+            //     if let Some(in_tex) = inputs.first_texture() {
+            //         in_tex.as_surface().fill(&texture.as_surface(), glium::uniforms::MagnifySamplerFilter::Nearest);
+            //         spout_out.send(texture);
+            //     }
+            // }
         };
     }
 }

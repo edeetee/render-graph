@@ -1,5 +1,5 @@
-use glium::{Texture2d, GlObject};
 use spout_rust::SpoutSender;
+use wgpu::Texture;
 
 
 pub struct SpoutOutShader {
@@ -14,7 +14,8 @@ impl SpoutOutShader {
         }
     }
 
-    pub fn send(&mut self, texture: &Texture2d) {
+    pub fn send(&mut self, texture: &Texture) {
+        // texture.as_hal(|hal_tex| )
         self.spout.send_texture(gl::TEXTURE_2D, texture.get_id(), texture.width(), texture.height());
     }
 }

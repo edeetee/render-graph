@@ -51,7 +51,7 @@ impl ShaderGraphProcessor {
         Default::default()
     }
 
-    fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
+    fn add_dangling_output(&mut self, device: &Device, node_id: NodeId) {
         // let is_output_target = node.outputs(&self.graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
         let output_target = OutputTargetBuilder {
@@ -71,7 +71,7 @@ impl ShaderGraphProcessor {
 
     pub fn node_event(
         &mut self,
-        facade: &impl Facade,
+        device: &Device,
         egui_glium: &mut EguiGlium,
         event: NodeResponse<def::GraphResponse, NodeData>,
     ) {
@@ -147,7 +147,7 @@ impl ShaderGraphProcessor {
     ///Processes each shader in the output_targets list from start to end
     /// Generates ui textures
     /// processes inputs
-    fn render_shaders(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium) {
+    fn render_shaders(&mut self, device: &Device, egui_glium: &mut EguiGlium) {
         // let shaders = &mut self.shaders;
         // let graph = &self.graph;
 
@@ -206,7 +206,7 @@ impl ShaderGraphProcessor {
         }
     }
 
-    pub fn reload_ifs_shaders(&mut self, facade: &impl Facade) {
+    pub fn reload_ifs_shaders(&mut self, device: &Device) {
         for (node_id, version) in self.versions.iter_mut() {
             let template = &mut self.graph[node_id].user_data.template;
 

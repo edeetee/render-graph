@@ -3,7 +3,7 @@ use std::{fs::{File}, io::Read, time::Instant};
 use glium::{backend::Facade, ProgramCreationError::{LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
 use isf::{Isf, Pass};
 use crate::fullscreen_shader::FullscreenFrag;
-use crate::textures::new_texture_2d;
+use crate::textures::new_texture_f32_2d;
 
 use super::meta::{IsfInfo, IsfReadError};
 
@@ -16,7 +16,7 @@ pub struct IsfShader {
 }
 
 impl IsfShader {
-    pub fn new(facade: &impl Facade, isf: &IsfInfo) -> Result<Self, IsfShaderLoadError> {
+    pub fn new(device: &Device, isf: &IsfInfo) -> Result<Self, IsfShaderLoadError> {
         // let source = read_to_string(file).unwrap();
         let mut source = generate_isf_prefix(&isf.def);
         source.push('\n');
@@ -24,7 +24,7 @@ impl IsfShader {
         file.read_to_string(&mut source)?;
 
         let passes = isf.def.passes.iter().map(|pass| {
-            (pass.clone(), new_texture_2d(facade, (256, 256)).unwrap())
+            (pass.clone(), new_texture_f32_2d(facade, (256, 256)).unwrap())
         })
         .collect();
 
@@ -96,7 +96,7 @@ impl <U: Uniforms> Uniforms for IsfUniforms<'_, U> {
 }
 
 pub fn reload_ifs_shader(
-    facade: &impl Facade,
+    device: &Device,
     file: &IsfInfo,
 ) -> Result<(IsfInfo, IsfShader), IsfShaderLoadError> {
     let isf = IsfInfo::new_from_path(&file.path)?;

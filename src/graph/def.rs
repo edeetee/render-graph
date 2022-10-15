@@ -6,7 +6,6 @@ use std::{rc::{Weak}, cell::RefCell};
 
 use egui::{Rgba};
 use egui_node_graph::{GraphEditorState, UserResponseTrait};
-use glium::{uniforms::{AsUniformValue, UniformValue}};
 use strum::{Display};
 
 

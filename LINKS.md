@@ -1,3 +1,7 @@
+# Non-pipeline rendering
+https://github.com/linebender/piet-gpu/blob/main/doc/blogs.md
+
+
 # RPI Rendering
 
 https://symbolibre.org/graphics-acceleration-on-the-raspberry-pi-zero.html
