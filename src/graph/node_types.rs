@@ -56,7 +56,7 @@ impl NodeType {
                 ("name", "RustSpout").into(),
                 InputDef::texture("texture"),
             ],
-            NodeType::ObjRender => vec![]
+            NodeType::ObjRender => vec![("obj", UiValue::Path(None)).into()]
         }
     }
 

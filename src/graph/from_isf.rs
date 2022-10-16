@@ -3,7 +3,7 @@ use core::default::Default;
 use egui::Rgba;
 use isf::{Input, InputType, InputValues};
 use super::conection_def::InputDef;
-use super::def::{ConnectionType, UiValue, ValueData};
+use super::def::{ConnectionType, UiValue, RangedData};
 
 impl From<&InputType> for ConnectionType {
     fn from(ty: &InputType) -> Self {
@@ -16,7 +16,7 @@ impl From<&InputType> for ConnectionType {
     }
 }
 
-impl <T: Default + Copy> From<&InputValues<T>> for ValueData<T> {
+impl <T: Default + Copy> From<&InputValues<T>> for RangedData<T> {
     fn from(value: &InputValues<T>) -> Self {
         Self {
             value: value.identity.or(value.default).unwrap_or_default(),
@@ -48,7 +48,7 @@ impl From<&InputType> for UiValue {
 
                 let default = vec![];
 
-                let data = ValueData{
+                let data = RangedData{
                     value: rgba_from_vec(v.default.as_ref().unwrap_or(&default)),
                     min: v.min.as_ref().map(rgba_from_vec),
                     max: v.max.as_ref().map(rgba_from_vec),
@@ -58,9 +58,9 @@ impl From<&InputType> for UiValue {
                 UiValue::Color(data)
             },
             InputType::Point2d(v) => UiValue::Vec2(v.into()),
-            InputType::Bool(v) => UiValue::Bool(ValueData::new_default(v.default.unwrap_or_default())),
+            InputType::Bool(v) => UiValue::Bool(RangedData::new_default(v.default.unwrap_or_default())),
             InputType::Long(v) => UiValue::Long(
-                ValueData {
+                RangedData {
                     value: v.default.unwrap_or_default(),
                     min: v.min.or_else(|| v.values.iter().min().copied()),
                     max: v.max.or_else(|| v.values.iter().max().copied()),
@@ -68,7 +68,7 @@ impl From<&InputType> for UiValue {
                 }
             ),
             
-            InputType::Event => UiValue::Bool(ValueData::new_default(false)),
+            InputType::Event => UiValue::Bool(RangedData::new_default(false)),
 
             InputType::Image | InputType::Audio(_) | InputType::AudioFft(_) => UiValue::None,
         }

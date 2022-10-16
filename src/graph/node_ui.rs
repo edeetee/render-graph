@@ -57,7 +57,7 @@ impl DataTypeTrait<GraphState> for ConnectionType {
 fn horizontal_drags<const A: usize>(
     ui: &mut egui::Ui, 
     labels: &[&str; A],
-    data: &mut ValueData<[f32; A]>
+    data: &mut RangedData<[f32; A]>
 ) -> egui::InnerResponse<bool> {
 
     ui.horizontal(|ui| {
@@ -67,7 +67,7 @@ fn horizontal_drags<const A: usize>(
             ui.label(labels[i].to_string());
 
             let speed = 0.01 * match data {
-                ValueData{
+                RangedData{
                     min: Some(min),
                     max: Some(max),
                     ..
@@ -109,6 +109,7 @@ impl WidgetValueTrait for UiValue {
     type Response = GraphResponse;
 
     fn value_widget(&mut self, param_name: &str, ui: &mut egui::Ui) -> Vec<Self::Response> {
+
         let _changed = match self {
             UiValue::Vec2 (data) => {
                 ui.label(param_name);
@@ -118,32 +119,78 @@ impl WidgetValueTrait for UiValue {
                 ui.label(param_name);
                 horizontal_drags(ui, &["r", "g", "b", "a"], data).inner
             }
-            UiValue::Color(ValueData { value, .. }) => {
+            UiValue::Color(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
                 }).inner.changed()
             }
-            UiValue::Float (ValueData { value, min, max, .. }) => {
+            UiValue::Float (RangedData { value, min, max, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     // ui.add(DragValue::new(value))
                     ui.add(Slider::new(value, default_range_f32(min, max)).clamp_to_range(false))
                 }).inner.changed()
             }
-            UiValue::Long(ValueData { value, min, max, .. }) => {
+            UiValue::Long(RangedData { value, min, max, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
                 }).inner.changed()
             },
-            UiValue::Bool(ValueData { value, .. }) => {
+            UiValue::Bool(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.checkbox(value, "")
                 }).inner.changed()
             }
-            UiValue::Text(ValueData { value, .. }) => {
+            UiValue::Path(path) => {
+                ui.horizontal(|ui| {
+                    ui.label(param_name);
+
+                    let path_text = if let Some(path) = path {
+                        if let Some(path_str) = path.to_str() {
+                            let max_length = 30;
+
+                            if max_length < path_str.len() {
+                                &path_str[path_str.len()-max_length..]
+                            } else {
+                                path_str
+                            }
+                        } else {
+                            "???"
+                        }
+                    } else {
+                        "Open"
+                    };
+                    let open_resp = ui.button(path_text);
+
+                    if ui.ui_contains_pointer() {
+                        let files = &ui.ctx().input().raw.dropped_files;
+                        if let Some(file) = files.iter().next() {
+                            if file.path.is_some() {
+                                *path = file.path.clone();
+                            }
+                        }
+                    }
+
+                    if open_resp.clicked() {
+                        let new_path = native_dialog::FileDialog::new()
+                            .set_location("~/Desktop")
+                            .add_filter("OBJ file", &["obj"])
+                            // .add_filter("JPEG Image", &["jpg", "jpeg"])
+                            .show_open_single_file()
+                            .unwrap();
+
+                        if new_path.is_some() {
+                            *path = new_path;
+                        }
+                    }
+
+                    open_resp
+                }).inner.changed()
+            }
+            UiValue::Text(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.text_edit_singleline(value)

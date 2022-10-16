@@ -2,7 +2,7 @@
 
 
 
-use std::{rc::{Weak}, cell::RefCell};
+use std::{rc::{Weak}, cell::RefCell, path::PathBuf};
 
 use egui::{Rgba};
 use egui_node_graph::{GraphEditorState, UserResponseTrait};
@@ -34,14 +34,14 @@ pub enum ConnectionType {
 }
 
 #[derive(Debug)]
-pub struct ValueData<T> {
+pub struct RangedData<T> {
     pub value: T,
     pub min: Option<T>,
     pub max: Option<T>,
     pub default: Option<T>
 }
 
-impl <T> ValueData<T> {
+impl <T> RangedData<T> {
     ///Set default and value
     pub fn new_default(value: T) -> Self
         where T: Clone
@@ -55,7 +55,7 @@ impl <T> ValueData<T> {
     }
 }
 
-impl <T: PartialEq> PartialEq for ValueData<T>{
+impl <T: PartialEq> PartialEq for RangedData<T>{
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
@@ -63,19 +63,20 @@ impl <T: PartialEq> PartialEq for ValueData<T>{
 
 #[derive(Debug, PartialEq)]
 pub enum UiValue {
-    Vec2(ValueData<[f32; 2]>),
-    Float(ValueData<f32>),
-    Long(ValueData<i32>),
-    Bool(ValueData<bool>),
-    Vec4(ValueData<[f32; 4]>),
-    Color(ValueData<Rgba>),
-    Text(ValueData<String>),
+    Vec2(RangedData<[f32; 2]>),
+    Float(RangedData<f32>),
+    Long(RangedData<i32>),
+    Bool(RangedData<bool>),
+    Vec4(RangedData<[f32; 4]>),
+    Color(RangedData<Rgba>),
+    Text(RangedData<String>),
+    Path(Option<PathBuf>),
     None,
 }
 
 impl From<&str> for UiValue {
     fn from(s: &str) -> Self {
-        Self::Text(ValueData::new_default(s.into()))
+        Self::Text(RangedData::new_default(s.into()))
     }
 }
 
@@ -89,7 +90,7 @@ impl UiValue {
             UiValue::Color(v) => Some(UniformValue::Vec4(v.value.to_array())),
             UiValue::Long(v) => Some(v.value.as_uniform_value()),
 
-            UiValue::Text(_) | UiValue::None => None,
+            UiValue::Text(_) | UiValue::Path(_) | UiValue::None => None,
         }
     }
 }
