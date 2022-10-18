@@ -2,8 +2,9 @@ use std::{fs::{File}, io::Read, time::Instant};
 
 use glium::{backend::Facade, ProgramCreationError::{LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
 use isf::{Isf, Pass};
+use strum::Display;
 use thiserror::Error;
-use crate::fullscreen_shader::FullscreenFrag;
+use crate::{fullscreen_shader::FullscreenFrag, util::GlProgramCreationError};
 use crate::textures::new_texture_2d;
 
 use super::meta::{IsfInfo, IsfInfoReadError};
@@ -134,26 +135,8 @@ fn generate_isf_prefix(def: &Isf) -> String {
 
 #[derive(Error, Debug)]
 pub enum IsfShaderLoadError {
+    #[error("Load error {0}")]
     IoError(#[from] std::io::Error),
-    CompileError(#[from] glium::program::ProgramCreationError),
-}
-
-impl std::fmt::Display for IsfShaderLoadError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::IoError(arg0) => arg0.fmt(f),
-            //better multiline parsing
-            Self::CompileError(arg0) => {
-                match arg0 {
-                    glium::ProgramCreationError::CompilationError(source, shader_type) => {
-                        write!(f, "CompilationError for {shader_type:?} (\n{source})")
-                    }
-                    LinkingError(source) => {
-                        write!(f, "LinkingError (\n{source})")
-                    },
-                    _ => arg0.fmt(f),
-                }
-            }
-        }
-    }
+    #[error("Compile error {0}")]
+    CompileError(#[from] GlProgramCreationError),
 }

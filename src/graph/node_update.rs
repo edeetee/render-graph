@@ -5,21 +5,26 @@ use glium::backend::Facade;
 use strum::Display;
 use thiserror::Error;
 
-use crate::{isf::{meta::{IsfInfo, IsfInfoReadError}, shader::{IsfShader, IsfShaderLoadError}, updater::IsfUpdater}, obj_shader::loader::ObjLoader};
+use crate::{isf::{meta::{IsfInfo, IsfInfoReadError}, shader::{IsfShader, IsfShaderLoadError}, updater::IsfUpdater}, obj_shader::loader::ObjLoader, gl_expression::GlExpressionUpdater};
 
 use super::{node_types::NodeType, def::{EditorState, NodeData, UiValue}, node_shader::NodeShader, graph::InputParams};
 
 
 pub enum NodeUpdate {
     Isf(IsfUpdater),
-    Obj(ObjLoader)
+    Obj(ObjLoader),
+    Expression(GlExpressionUpdater)
 }
+
+//TODO: Only run on change (ui etc)
+//Maybe time to use ECS?
 
 impl NodeUpdate {
     pub fn new(template: &NodeType) -> Option<Self> {
         match template {
             NodeType::Isf { .. } => Some(Self::Isf(IsfUpdater{modified: SystemTime::now()})),
             NodeType::ObjRender => Some(Self::Obj(ObjLoader::new())),
+            NodeType::Expression { .. } => Some(Self::Expression(GlExpressionUpdater{frag_source: None})),
             _ => None
         }
     }
@@ -45,6 +50,26 @@ impl NodeUpdate {
                     }
                 }).next() {
                     loader.load_if_changed(facade, &path, obj_renderer);
+                }
+            },
+            (
+                NodeUpdate::Expression(updater),
+                NodeType::Expression { .. },
+                NodeShader::Expression(renderer)
+            ) => {
+
+                if let Some(frag_source) = inputs.iter()
+                    .find_map(|(name, val)| {
+                        if let UiValue::Text(text, ..) = &val.value {
+                            Some(text.value.clone())
+                        } else {
+                            None
+                        }
+                    }) 
+                {
+                    if let Some(inputs) = updater.update(facade, renderer, frag_source) {
+                        dbg!(inputs);
+                    }
                 }
             }
             _ => {}

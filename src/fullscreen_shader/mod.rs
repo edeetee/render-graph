@@ -1,16 +1,14 @@
 use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue, UniformValue}, ProgramCreationError, uniform};
 
-use crate::util::MultiUniforms;
+use crate::util::{MultiUniforms, GlProgramCreationError};
 pub struct FullscreenFrag{
-    verts: VertexBuffer<VertexAttr>,
-    program: Program,
-    params: DrawParameters<'static>
+    pub verts: VertexBuffer<VertexAttr>,
+    pub program: Program,
+    pub params: DrawParameters<'static>
 }
 
-
-
 impl FullscreenFrag {
-    pub fn new(facade: &impl Facade, frag: &str) -> Result<Self, ProgramCreationError> {
+    pub fn new(facade: &impl Facade, frag: &str) -> Result<Self, GlProgramCreationError> {
         let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),
@@ -21,7 +19,7 @@ impl FullscreenFrag {
         Self::new_with_params(facade, frag, params)
     }
 
-    pub fn new_with_params(facade: &impl Facade, frag: &str, params: DrawParameters<'static>) -> Result<Self, ProgramCreationError> {
+    pub fn new_with_params(facade: &impl Facade, frag: &str, params: DrawParameters<'static>) -> Result<Self, GlProgramCreationError> {
         let vert_buffer = new_fullscreen_buffer(facade).unwrap();
     
         let program = Program::from_source(
@@ -30,6 +28,8 @@ impl FullscreenFrag {
             frag,
             None
         )?;
+
+        // program.get_shader_storage_blocks()t
 
         Ok(Self{
             params,

@@ -1,4 +1,5 @@
-use glium::uniforms::{Uniforms, UniformValue, AsUniformValue};
+use glium::{uniforms::{Uniforms, UniformValue, AsUniformValue}, ProgramCreationError};
+use thiserror::Error;
 
 pub struct MultiUniforms<'a, T: Uniforms> {
     // name: &'a str,
@@ -23,5 +24,24 @@ impl<'b,T: Uniforms> Uniforms for MultiUniforms<'b,T>{
             output(name, *val);
         }
         self.next.visit_values(output);
+    }
+}
+
+#[derive(Error, Debug)]
+pub struct GlProgramCreationError{
+    #[from] pub inner: ProgramCreationError
+}
+
+impl std::fmt::Display for GlProgramCreationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.inner {
+            glium::ProgramCreationError::CompilationError(source, shader_type) => {
+                write!(f, "CompilationError for {shader_type:?} (\n{source})")
+            }
+            glium::ProgramCreationError::LinkingError(source) => {
+                write!(f, "LinkingError (\n{source})")
+            },
+            _ => self.inner.fmt(f),
+        }
     }
 }

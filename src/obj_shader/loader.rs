@@ -5,6 +5,8 @@ use itertools::Itertools;
 use tri_mesh::{prelude::Mesh, MeshBuilder};
 use wavefront_obj::obj::ObjSet;
 
+use crate::obj_shader::renderer::vertices_from_mesh;
+
 use super::renderer::{VertexAttr, ObjRenderer};
 
 pub struct ObjLoader {
@@ -40,11 +42,18 @@ impl ObjLoader {
 
             let obj_source = read_to_string(path).unwrap();
             let objs = wavefront_obj::obj::parse(obj_source).unwrap();
-            let (verts, index_groups) = tri_data_from_obj(objs);
+            let (verts, indices) = tri_data_from_obj(objs);
 
-            dbg!(verts.len(), index_groups.len());
+            let mut mesh = MeshBuilder::new()
+                .with_positions(verts.iter().flat_map(|v|v.position.iter()).map(|f| *f as f64).collect_vec())
+                .with_indices(indices)
+                .build().unwrap();
+                
+            // mesh.merge_overlapping_primitives();
 
-            renderer.set_tri_data(facade, &verts, &index_groups);
+            // dbg!(verts.len(), indices.len());
+
+            renderer.set_tri_data(facade, &vertices_from_mesh(&mesh), &mesh.indices_buffer());
         }
     }
 }
@@ -54,9 +63,11 @@ fn tri_data_from_obj(objs: ObjSet) -> (Vec<VertexAttr>, Vec<u32>) {
     let mut indices = Vec::new();
 
     for (i, obj) in objs.objects.iter().enumerate() { // Objects consisting of several meshes with different materials
-        if obj.vertices.is_empty() || 32 < obj.vertices.len() {
-            println!("Skipping obj{}: {}v {}g", obj.name, obj.vertices.len(), obj.geometry.len());
+        if obj.vertices.is_empty() || 16 <= obj.vertices.len() {
+            println!("- obj{}: {}v {}g", obj.name, obj.vertices.len(), obj.geometry.len());
             continue;
+        } else {
+            println!("+ obj{}: {}v {}g {}t", obj.name, obj.vertices.len(), obj.geometry.len(), obj.tex_vertices.len());
         }
 
         let start_index = positions.len();
@@ -64,11 +75,12 @@ fn tri_data_from_obj(objs: ObjSet) -> (Vec<VertexAttr>, Vec<u32>) {
         positions.extend(obj.vertices.iter()
             .map(|v| {
                 VertexAttr {
-                    position: [v.x as f32, -v.y as f32, v.z as f32],
-                    color: [(i%2) as f32, (i%3) as f32, (i%5) as f32]
+                    position: [v.x as f32, -v.y as f32, v.z as f32]
                 }
             })
         );
+
+        // obj.tex_vertices
 
         for geo in &obj.geometry {
             //index group per geometry

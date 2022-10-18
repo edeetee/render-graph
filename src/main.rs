@@ -6,6 +6,7 @@ mod isf;
 mod tree_view;
 mod obj_shader;
 mod util;
+mod gl_expression;
 
 use graph::render_glium;
 

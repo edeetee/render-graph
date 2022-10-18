@@ -34,7 +34,7 @@ pub enum ConnectionType {
     // Float,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RangedData<T> {
     pub value: T,
     pub min: Option<T>,
@@ -65,7 +65,7 @@ impl <T: PartialEq> PartialEq for RangedData<T>{
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Mat4UiData {
     pub mat: Mat4,
     pub rotation: (f32, f32, f32),
@@ -109,7 +109,14 @@ impl Mat4UiData {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug,Default, PartialEq, Clone)]
+pub enum TextStyle {
+    #[default]
+    Oneline,
+    Multiline
+}
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum UiValue {
     Vec2(RangedData<[f32; 2]>),
     Float(RangedData<f32>),
@@ -117,7 +124,7 @@ pub enum UiValue {
     Bool(RangedData<bool>),
     Vec4(RangedData<[f32; 4]>),
     Color(RangedData<Rgba>),
-    Text(RangedData<String>),
+    Text(RangedData<String>, TextStyle),
     Path(Option<PathBuf>),
     Mat4(Mat4UiData),
     None,
@@ -125,7 +132,7 @@ pub enum UiValue {
 
 impl From<&str> for UiValue {
     fn from(s: &str) -> Self {
-        Self::Text(s.to_string().into())
+        Self::Text(s.to_string().into(), TextStyle::Oneline)
     }
 }
 
@@ -140,7 +147,7 @@ impl UiValue {
             UiValue::Long(v) => Some(v.value.as_uniform_value()),
             UiValue::Mat4(v) => Some(UniformValue::Mat4(v.mat.to_cols_array_2d())),
 
-            UiValue::Text(_) | UiValue::Path(_) | UiValue::None => None,
+            UiValue::Text(..) | UiValue::Path(_) | UiValue::None => None,
         }
     }
 }

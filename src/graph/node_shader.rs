@@ -3,12 +3,13 @@ use std::rc::Rc;
 use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue}, framebuffer::SimpleFrameBuffer};
 
 use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph::{ProcessedInputs}};
-use crate::{isf::shader::{IsfShader, IsfShaderLoadError}, obj_shader::renderer::ObjRenderer, textures::{DefaultTexture, TextureManager}};
+use crate::{isf::shader::{IsfShader, IsfShaderLoadError}, obj_shader::renderer::ObjRenderer, textures::{DefaultTexture, TextureManager}, gl_expression::GlExpressionRenderer};
 
 pub enum NodeShader {
     Isf(IsfShader),
     SpoutOut(SpoutOutShader),
-    Obj(ObjRenderer)
+    Obj(ObjRenderer),
+    Expression(GlExpressionRenderer)
 }
 
 impl NodeShader {
@@ -23,11 +24,10 @@ impl NodeShader {
             NodeType::ObjRender => {
                 Some(Ok(NodeShader::Obj(ObjRenderer::new(facade).unwrap())))
             },
+            NodeType::Expression { .. } => {
+                Some(Ok(NodeShader::Expression(GlExpressionRenderer::new(facade))))
+            }
         }
-    }
-
-    pub fn update(&mut self, inputs: ShaderInputs<'_>, facade: &impl Facade) {
-
     }
 
     pub fn render(
@@ -39,8 +39,15 @@ impl NodeShader {
         let color = textures.get_color(facade);
 
         match self {
+            NodeShader::Expression(renderer) => {
+                let mut surface = color.as_surface();
+                surface.clear_color(0.0, 0.0, 0.0, 0.0);
+                renderer.draw(&mut surface, &inputs);
+            }
             NodeShader::Isf(isf) => {
-                isf.draw(&mut color.as_surface(), &inputs);
+                let mut surface = color.as_surface();
+                surface.clear_color(0.0, 0.0, 0.0, 0.0);
+                isf.draw(&mut surface, &inputs);
             }
             NodeShader::Obj(obj) => {
                 let depth = textures.get_depth(facade);

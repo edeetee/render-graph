@@ -16,4 +16,3 @@ vec2 isf_FragNormCoord = gl_FragCoord.xy/RENDERSIZE;
 #define IMG_NORM_PIXEL(sampler, coord) texture2D(sampler, coord)
 #define IMG_THIS_PIXEL(sampler) IMG_THIS_NORM_PIXEL(sampler)
 #define IMG_THIS_NORM_PIXEL(sampler) texture2D(sampler,isf_FragNormCoord)
-

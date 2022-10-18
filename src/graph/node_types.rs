@@ -14,6 +14,9 @@ pub enum NodeType {
     ObjRender,
     Isf {
         info: IsfInfo
+    },
+    Expression {
+        inputs: Option<Vec<InputDef>>
     }
 }
 
@@ -28,7 +31,8 @@ impl NodeType {
         match self {
             NodeType::SpoutOut => "SpoutOut",
             NodeType::ObjRender => "ObjRender",
-            NodeType::Isf{info} => info.name.as_str()
+            NodeType::Isf{info} => info.name.as_str(),
+            NodeType::Expression { .. } => "Expression"
         }
     }
 
@@ -41,7 +45,8 @@ impl NodeType {
             // NodeTypes::Instances,
             // NodeTypes::Output,
             NodeType::ObjRender,
-            NodeType::SpoutOut
+            NodeType::SpoutOut,
+            NodeType::Expression { inputs: None }
         ];
         // types.extend(shaders);
 
@@ -62,16 +67,19 @@ impl NodeType {
                 ("model", UiValue::Mat4(Mat4::IDENTITY.into())).into(),
                 ("view", UiValue::Mat4(Mat4UiData::new_view())).into(),
             ],
+            NodeType::Expression { .. } => vec![
+                ("text", UiValue::Text("vec4(1.0,1.0,1.0,1.0)".to_string().into(), TextStyle::Multiline)).into(),
+                InputDef::texture("pixels")
+            ]
         }
     }
 
     pub fn get_output_types(&self) -> Vec<OutputDef> {
         match self {
             NodeType::SpoutOut => vec![],
-            NodeType::Isf { .. } => {
-                vec![ConnectionType::Texture2D.into()]
-            }
+            NodeType::Isf { .. } => vec![ConnectionType::Texture2D.into()],
             NodeType::ObjRender => vec![ConnectionType::Texture2D.into()],
+            NodeType::Expression { .. } => vec![ConnectionType::Texture2D.into()]
             // _ => vec![ConnectionType::Texture2D.into()],
         }
     }

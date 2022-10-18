@@ -2,7 +2,7 @@
 
 use super::def::{ConnectionType, UiValue};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InputDef {
     pub name: String,
     pub ty: ConnectionType,

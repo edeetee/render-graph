@@ -242,10 +242,15 @@ impl WidgetValueTrait for UiValue {
                 changed
             }
 
-            UiValue::Text(RangedData { value, .. }) => {
+            UiValue::Text(RangedData { value, .. }, style) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
-                    ui.text_edit_singleline(value)
+                    let widget = match style {
+                        TextStyle::Oneline => egui::TextEdit::singleline(value),
+                        TextStyle::Multiline => egui::TextEdit::multiline(value).code_editor()
+                    };
+                    ui.set_max_width(256.0);
+                    ui.add_sized(ui.available_size(), widget)
                 }).inner.changed()
             }
 

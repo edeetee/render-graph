@@ -49,10 +49,7 @@ impl ObjRenderer {
     pub fn new_with_params(facade: &impl Facade, params: DrawParameters<'static>) -> Result<Self, ProgramCreationError> {
         let mesh = MeshBuilder::new().cube().build().unwrap();
 
-        let vertices: Vec<_> = mesh.vertex_iter()
-            .map(|id| mesh.vertex_position(id).map(|n| n as f32))
-            .map(|v| VertexAttr { position: v.into(), color: v.into() })
-            .collect();
+        let vertices: Vec<_> = vertices_from_mesh(&mesh);
 
         let indices = mesh.indices_buffer();
 
@@ -132,10 +129,16 @@ pub fn buffers_from_data<V: glium::Vertex,I: glium::index::Index>(facade: &impl 
     (vert_buffer, index_buffer)
 }
 
-#[derive(Copy, Clone)]
-pub struct VertexAttr {
-    pub position: [f32; 3],
-    pub color: [f32; 3],
+pub fn vertices_from_mesh(mesh: &Mesh) -> Vec<VertexAttr> {
+    mesh.vertex_iter()
+        .map(|id| mesh.vertex_position(id).map(|n| n as f32))
+        .map(|v| VertexAttr { position: v.into() })
+        .collect()
 }
 
-implement_vertex!(VertexAttr, position, color);
+#[derive(Copy, Clone)]
+pub struct VertexAttr {
+    pub position: [f32; 3]
+}
+
+implement_vertex!(VertexAttr, position);
