@@ -36,3 +36,4 @@ API is very much unstable at the moment. If you are interested in contributing, 
 - Continue reducing dependencies between structs
 - Support an SDF workflow
 - Support different texture sizes (options per node)
+- Sub shader input for obj render
