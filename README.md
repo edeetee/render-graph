@@ -2,7 +2,7 @@
 
 A node graph renderer written in rust utilising [egui_node_graph](https://github.com/setzer22/egui_node_graph) for the graph view.
 
-I am developing this for the use case of live generative visual performances, where I want to do performant experimentation without the possibility of crashes.
+I am developing this for the use case of live generative visual performances, where I want to do performant, intuitive experimentation without crashes.
 
 ![screenshot](media/screenshot.jpg)
 
@@ -13,6 +13,7 @@ I come from Touchdesigner, a mature node graph system that has a tendency to cra
 - ISF shader support
     - Hot reloading
 - Texture sharing
+- Obj file render
 
 ## Contributing
 
