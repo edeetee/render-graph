@@ -4,7 +4,8 @@
 use std::{rc::Weak, fmt::Display};
 
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
-use super::{def::*, conection_def::{InputDef, OutputDef}};
+use glam::Mat4;
+use super::{def::*, node_connections::{InputDef, OutputDef}};
 use crate::isf::meta::{parse_isf_shaders, IsfInfo, default_isf_path};
 
 #[derive(Clone, PartialEq, Debug)]
@@ -56,7 +57,11 @@ impl NodeType {
                 ("name", "RustSpout").into(),
                 InputDef::texture("texture"),
             ],
-            NodeType::ObjRender => vec![("obj", UiValue::Path(None)).into()]
+            NodeType::ObjRender => vec![
+                ("obj", UiValue::Path(None)).into(),
+                ("model", UiValue::Mat4(Mat4::IDENTITY.into())).into(),
+                ("view", UiValue::Mat4(Mat4UiData::new_view())).into(),
+            ],
         }
     }
 

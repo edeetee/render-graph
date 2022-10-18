@@ -10,7 +10,6 @@ use glium::{
     framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface, Texture2d, uniforms::AsUniformValue,
 };
 
-
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use crate::textures::{UiTexture, TextureManager};
@@ -19,10 +18,8 @@ use super::{
     def::{self, *},
     graph::ShaderGraph,
     node_types::NodeType,
-    node_shader::ShaderInputs, node_shader::NodeShader,
+    node_shader::ShaderInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
-
-use crate::isf::shader::reload_ifs_shader;
 
 extern crate gl;
 
@@ -44,6 +41,8 @@ pub struct ShaderGraphProcessor {
     node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
     shaders: SecondaryMap<NodeId, NodeShader>,
     versions: SecondaryMap<NodeId, SystemTime>,
+
+    updaters: SecondaryMap<NodeId, NodeUpdate>
 }
 
 impl ShaderGraphProcessor {
@@ -106,6 +105,10 @@ impl ShaderGraphProcessor {
                     }
                 }
 
+                if let Some(updater) = NodeUpdate::new(template) {
+                    self.updaters.insert(node_id, updater);
+                }
+
                 //remove output target if not needed
                 for input in node.inputs(self.graph.graph_ref()) {
                     if input.typ == ConnectionType::Texture2D {
@@ -137,6 +140,7 @@ impl ShaderGraphProcessor {
                 self.output_targets.remove(node_id);
                 self.shaders.remove(node_id);
                 self.versions.remove(node_id);
+                self.updaters.remove(node_id);
                 self.node_textures.remove(node_id);
             }
             _ => {}
@@ -157,27 +161,31 @@ impl ShaderGraphProcessor {
 
                 self.graph.map_with_inputs(output_id, &mut |node_id, inputs| {
 
-                    let target = self.texture_manager.new_target(facade);
+                    // let target = self.texture_manager.get_color(facade);
 
                     //Render a shader
                     if let Some(shader) = self.shaders.get_mut(node_id) {
-                        let mut surface = target.as_surface();
+                        // let mut surface = target.as_surface();
 
-                        surface.clear_color(0., 0., 0., 0.);
+                        // surface.clear_color(0., 0., 0., 0.);
 
-                        shader.render(&target, ShaderInputs::from(&inputs));
+                        let target = shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs));
+
+                        let surface = target.as_surface();
 
                         let (w, h) = surface.get_dimensions();
                         let size = (w/4, h/4);
 
                         // node.user_data.
                         // self.node_textures[node_id].borrow_mut()
-                        let mut texture = (*self.node_textures[node_id]).borrow_mut();
-                        texture.update_size(facade, egui_glium, size);
-                        texture.copy_from(&surface);
-                    }
+                        let mut ui_texture = (*self.node_textures[node_id]).borrow_mut();
+                        ui_texture.update_size(facade, egui_glium, size);
+                        ui_texture.copy_from(&surface);
 
-                    target
+                        Some(target)
+                    } else {
+                        None
+                    }
                 }, &mut SecondaryMap::new());
             });
 
@@ -185,36 +193,21 @@ impl ShaderGraphProcessor {
         }
     }
 
-    pub fn reload_ifs_shaders(&mut self, facade: &impl Facade) {
-        for (node_id, version) in self.versions.iter_mut() {
+    pub fn update(&mut self, facade: &impl Facade) {
+        for (node_id, updater) in self.updaters.iter_mut() {
             let template = &mut self.graph[node_id].user_data.template;
 
-            if let NodeType::Isf { info } = template {
-                let new_version = info.path.metadata().unwrap().modified().unwrap();
-                let diff = new_version.duration_since(*version);
+            let node = &mut self.graph.0.graph.nodes[node_id];
+            let inputs: Vec<_> = node.inputs.iter()
+                .map(|(name, in_id)| (name.as_str(), &self.graph.0.graph.inputs[*in_id]))
+                .collect();
 
-                if let Ok(diff) = diff {
-                    if 10 < diff.as_millis() {
-                        //iterate version even on error (wait for change to retry)
-                        *version = new_version;
-
-                        let name = info.name.clone();
-
-                        match reload_ifs_shader(facade, &info) {
-                            Ok((new_info, new_shader)) => {
-                                self.shaders.insert(node_id, NodeShader::Isf(new_shader));
-                                *info = new_info;
-                                println!("Reloaded shader: {}", name);
-                            }
-                            Err(err) => {
-                                let err_txt = format!("{:#?}", err);
-                                let err_txt = err_txt.replace("\\n", "\n");
-                                eprintln!("Error reloading shader {}: {}", info.name, err_txt);
-                            }
-                        }
-                    }
-                }
-            }
+            updater.update(
+                facade, 
+                &mut node.user_data, 
+                &inputs, 
+                &mut self.shaders[node_id]
+            )
         }
     }
 

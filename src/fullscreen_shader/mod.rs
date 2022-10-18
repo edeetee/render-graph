@@ -1,21 +1,13 @@
-use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError};
+use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue, UniformValue}, ProgramCreationError, uniform};
+
+use crate::util::MultiUniforms;
 pub struct FullscreenFrag{
     verts: VertexBuffer<VertexAttr>,
     program: Program,
     params: DrawParameters<'static>
 }
 
-struct FullscreenUniforms<'a, U: Uniforms> {
-    res: [f32; 2],
-    inner: &'a U
-}
 
-impl<U: Uniforms> Uniforms for FullscreenUniforms<'_, U>{
-    fn visit_values<'a, F: FnMut(&str, glium::uniforms::UniformValue<'a>)>(&'a self, mut output: F) {
-        output("res", self.res.as_uniform_value());
-        self.inner.visit_values(output);
-    }
-}
 
 impl FullscreenFrag {
     pub fn new(facade: &impl Facade, frag: &str) -> Result<Self, ProgramCreationError> {
@@ -49,16 +41,14 @@ impl FullscreenFrag {
     pub fn draw(&self, surface: &mut impl Surface, uniforms: &impl Uniforms) -> Result<(), DrawError>{
         let dim = surface.get_dimensions();
 
-        let extra_uniforms = FullscreenUniforms {
-            res: [dim.0 as f32, dim.1 as f32],
-            inner: uniforms
-        };
-
         surface.draw(
             &self.verts,
             &FULLSCREEN_INDICES,
             &self.program,
-            &extra_uniforms,
+            &MultiUniforms::single(
+                "res", &[dim.0 as f32, dim.1 as f32],
+                uniforms
+            ),
             &self.params
         )
     }

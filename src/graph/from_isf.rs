@@ -2,7 +2,7 @@ use core::convert::From;
 use core::default::Default;
 use egui::Rgba;
 use isf::{Input, InputType, InputValues};
-use super::conection_def::InputDef;
+use super::node_connections::InputDef;
 use super::def::{ConnectionType, UiValue, RangedData};
 
 impl From<&InputType> for ConnectionType {
@@ -58,7 +58,7 @@ impl From<&InputType> for UiValue {
                 UiValue::Color(data)
             },
             InputType::Point2d(v) => UiValue::Vec2(v.into()),
-            InputType::Bool(v) => UiValue::Bool(RangedData::new_default(v.default.unwrap_or_default())),
+            InputType::Bool(v) => UiValue::Bool(v.default.unwrap_or_default().into()),
             InputType::Long(v) => UiValue::Long(
                 RangedData {
                     value: v.default.unwrap_or_default(),
@@ -68,7 +68,7 @@ impl From<&InputType> for UiValue {
                 }
             ),
             
-            InputType::Event => UiValue::Bool(RangedData::new_default(false)),
+            InputType::Event => UiValue::Bool(false.into()),
 
             InputType::Image | InputType::Audio(_) | InputType::AudioFft(_) => UiValue::None,
         }

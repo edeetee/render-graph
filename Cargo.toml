@@ -26,6 +26,9 @@ strum = { version = "0.24", features = ["derive"] }
 
 slotmap = "1.0.6"
 native-dialog = "0.6.3"
+enum_dispatch = "0.3.8"
+thiserror = "1.0.37"
+wavefront_obj = "10.0.0"
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"

@@ -2,10 +2,11 @@ use std::{fs::{File}, io::Read, time::Instant};
 
 use glium::{backend::Facade, ProgramCreationError::{LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
 use isf::{Isf, Pass};
+use thiserror::Error;
 use crate::fullscreen_shader::FullscreenFrag;
 use crate::textures::new_texture_2d;
 
-use super::meta::{IsfInfo, IsfReadError};
+use super::meta::{IsfInfo, IsfInfoReadError};
 
 pub struct IsfShader {
     frag: FullscreenFrag,
@@ -95,17 +96,6 @@ impl <U: Uniforms> Uniforms for IsfUniforms<'_, U> {
     }
 }
 
-pub fn reload_ifs_shader(
-    facade: &impl Facade,
-    file: &IsfInfo,
-) -> Result<(IsfInfo, IsfShader), IsfShaderLoadError> {
-    let isf = IsfInfo::new_from_path(&file.path)?;
-    let shader = IsfShader::new(facade, &isf)?;
-
-    Ok((isf, shader))
-}
-
-
 const STANDARD_PREFIX: &'static str = include_str!("prefix.glsl");
 
 fn generate_isf_prefix(def: &Isf) -> String {
@@ -142,19 +132,17 @@ fn generate_isf_prefix(def: &Isf) -> String {
     prefix
 }
 
+#[derive(Error, Debug)]
 pub enum IsfShaderLoadError {
-    IoError(std::io::Error),
-    ParseError(isf::ParseError),
-    CompileError(glium::program::ProgramCreationError),
-    ReadError(IsfReadError),
+    IoError(#[from] std::io::Error),
+    CompileError(#[from] glium::program::ProgramCreationError),
 }
 
-impl std::fmt::Debug for IsfShaderLoadError {
+impl std::fmt::Display for IsfShaderLoadError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::ReadError(arg0) => arg0.fmt(f),
             Self::IoError(arg0) => arg0.fmt(f),
-            Self::ParseError(arg0) => arg0.fmt(f),
+            //better multiline parsing
             Self::CompileError(arg0) => {
                 match arg0 {
                     glium::ProgramCreationError::CompilationError(source, shader_type) => {
@@ -167,29 +155,5 @@ impl std::fmt::Debug for IsfShaderLoadError {
                 }
             }
         }
-    }
-}
-
-impl From<IsfReadError> for IsfShaderLoadError {
-    fn from(err: IsfReadError) -> Self {
-        IsfShaderLoadError::ReadError(err)
-    }
-}
-
-impl From<std::io::Error> for IsfShaderLoadError {
-    fn from(err: std::io::Error) -> Self {
-        IsfShaderLoadError::IoError(err)
-    }
-}
-
-impl From<glium::program::ProgramCreationError> for IsfShaderLoadError {
-    fn from(err: glium::program::ProgramCreationError) -> Self {
-        IsfShaderLoadError::CompileError(err)
-    }
-}
-
-impl From<isf::ParseError> for IsfShaderLoadError {
-    fn from(err: isf::ParseError) -> Self {
-        IsfShaderLoadError::ParseError(err)
     }
 }

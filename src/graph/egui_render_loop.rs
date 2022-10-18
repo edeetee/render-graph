@@ -29,7 +29,7 @@ pub fn render_glium() {
 
     event_loop.run(move |ev, _, control_flow| {
         
-        shader_node_graph.reload_ifs_shaders(&display);
+        shader_node_graph.update(&display);
 
         match ev {
             Event::RedrawRequested(_) => {

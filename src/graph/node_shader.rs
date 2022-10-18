@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
-use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue}};
+use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue}, framebuffer::SimpleFrameBuffer};
 
 use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph::{ProcessedInputs}};
-use crate::{isf::shader::{IsfShader, IsfShaderLoadError}, obj_shader::ObjRenderer};
+use crate::{isf::shader::{IsfShader, IsfShaderLoadError}, obj_shader::renderer::ObjRenderer, textures::{DefaultTexture, TextureManager}};
 
 pub enum NodeShader {
     Isf(IsfShader),
@@ -26,26 +26,38 @@ impl NodeShader {
         }
     }
 
-    pub fn render<'a, 'b>(
+    pub fn update(&mut self, inputs: ShaderInputs<'_>, facade: &impl Facade) {
+
+    }
+
+    pub fn render(
         &mut self,
-        texture: &Texture2d,
-        inputs: ShaderInputs<'a>,
-    ) {
+        facade: &impl Facade,
+        textures: &mut TextureManager,
+        inputs: ShaderInputs<'_>,
+    ) -> Rc<Texture2d> {
+        let color = textures.get_color(facade);
+
         match self {
             NodeShader::Isf(isf) => {
-                isf.draw(&mut texture.as_surface(), &inputs);
+                isf.draw(&mut color.as_surface(), &inputs);
             }
             NodeShader::Obj(obj) => {
-                obj.draw(&mut texture.as_surface()).unwrap();
+                let depth = textures.get_depth(facade);
+                let mut fb = SimpleFrameBuffer::with_depth_buffer(facade, color.as_ref(), depth.as_ref()).unwrap();
+                fb.clear_color_and_depth((0.0,0.0,0.0,0.0), f32::INFINITY);
+                obj.draw(&mut fb, &inputs).unwrap();
             }
             NodeShader::SpoutOut(spout_out) => {
                 //only send if input exists
                 if let Some(in_tex) = inputs.first_texture() {
-                    in_tex.as_surface().fill(&texture.as_surface(), glium::uniforms::MagnifySamplerFilter::Nearest);
-                    spout_out.send(texture);
+                    in_tex.as_surface().fill(&color.as_surface(), glium::uniforms::MagnifySamplerFilter::Nearest);
+                    spout_out.send(&color);
                 }
             }
         };
+
+        color
     }
 }
 

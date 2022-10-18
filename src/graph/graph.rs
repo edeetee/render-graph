@@ -17,7 +17,7 @@ pub struct ShaderGraph(pub(super) EditorState, TreeState);
 impl Default for ShaderGraph {
     fn default() -> Self {
         Self(
-            GraphEditorState::new(1.0, GraphState::default()),
+            GraphEditorState::new(1.0, GraphState),
             TreeState::default()
         )
     }
@@ -37,6 +37,8 @@ impl IndexMut<NodeId> for ShaderGraph {
     }
 }
 
+pub type InputParams<'a> = Vec<(&'a str, &'a InputParam<ConnectionType, UiValue>)>;
+
 pub type ProcessedInputs<'a, OUT> = Vec<(&'a str, &'a InputParam<ConnectionType, UiValue>, Option<OUT>)>;
 
 impl ShaderGraph {
@@ -44,12 +46,18 @@ impl ShaderGraph {
         &self.0.graph
     }
 
+    pub fn input_params(&self, node_id: NodeId) -> InputParams<'_> {
+        self.graph_ref()[node_id].inputs.iter().map(|(name, input_id)| {
+            (name.as_str(), &self.graph_ref()[*input_id])
+        }).collect()
+    }
+
     ///Call f for each node in correct order, ending on node_id\
     /// 
     /// # Type arguments
     /// OUT: type that may come out of a 
-    pub fn map_with_inputs<FOnNode, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut FOnNode, cache: &mut SecondaryMap<NodeId, OUT>) -> OUT 
-        where FOnNode: FnMut(NodeId, ProcessedInputs<'_, OUT>) -> OUT
+    pub fn map_with_inputs<FOnNode, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut FOnNode, cache: &mut SecondaryMap<NodeId, Option<OUT>>) -> Option<OUT> 
+        where FOnNode: FnMut(NodeId, ProcessedInputs<'_, OUT>) -> Option<OUT>
     {
         let computed_inputs = self.0.graph[node_id].inputs.iter()
             .map(|(name, input_id)| {
@@ -66,9 +74,9 @@ impl ShaderGraph {
                     }
 
                     cache[input_node_id].clone()
-                });
+                }).flatten();
 
-                let input_param = self.0.graph.get_input(*input_id);
+                let input_param = &self.0.graph[*input_id];
 
                 (name.as_str(), input_param, process_input)
             })

@@ -1,8 +1,9 @@
 
-use std::ops::{RangeInclusive};
+use std::{ops::{RangeInclusive}, path::Path};
 
 use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
+use glam::Mat4;
 
 use super::def::*;
 
@@ -111,20 +112,24 @@ impl WidgetValueTrait for UiValue {
     fn value_widget(&mut self, param_name: &str, ui: &mut egui::Ui) -> Vec<Self::Response> {
 
         let _changed = match self {
+
             UiValue::Vec2 (data) => {
                 ui.label(param_name);
                 horizontal_drags(ui, &["x", "y"], data).inner
             }
+
             UiValue::Vec4(data) => {
                 ui.label(param_name);
                 horizontal_drags(ui, &["r", "g", "b", "a"], data).inner
             }
+
             UiValue::Color(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
                 }).inner.changed()
             }
+
             UiValue::Float (RangedData { value, min, max, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
@@ -132,18 +137,21 @@ impl WidgetValueTrait for UiValue {
                     ui.add(Slider::new(value, default_range_f32(min, max)).clamp_to_range(false))
                 }).inner.changed()
             }
+
             UiValue::Long(RangedData { value, min, max, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
                 }).inner.changed()
             },
+
             UiValue::Bool(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.checkbox(value, "")
                 }).inner.changed()
             }
+
             UiValue::Path(path) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
@@ -175,8 +183,10 @@ impl WidgetValueTrait for UiValue {
                     }
 
                     if open_resp.clicked() {
+                        let open_dir = path.as_deref().map(Path::to_str).flatten().unwrap_or(&"~");
+
                         let new_path = native_dialog::FileDialog::new()
-                            .set_location("~/Desktop")
+                            .set_location(open_dir)
                             .add_filter("OBJ file", &["obj"])
                             // .add_filter("JPEG Image", &["jpg", "jpeg"])
                             .show_open_single_file()
@@ -190,15 +200,62 @@ impl WidgetValueTrait for UiValue {
                     open_resp
                 }).inner.changed()
             }
+
+            UiValue::Mat4(mat) => {
+                let mut changed = false;
+
+                ui.vertical(|ui| {
+                    ui.label(param_name);
+
+                    ui.horizontal(|ui| {
+                        ui.label("s");
+                        changed |= ui.add(DragValue::new(&mut mat.scale)).changed()
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("tx");
+                        changed |= ui.add(DragValue::new(&mut mat.translation.x)).changed();
+
+                        ui.label("ty");
+                        changed |= ui.add(DragValue::new(&mut mat.translation.y)).changed();
+
+                        ui.label("tz");
+                        changed |= ui.add(DragValue::new(&mut mat.translation.z)).changed();
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.label("rx");
+                        changed |= ui.drag_angle(&mut mat.rotation.0).changed();
+
+                        ui.label("ry");
+                        changed |= ui.drag_angle(&mut mat.rotation.1).changed();
+
+                        ui.label("rz");
+                        changed |= ui.drag_angle(&mut mat.rotation.2).changed();
+                    });
+                });
+
+                if changed {
+                    mat.update_mat();
+                }
+
+                changed
+            }
+
             UiValue::Text(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.text_edit_singleline(value)
                 }).inner.changed()
             }
+
             UiValue::None => { ui.label(param_name); false }
         };
 
         vec![]
     }
+}
+
+fn draw_matrix(ui: &egui::Ui, v: &mut Mat4UiData) {
+
 }

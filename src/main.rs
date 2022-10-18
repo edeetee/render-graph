@@ -5,6 +5,7 @@ mod textures;
 mod isf;
 mod tree_view;
 mod obj_shader;
+mod util;
 
 use graph::render_glium;
 

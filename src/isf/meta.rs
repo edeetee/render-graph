@@ -3,6 +3,7 @@ use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path
 
 use isf::{Isf};
 use strum::Display;
+use thiserror::Error;
 
 pub fn default_isf_path() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("shaders")
@@ -20,7 +21,7 @@ pub fn parse_isf_shaders(path: impl AsRef<Path>) -> impl Iterator<Item = IsfInfo
                     Some(isf)
                 },
                 Err(err) => {
-                    if matches!(err, IsfReadError::ParseError(_)) {
+                    if matches!(err, IsfInfoReadError::ParseError(_)) {
                         eprintln!("Error parsing isf_meta file ({path:?}): {err}");
                     }
                     None
@@ -30,24 +31,14 @@ pub fn parse_isf_shaders(path: impl AsRef<Path>) -> impl Iterator<Item = IsfInfo
 }
 
 
-
-#[derive(Display, Debug)]
-pub enum IsfReadError {
-    IoError(std::io::Error),
-    InvalidExt,
-    ParseError(isf::ParseError),
-}
-
-impl From<std::io::Error> for IsfReadError {
-    fn from(err: std::io::Error) -> Self {
-        IsfReadError::IoError(err)
-    }
-}
-
-impl From<isf::ParseError> for IsfReadError {
-    fn from(err: isf::ParseError) -> Self {
-        IsfReadError::ParseError(err)
-    }
+#[derive(Error, Debug)]
+pub enum IsfInfoReadError {
+    #[error("file read failed")]
+    IoError(#[from] std::io::Error),
+    #[error("invalid file extension: .{0}")]
+    InvalidExt(String),
+    #[error("parse failed: {0}")]
+    ParseError(#[from] isf::ParseError),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -64,11 +55,11 @@ impl AsRef<Path> for IsfInfo {
 }
 
 impl IsfInfo {
-    pub fn new_from_path(path: &Path) -> Result<Self, IsfReadError> {
+    pub fn new_from_path(path: &Path) -> Result<Self, IsfInfoReadError> {
         let ext = path.extension()
             .map(|ext| ext.to_str())
             .flatten()
-            .ok_or(IsfReadError::InvalidExt)?;
+            .unwrap();
     
         if ext == "fs" {
             let content = read_to_string(&path)?;
@@ -82,7 +73,7 @@ impl IsfInfo {
                 }
             )
         } else {
-            Err(IsfReadError::InvalidExt)
+            Err(IsfInfoReadError::InvalidExt(ext.to_string()))
         }
     }
 }
