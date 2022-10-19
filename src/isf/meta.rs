@@ -1,4 +1,4 @@
-use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path, PathBuf}};
+use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path, PathBuf}, ffi::{OsStr, OsString}};
 
 
 use isf::{Isf};
@@ -35,8 +35,8 @@ pub fn parse_isf_shaders(path: impl AsRef<Path>) -> impl Iterator<Item = IsfInfo
 pub enum IsfInfoReadError {
     #[error("file read failed")]
     IoError(#[from] std::io::Error),
-    #[error("invalid file extension: .{0}")]
-    InvalidExt(String),
+    #[error("invalid file extension: .{0:?}")]
+    InvalidExt(Option<OsString>),
     #[error("parse failed: {0}")]
     ParseError(#[from] isf::ParseError),
 }
@@ -56,12 +56,12 @@ impl AsRef<Path> for IsfInfo {
 
 impl IsfInfo {
     pub fn new_from_path(path: &Path) -> Result<Self, IsfInfoReadError> {
-        let ext = path.extension()
-            .map(|ext| ext.to_str())
-            .flatten()
-            .unwrap();
+        let ext = path.extension();
+
+        let ext_str = ext.map(|ext| ext.to_str())
+            .flatten();
     
-        if ext == "fs" {
+        if ext_str == Some("fs") {
             let content = read_to_string(&path)?;
             let isf = isf::parse(&content)?;
 
@@ -73,7 +73,7 @@ impl IsfInfo {
                 }
             )
         } else {
-            Err(IsfInfoReadError::InvalidExt(ext.to_string()))
+            Err(IsfInfoReadError::InvalidExt(ext.map(OsStr::to_owned)))
         }
     }
 }
