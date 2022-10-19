@@ -12,8 +12,11 @@ I come from Touchdesigner, a mature node graph system that has a tendency to cra
 - Spout (Windows texture sharing)
 - ISF shader support
     - Hot reloading
+    - Default ISF location (install the [Isf Editor](https://isf.vidvox.net/desktop-editor/) for a free library of examples)
 - Texture sharing
 - Obj file render
+    - Will cull objects if they have many vertices (WIP)
+- GL Expression OP
 
 ## Contributing
 
