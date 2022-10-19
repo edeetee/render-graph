@@ -7,39 +7,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug executable 'rpi-rust'",
+            "name": "Cargo launch",
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=rpi-rust",
-                    "--package=rpi-rust",
-                ],
-                "filter": {
-                    "name": "rpi-rust",
-                    "kind": "bin"
-                }
+                    "--bin",
+                    "render-graph"
+                ]
             },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'rpi-rust'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=rpi-rust",
-                    "--package=rpi-rust"
-                ],
-                "filter": {
-                    "name": "rpi-rust",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
+            "args": []
         }
+        
     ]
 }
