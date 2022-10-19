@@ -37,6 +37,8 @@ pub enum IsfInfoReadError {
     IoError(#[from] std::io::Error),
     #[error("invalid file extension: .{0:?}")]
     InvalidExt(Option<OsString>),
+    #[error("invalid file name (stem): {0:?}")]
+    InvalidName(Option<OsString>),
     #[error("parse failed: {0}")]
     ParseError(#[from] isf::ParseError),
 }
@@ -57,21 +59,26 @@ impl AsRef<Path> for IsfInfo {
 impl IsfInfo {
     pub fn new_from_path(path: &Path) -> Result<Self, IsfInfoReadError> {
         let ext = path.extension();
-
-        let ext_str = ext.map(|ext| ext.to_str())
-            .flatten();
     
-        if ext_str == Some("fs") {
+        if Some("fs") == ext.map(OsStr::to_str).flatten() {
             let content = read_to_string(&path)?;
             let isf = isf::parse(&content)?;
 
-            Ok(
-                Self {
-                    name: path.file_stem().unwrap().to_str().unwrap().to_string(),
-                    path: path.to_owned(),
-                    def: isf,
-                }
-            )
+            let name = path.file_stem();
+
+            if let Some(name) = name.map(OsStr::to_str).flatten() {
+                Ok(
+                    Self {
+                        name: name.to_string(),
+                        path: path.to_owned(),
+                        def: isf,
+                    }
+                )
+            } else {
+                Err(IsfInfoReadError::InvalidName(name.map(OsStr::to_owned)))
+            }
+
+            
         } else {
             Err(IsfInfoReadError::InvalidExt(ext.map(OsStr::to_owned)))
         }
