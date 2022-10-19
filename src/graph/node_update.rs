@@ -1,13 +1,13 @@
-use std::{time::SystemTime, path::PathBuf};
+use std::{time::SystemTime};
 
-use enum_dispatch::enum_dispatch;
+
 use glium::backend::Facade;
-use strum::Display;
-use thiserror::Error;
 
-use crate::{isf::{meta::{IsfInfo, IsfInfoReadError}, shader::{IsfShader, IsfShaderLoadError}, updater::IsfUpdater}, obj_shader::loader::ObjLoader, gl_expression::GlExpressionUpdater};
 
-use super::{node_types::NodeType, def::{EditorState, NodeData, UiValue}, node_shader::NodeShader, graph::InputParams};
+
+use crate::{isf::{updater::IsfUpdater}, obj_shader::loader::ObjLoader, gl_expression::GlExpressionUpdater};
+
+use super::{node_types::NodeType, def::{NodeData, UiValue}, node_shader::NodeShader, graph::InputParams};
 
 
 pub enum NodeUpdate {
@@ -43,7 +43,7 @@ impl NodeUpdate {
                 _,
                 NodeShader::Obj(obj_renderer)
             ) => {
-                if let Some(Some(path)) = inputs.iter().filter_map(|(name, input)| {
+                if let Some(Some(path)) = inputs.iter().filter_map(|(_name, input)| {
                     match &input.value {
                         UiValue::Path(path) => Some(path),
                         _ => None
@@ -59,7 +59,7 @@ impl NodeUpdate {
             ) => {
 
                 if let Some(frag_source) = inputs.iter()
-                    .find_map(|(name, val)| {
+                    .find_map(|(_name, val)| {
                         if let UiValue::Text(text, ..) = &val.value {
                             Some(text.value.clone())
                         } else {

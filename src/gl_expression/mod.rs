@@ -7,7 +7,7 @@ pub struct GlExpressionRenderer {
 }
 
 impl GlExpressionRenderer {
-    pub fn new(facade: &impl Facade) -> Self {
+    pub fn new(_facade: &impl Facade) -> Self {
         Self {
             frag: None
         }

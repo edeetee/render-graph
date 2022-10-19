@@ -2,7 +2,7 @@ use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path
 
 
 use isf::{Isf};
-use strum::Display;
+
 use thiserror::Error;
 
 pub fn default_isf_path() -> PathBuf {

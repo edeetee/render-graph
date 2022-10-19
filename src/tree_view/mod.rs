@@ -11,7 +11,7 @@ impl<Leaf: Display, Branch: Display> Tree<Leaf, Branch> {
     pub fn map_mut(&mut self, f: &mut impl FnMut(&mut Leaf)) {
         match self {
             Tree::Leaf(item) => f(item),
-            Tree::Branch(item, children) => {
+            Tree::Branch(_item, children) => {
                 // f(item);
                 for child in children {
                     child.map_mut(f);

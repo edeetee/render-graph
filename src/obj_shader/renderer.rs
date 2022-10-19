@@ -1,7 +1,7 @@
-use std::{f32::consts::FRAC_PI_2, time::Instant};
+use std::{time::Instant};
 
-use gl::PolygonOffset;
-use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue, EmptyUniforms, UniformValue}, ProgramCreationError, IndexBuffer, uniform, Depth, BackfaceCullingMode};
+
+use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError, IndexBuffer, Depth, BackfaceCullingMode};
 use tri_mesh::{MeshBuilder, prelude::Mesh};
 
 use crate::util::MultiUniforms;
@@ -99,7 +99,7 @@ impl ObjRenderer {
             glam::Vec3::Z,
         );
 
-        let matrix = (view_matrix*pre_matrix).to_cols_array_2d();
+        let _matrix = (view_matrix*pre_matrix).to_cols_array_2d();
 
         let combo_uniforms = MultiUniforms {
             uniforms: vec![

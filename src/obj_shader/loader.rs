@@ -1,8 +1,8 @@
-use std::{path::{Path, PathBuf}, time::{SystemTime, Instant}, fs::read_to_string, iter::repeat};
+use std::{path::{Path, PathBuf}, time::{SystemTime}, fs::read_to_string};
 
 use glium::backend::Facade;
 use itertools::Itertools;
-use tri_mesh::{prelude::Mesh, MeshBuilder};
+use tri_mesh::{MeshBuilder};
 use wavefront_obj::obj::ObjSet;
 
 use crate::obj_shader::renderer::vertices_from_mesh;
@@ -44,7 +44,7 @@ impl ObjLoader {
             let objs = wavefront_obj::obj::parse(obj_source).unwrap();
             let (verts, indices) = tri_data_from_obj(objs);
 
-            let mut mesh = MeshBuilder::new()
+            let mesh = MeshBuilder::new()
                 .with_positions(verts.iter().flat_map(|v|v.position.iter()).map(|f| *f as f64).collect_vec())
                 .with_indices(indices)
                 .build().unwrap();
@@ -62,7 +62,7 @@ fn tri_data_from_obj(objs: ObjSet) -> (Vec<VertexAttr>, Vec<u32>) {
     let mut positions = Vec::new();
     let mut indices = Vec::new();
 
-    for (i, obj) in objs.objects.iter().enumerate() { // Objects consisting of several meshes with different materials
+    for (_i, obj) in objs.objects.iter().enumerate() { // Objects consisting of several meshes with different materials
         if obj.vertices.is_empty() || 16 <= obj.vertices.len() {
             println!("- obj{}: {}v {}g", obj.name, obj.vertices.len(), obj.geometry.len());
             continue;

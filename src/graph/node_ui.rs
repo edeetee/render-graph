@@ -3,7 +3,7 @@ use std::{ops::{RangeInclusive}, path::Path};
 
 use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
-use glam::Mat4;
+
 
 use super::def::*;
 
@@ -261,6 +261,6 @@ impl WidgetValueTrait for UiValue {
     }
 }
 
-fn draw_matrix(ui: &egui::Ui, v: &mut Mat4UiData) {
+fn draw_matrix(_ui: &egui::Ui, _v: &mut Mat4UiData) {
 
 }

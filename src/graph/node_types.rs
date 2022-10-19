@@ -6,7 +6,7 @@ use std::{rc::Weak, fmt::Display};
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use glam::Mat4;
 use super::{def::*, node_connections::{InputDef, OutputDef}};
-use crate::isf::meta::{parse_isf_shaders, IsfInfo, default_isf_path};
+use crate::isf::meta::{IsfInfo};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum NodeType {

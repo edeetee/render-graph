@@ -1,13 +1,13 @@
 use std::{fs::{File}, io::Read, time::Instant};
 
-use glium::{backend::Facade, ProgramCreationError::{LinkingError}, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
+use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
 use isf::{Isf, Pass};
-use strum::Display;
+
 use thiserror::Error;
 use crate::{fullscreen_shader::FullscreenFrag, util::GlProgramCreationError};
 use crate::textures::new_texture_2d;
 
-use super::meta::{IsfInfo, IsfInfoReadError};
+use super::meta::{IsfInfo};
 
 pub struct IsfShader {
     frag: FullscreenFrag,

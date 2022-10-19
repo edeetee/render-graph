@@ -7,7 +7,7 @@ use egui_node_graph::{NodeId, NodeResponse};
 use glium::{
     backend::Facade,
     Display,
-    framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface, Texture2d, uniforms::AsUniformValue,
+    framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface,
 };
 
 use ouroboros::self_referencing;
@@ -195,7 +195,7 @@ impl ShaderGraphProcessor {
 
     pub fn update(&mut self, facade: &impl Facade) {
         for (node_id, updater) in self.updaters.iter_mut() {
-            let template = &mut self.graph[node_id].user_data.template;
+            let _template = &mut self.graph[node_id].user_data.template;
 
             let node = &mut self.graph.0.graph.nodes[node_id];
             let inputs: Vec<_> = node.inputs.iter()
