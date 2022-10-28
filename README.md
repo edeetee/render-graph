@@ -40,3 +40,8 @@ API is very much unstable at the moment. If you are interested in contributing, 
 - Support an SDF workflow
 - Support different texture sizes (options per node)
 - Sub shader input for obj render
+- Template system for nodes
+    - ISF transitions/effects
+    - consistent midi controls
+    - easy way to map simple control systems to complex operators / groups of operators
+    - Better than CHOPs
