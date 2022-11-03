@@ -45,3 +45,4 @@ API is very much unstable at the moment. If you are interested in contributing, 
     - consistent midi controls
     - easy way to map simple control systems to complex operators / groups of operators
     - Better than CHOPs
+- Temporal reprojection for low fps
