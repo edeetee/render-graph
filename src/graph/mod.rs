@@ -10,6 +10,7 @@ mod node_types;
 mod spout_out_shader;
 mod from_isf;
 mod node_tree_ui;
+mod graph_ecs;
 
 pub use graph_processor::ShaderGraphProcessor;
 pub use egui_render_loop::render_glium;

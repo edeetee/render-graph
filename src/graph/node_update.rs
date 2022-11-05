@@ -38,6 +38,7 @@ impl NodeUpdate {
             ) => {
                 updater.reload_if_updated(facade, isf_info, shader);
             },
+
             (
                 NodeUpdate::Obj(loader),
                 _,
@@ -52,6 +53,7 @@ impl NodeUpdate {
                     loader.load_if_changed(facade, &path, obj_renderer);
                 }
             },
+            
             (
                 NodeUpdate::Expression(updater),
                 NodeType::Expression { .. },

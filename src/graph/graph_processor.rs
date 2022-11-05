@@ -2,6 +2,7 @@ use std::{
     rc::Rc, time::SystemTime, cell::RefCell,
 };
 
+use bevy_ecs::prelude::Component;
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId, NodeResponse};
 use glium::{
@@ -23,13 +24,8 @@ use super::{
 
 extern crate gl;
 
-#[self_referencing]
 pub struct OutputTarget {
     rb: RenderBuffer,
-
-    #[borrows(rb)]
-    #[covariant]
-    fb: SimpleFrameBuffer<'this>,
 }
 
 #[derive(Default)]
@@ -41,7 +37,6 @@ pub struct ShaderGraphProcessor {
     node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
     shaders: SecondaryMap<NodeId, NodeShader>,
     versions: SecondaryMap<NodeId, SystemTime>,
-
     updaters: SecondaryMap<NodeId, NodeUpdate>
 }
 
@@ -53,17 +48,15 @@ impl ShaderGraphProcessor {
     fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
         // let is_output_target = node.outputs(&self.graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
-        let output_target = OutputTargetBuilder {
+        let output_target = OutputTarget {
             rb: RenderBuffer::new(
                 facade,
                 glium::texture::UncompressedFloatFormat::F32F32F32F32,
                 512,
                 512,
             )
-            .unwrap(),
-            fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap(),
-        }
-        .build();
+            .unwrap()
+        };
 
         self.output_targets.insert(node_id, output_target);
     }
@@ -155,39 +148,38 @@ impl ShaderGraphProcessor {
         // let graph = &self.graph;
 
         for (output_id, output_target) in &mut self.output_targets {
+            let fb = SimpleFrameBuffer::new(facade, &output_target.rb).unwrap();
 
-            output_target.with_fb_mut(|fb| {
-                fb.clear_color(0., 0., 0., 0.);
+            fb.clear_color(0., 0., 0., 0.);
 
-                self.graph.map_with_inputs(output_id, &mut |node_id, inputs| {
+            self.graph.map_with_inputs(output_id, &mut |node_id, inputs| {
 
-                    // let target = self.texture_manager.get_color(facade);
+                // let target = self.texture_manager.get_color(facade);
 
-                    //Render a shader
-                    if let Some(shader) = self.shaders.get_mut(node_id) {
-                        // let mut surface = target.as_surface();
+                //Render a shader
+                if let Some(shader) = self.shaders.get_mut(node_id) {
+                    // let mut surface = target.as_surface();
 
-                        // surface.clear_color(0., 0., 0., 0.);
+                    // surface.clear_color(0., 0., 0., 0.);
 
-                        let target = shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs));
+                    let target = shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs));
 
-                        let surface = target.as_surface();
+                    let surface = target.as_surface();
 
-                        let (w, h) = surface.get_dimensions();
-                        let size = (w/4, h/4);
+                    let (w, h) = surface.get_dimensions();
+                    let size = (w/4, h/4);
 
-                        // node.user_data.
-                        // self.node_textures[node_id].borrow_mut()
-                        let mut ui_texture = (*self.node_textures[node_id]).borrow_mut();
-                        ui_texture.update_size(facade, egui_glium, size);
-                        ui_texture.copy_from(&surface);
+                    // node.user_data.
+                    // self.node_textures[node_id].borrow_mut()
+                    let mut ui_texture = (*self.node_textures[node_id]).borrow_mut();
+                    ui_texture.update_size(facade, egui_glium, size);
+                    ui_texture.copy_from(&surface);
 
-                        Some(target)
-                    } else {
-                        None
-                    }
-                }, &mut SecondaryMap::new());
-            });
+                    Some(target)
+                } else {
+                    None
+                }
+            }, &mut SecondaryMap::new());
 
             // println!("RENDERED {rendered_node_names} to {}", self.graph[output_id].label);
         }
