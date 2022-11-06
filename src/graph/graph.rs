@@ -38,7 +38,6 @@ impl IndexMut<NodeId> for ShaderGraph {
 }
 
 pub type InputParams<'a> = Vec<(&'a str, &'a InputParam<ConnectionType, UiValue>)>;
-
 pub type ProcessedInputs<'a, OUT> = Vec<(&'a str, &'a InputParam<ConnectionType, UiValue>, Option<OUT>)>;
 
 impl ShaderGraph {
