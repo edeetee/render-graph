@@ -1,5 +1,6 @@
 use glium::{backend::Facade, Surface, uniforms::Uniforms, program::UniformBlock};
-use glsl::{syntax::{Expr, ShaderStage, Identifier}, parser::Parse};
+use glsl::{syntax::{Expr, Identifier}, parser::Parse};
+use naga::{front::glsl::Options, ShaderStage};
 
 use crate::fullscreen_shader::FullscreenFrag;
 
@@ -77,6 +78,7 @@ fn parse_gl_type(expr: &Expr) -> GlType {
             match fun_ident.as_str() {
                 "vec2" => GlType::Vec2,
                 "vec3" => GlType::Vec3,
+                // "length" => GlType::Float,
                 _ => GlType::Vec4
             }
         }
@@ -86,6 +88,10 @@ fn parse_gl_type(expr: &Expr) -> GlType {
 }
 
 fn build_shader_from_snippet(snippet: &str) -> String {
+    let mut parser = naga::front::glsl::Parser::default();
+
+    
+
     let expression = Expr::parse(snippet);
     dbg!(&expression);
 
@@ -115,6 +121,13 @@ fn build_shader_from_snippet(snippet: &str) -> String {
         gl_FragColor = {wrapped_snippet};
     }}
     ");
+
+    let naga_result = parser.parse(
+        &ShaderStage::Fragment.into(),
+        &shader_str
+    );
+
+    dbg!(&naga_result);
 
     // let stage = ShaderStage::parse(&shader_str);
     // dbg!(stage);
