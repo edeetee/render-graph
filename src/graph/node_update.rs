@@ -38,20 +38,22 @@ impl NodeUpdate {
             ) => {
                 updater.reload_if_updated(facade, isf_info, shader);
             },
+
             (
                 NodeUpdate::Obj(loader),
                 _,
                 NodeShader::Obj(obj_renderer)
             ) => {
-                if let Some(Some(path)) = inputs.iter().filter_map(|(_name, input)| {
+                if let Some(Some(path)) = inputs.iter().find_map(|(_name, input)| {
                     match &input.value {
                         UiValue::Path(path) => Some(path),
                         _ => None
                     }
-                }).next() {
+                }) {
                     loader.load_if_changed(facade, &path, obj_renderer);
                 }
             },
+            
             (
                 NodeUpdate::Expression(updater),
                 NodeType::Expression { .. },
