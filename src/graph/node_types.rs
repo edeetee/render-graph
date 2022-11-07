@@ -8,6 +8,14 @@ use glam::Mat4;
 use super::{def::*, node_connections::{InputDef, OutputDef}};
 use crate::isf::meta::{IsfInfo};
 
+pub mod NodeStruct {
+    pub struct SpoutOut;
+    pub struct Obj;
+    pub struct Isf;
+    pub struct Expression;
+}
+
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum NodeType {
     SpoutOut,

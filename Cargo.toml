@@ -33,6 +33,8 @@ glsl = "6.0.1"
 
 bevy_ecs = "0.8.1"
 shred = "0.14.1"
+hecs = "0.9.0"
+shipyard = {version = "0.6.2", features=["thread_local"]}
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"

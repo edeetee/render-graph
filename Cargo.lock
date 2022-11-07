@@ -1346,6 +1346,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2540771e65fc8cb83cd6e8a237f70c319bd5c29f78ed1084ba5d50eeac86f7f9"
 
 [[package]]
+name = "hecs"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11b81e962a0576ee276c1e6cbdce16bed83c7357ce8ff4e9efc8f49e43d2d1a1"
+dependencies = [
+ "hashbrown",
+ "spin",
+]
+
+[[package]]
 name = "hermit-abi"
 version = "0.1.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2250,11 +2260,13 @@ dependencies = [
  "glam",
  "glium",
  "glsl",
+ "hecs",
  "isf",
  "itertools 0.10.3",
  "native-dialog",
  "ouroboros",
  "rand 0.8.5",
+ "shipyard",
  "shred",
  "slotmap",
  "spout_rust",
@@ -2352,6 +2364,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "shipyard"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3511ae730f2e1c3d62a9025e2f9b2acbf130968057f1b3caab6d74a54a5e0e56"
+dependencies = [
+ "hashbrown",
+ "lock_api",
+ "rayon",
+ "shipyard_proc",
+]
+
+[[package]]
+name = "shipyard_proc"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3eb847f4b9582e468198b5cfb5731b65cc67fe5e535acc9cbf3c11703d15f08c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "shlex"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2430,6 +2465,12 @@ dependencies = [
  "wayland-cursor",
  "wayland-protocols",
 ]
+
+[[package]]
+name = "spin"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f6002a767bff9e83f8eeecf883ecb8011875a21ae8da43bffb817a57e78cc09"
 
 [[package]]
 name = "spout_rust"
