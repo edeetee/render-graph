@@ -5,6 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[target.'cfg(windows)'.dependencies]
+spout_rust = { path = "./spout" }
+
+# [target.'cfg(macos)'.dependencies]
+# syphon_rust = { path = "./syphon" }
+
 [dependencies]
 glium = "0.31.0"
 rand = "0.8.5"
@@ -17,7 +23,6 @@ itertools = "0.10.2"
 isf = "0.1.0"
 gl = "0.14.0"
 
-spout_rust = { path = "./spout" }
 tri-mesh = "0.5.0"
 glam = "0.21.3"
 

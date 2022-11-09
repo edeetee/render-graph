@@ -18,7 +18,7 @@ impl NodeShader {
             NodeType::Isf{info} => {
                 Some(IsfShader::new(facade, info).map(NodeShader::Isf))
             },
-            NodeType::SpoutOut => {
+            NodeType::SharedOut => {
                 Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new())))
             },
             NodeType::ObjRender => {

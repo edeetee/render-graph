@@ -10,7 +10,8 @@ use crate::isf::meta::{IsfInfo};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum NodeType {
-    SpoutOut,
+    // #[cfg()]
+    SharedOut,
     ObjRender,
     Isf {
         info: IsfInfo
@@ -29,7 +30,7 @@ impl Display for NodeType {
 impl NodeType {
     pub fn get_name(&self) -> &str {
         match self {
-            NodeType::SpoutOut => "SpoutOut",
+            NodeType::SharedOut => "SpoutOut",
             NodeType::ObjRender => "ObjRender",
             NodeType::Isf{info} => info.name.as_str(),
             NodeType::Expression { .. } => "Expression"
@@ -45,7 +46,7 @@ impl NodeType {
             // NodeTypes::Instances,
             // NodeTypes::Output,
             NodeType::ObjRender,
-            NodeType::SpoutOut,
+            NodeType::SharedOut,
             NodeType::Expression { inputs: None }
         ];
         // types.extend(shaders);
@@ -58,7 +59,7 @@ impl NodeType {
             NodeType::Isf { info } => {
                 info.def.inputs.iter().map(InputDef::from).collect()
             }
-            NodeType::SpoutOut => vec![
+            NodeType::SharedOut => vec![
                 ("name", "RustSpout").into(),
                 InputDef::texture("texture"),
             ],
@@ -76,7 +77,7 @@ impl NodeType {
 
     pub fn get_output_types(&self) -> Vec<OutputDef> {
         match self {
-            NodeType::SpoutOut => vec![],
+            NodeType::SharedOut => vec![],
             NodeType::Isf { .. } => vec![ConnectionType::Texture2D.into()],
             NodeType::ObjRender => vec![ConnectionType::Texture2D.into()],
             NodeType::Expression { .. } => vec![ConnectionType::Texture2D.into()]
