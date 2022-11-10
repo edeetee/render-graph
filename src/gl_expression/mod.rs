@@ -61,13 +61,6 @@ impl GlType {
             _ => Self::Vec4
         }
     }
-
-    // fn from_iden(iden: &str) -> GlType {
-    //     match iden {
-    //         "pixel" => Self::Vec4,
-
-    //     }
-    // }
 }
 
 fn parse_gl_type(expr: &Expr) -> GlType {
@@ -89,8 +82,6 @@ fn parse_gl_type(expr: &Expr) -> GlType {
 
 fn build_shader_from_snippet(snippet: &str) -> String {
     let mut parser = naga::front::glsl::Parser::default();
-
-    
 
     let expression = Expr::parse(snippet);
     dbg!(&expression);
@@ -115,10 +106,12 @@ fn build_shader_from_snippet(snippet: &str) -> String {
     let shader_str = format!("
     #version 140
     uniform sampler2D pixels;
+
+    out vec4 out_color;
     
     void main() {{
-        vec4 pixel = texture2D(pixels, gl_FragCoord.xy/textureSize(pixels, 0));
-        gl_FragColor = {wrapped_snippet};
+        vec4 pixel = texture(pixels, gl_FragCoord.xy/textureSize(pixels, 0));
+        out_color = {wrapped_snippet};
     }}
     ");
 
