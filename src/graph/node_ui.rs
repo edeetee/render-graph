@@ -1,11 +1,24 @@
 
 use std::{ops::{RangeInclusive}, path::Path};
 
-use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva};
+use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
 
 
 use super::def::*;
+
+fn draw_error(ui: &mut egui::Ui, name: &str, error: &Option<NodeError>){
+    if let Some(error) = &error {
+        egui::Frame::none()
+            .inner_margin(2.0)
+            .stroke(Stroke::new(1.0, Color32::RED))
+            .show(ui, |ui| {
+                ui.set_min_size(ui.available_size());
+                ui.label(RichText::new(format!("ERROR in {name}")).code().color(Color32::RED));
+                ui.add(Label::new(RichText::new(&error.text).code()).sense(Sense::click_and_drag()));
+            });
+    }
+}
 
 impl NodeDataTrait for NodeData {
     type Response = GraphResponse;
@@ -23,18 +36,30 @@ impl NodeDataTrait for NodeData {
     where
         Self::Response: egui_node_graph::UserResponseTrait,
     {
-        let me = &graph[node_id];
+        let node = &graph[node_id];
 
-        if let Some(tex) = &me.user_data.texture.upgrade() {
-            let width = ui.available_width();
-            let tex = tex.borrow();
-            let (tex_w, tex_h) = tex.size();
-            let height = tex_h as f32 * width / tex_w as f32;
+        egui::Frame::none()
+            .stroke(Stroke::new(1.0, Color32::LIGHT_GRAY))
+            .show(ui, |ui| {
+                ui.set_min_size(ui.available_size());
 
-            ui.image(tex.clone_screen_tex_id(), [width, height]);
-        } else {
-            ui.label("NO IMAGE AVAILABLE");
-        }
+                if let Some(tex) = &node.user_data.texture.upgrade() {
+                    let width = ui.available_width();
+                    let tex = tex.borrow();
+                    let (tex_w, tex_h) = tex.size();
+                    let height = tex_h as f32 * width / tex_w as f32;
+        
+                    ui.image(tex.clone_screen_tex_id(), [width, height]);
+                } else {
+                    ui.label("NO IMAGE AVAILABLE");
+                }
+
+            });
+        
+
+        draw_error(ui, "Init", &node.user_data.create_error);
+        draw_error(ui, "Update", &node.user_data.update_error);
+        draw_error(ui, "Render", &node.user_data.render_error);
         
         vec![]
     }

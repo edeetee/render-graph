@@ -1,8 +1,8 @@
-use glium::{backend::Facade, Surface, uniforms::Uniforms, program::UniformBlock};
+use glium::{backend::Facade, Surface, uniforms::Uniforms, program::UniformBlock, DrawError};
 use glsl::{syntax::{Expr, Identifier}, parser::Parse};
 use naga::{front::glsl::Options, ShaderStage};
 
-use crate::fullscreen_shader::FullscreenFrag;
+use crate::{fullscreen_shader::FullscreenFrag, util::GlProgramCreationError};
 
 pub struct GlExpressionRenderer {
     frag: Option<FullscreenFrag>
@@ -15,31 +15,21 @@ impl GlExpressionRenderer {
         }
     }
 
-    pub fn set_shader(&mut self, facade: &impl Facade, shader: &str) -> Option<Vec<(String, UniformBlock)>> {
+    pub fn set_shader(&mut self, facade: &impl Facade, shader: &str) -> Result<Vec<(String, UniformBlock)>, GlProgramCreationError> {
         let full_source = build_shader_from_snippet(shader);
 
-        match FullscreenFrag::new(facade, &full_source) {
-            Ok(frag) => {
-                let uniform_data = frag.program.get_shader_storage_blocks().iter().map(|(n,v)| (n.clone(), v.clone())).collect();
-                self.frag = Some(frag);
-                Some(uniform_data)
-            },
-            Err(err) => {
-                eprintln!("Compiling '{shader}': Error {err}\nwhen ");
-                None
-            }
-        }
+        let frag = FullscreenFrag::new(facade, &full_source)?;
+        let uniform_data = frag.program.get_shader_storage_blocks().iter().map(|(n,v)| (n.clone(), v.clone())).collect();
+        self.frag = Some(frag);
+
+        Ok(uniform_data)
     }
 
-    pub fn draw(&self, surface: &mut impl Surface, uniforms: &impl Uniforms) {
+    pub fn draw(&self, surface: &mut impl Surface, uniforms: &impl Uniforms) -> Result<(), DrawError> {
         if let Some(frag) = &self.frag {
-            match frag.draw(surface, uniforms) {
-                Ok(_) => {},
-                Err(err) => {
-                    eprintln!("Failed to run shader:\n{err}")
-                }
-            }
+            frag.draw(surface, uniforms)?
         }
+        Ok(())
     }
 }
 
@@ -84,7 +74,7 @@ fn build_shader_from_snippet(snippet: &str) -> String {
     let mut parser = naga::front::glsl::Parser::default();
 
     let expression = Expr::parse(snippet);
-    dbg!(&expression);
+    // dbg!(&expression);
 
     let snippet = snippet.to_string();
 
@@ -120,7 +110,7 @@ fn build_shader_from_snippet(snippet: &str) -> String {
         &shader_str
     );
 
-    dbg!(&naga_result);
+    // dbg!(&naga_result);
 
     // let stage = ShaderStage::parse(&shader_str);
     // dbg!(stage);
@@ -133,17 +123,18 @@ pub struct GlExpressionUpdater {
 }
 
 impl GlExpressionUpdater {
-    pub fn update(&mut self, facade: &impl Facade, renderer: &mut GlExpressionRenderer, new_frag: String) -> Option<Vec<(String, UniformBlock)>> {
-        if match &self.frag_source {
+    pub fn update(&mut self, facade: &impl Facade, renderer: &mut GlExpressionRenderer, new_frag: String) -> Result<(), GlProgramCreationError> {
+
+        let should_update_frag = match &self.frag_source {
             Some(shader) => shader != &new_frag,
             None => true
-        } {
-            let result = renderer.set_shader(facade, &new_frag);
+        };
+        
+        if should_update_frag {
+            let result = renderer.set_shader(facade, &new_frag)?;
             self.frag_source = Some(new_frag);
-
-            result
-        } else {
-            None
         }
+
+        Ok(())
     }
 }

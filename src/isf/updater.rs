@@ -27,7 +27,7 @@ pub fn reload_ifs_shader(
 }
 
 impl IsfUpdater {
-    pub fn reload_if_updated(&mut self, facade: &impl Facade, isf_info: &mut IsfInfo, shader: &mut IsfShader) {
+    pub fn reload_if_updated(&mut self, facade: &impl Facade, isf_info: &mut IsfInfo, shader: &mut IsfShader) -> Result<(), IsfReloadError> {
         let new_version = isf_info.path.metadata().unwrap().modified().unwrap();
         let diff = new_version.duration_since(self.modified);
 
@@ -37,19 +37,13 @@ impl IsfUpdater {
                 //iterate version even on error (wait for change to retry update)
                 self.modified = new_version;
 
-                match reload_ifs_shader(facade, &isf_info) {
-                    Ok((new_info, new_shader)) => {
-                        *shader = new_shader;
-                        *isf_info = new_info;
-                        println!("Reloaded shader: {}", isf_info.name);
-                    }
-                    Err(err) => {
-                        let err_txt = format!("{:#?}", err);
-                        let err_txt = err_txt.replace("\\n", "\n");
-                        eprintln!("Error reloading shader {}: {}", isf_info.name, err_txt);
-                    }
-                }
+                let (new_info, new_shader) = reload_ifs_shader(facade, &isf_info)?;
+                println!("Reloaded shader: {}", isf_info.name);
+                *shader = new_shader;
+                *isf_info = new_info;
             }
         }
+
+        Ok(())
     }
 }

@@ -40,7 +40,6 @@ pub struct ShaderGraphProcessor {
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
     shaders: SecondaryMap<NodeId, NodeShader>,
-    versions: SecondaryMap<NodeId, SystemTime>,
 
     updaters: SecondaryMap<NodeId, NodeUpdate>
 }
@@ -81,36 +80,35 @@ impl ShaderGraphProcessor {
                 self.graph[node_id].user_data.texture = Rc::downgrade(&textures);
                 self.node_textures.insert(node_id, textures);
 
-                let node = &self.graph[node_id];
+                // let node = &self.graph[node_id];
 
-                let template = &node.user_data.template;
-
-                match template {
-                    NodeType::Isf { info } => {
-                        self.versions
-                            .insert(node_id, info.path.metadata().unwrap().modified().unwrap());
-                    }
-                    _ => {}
-                }
+                let template = &self.graph[node_id].user_data.template;
 
                 //only add if needed ()s
                 if let Some(shader) = NodeShader::new(template, facade) {
                     match shader {
                         Ok(shader) => {
                             self.shaders.insert(node_id, shader);
+
+                            if let Some(updater) = NodeUpdate::new(template) {
+                                self.updaters.insert(node_id, updater);
+                            }
                         }
                         Err(err) => {
-                            eprintln!("Error {:#?} creating shader for node: {:#?} {:#?}", err, template, node_id);
+                            self.graph[node_id].user_data.create_error = Some(err.into());
+                            // eprintln!("Error {:#?} creating shader for node: {:#?} {:#?}", err, template, node_id);
                         }
                     }
                 }
+
+                let template = &self.graph[node_id].user_data.template;
 
                 if let Some(updater) = NodeUpdate::new(template) {
                     self.updaters.insert(node_id, updater);
                 }
 
                 //remove output target if not needed
-                for input in node.inputs(self.graph.graph_ref()) {
+                for input in self.graph[node_id].inputs(self.graph.graph_ref()) {
                     if input.typ == ConnectionType::Texture2D {
                         let connected_output = self.graph.graph_ref().connection(input.id);
                         if let Some(output_id) = connected_output {
@@ -139,7 +137,6 @@ impl ShaderGraphProcessor {
             NodeResponse::DeleteNodeFull { node_id, .. } => {
                 self.output_targets.remove(node_id);
                 self.shaders.remove(node_id);
-                self.versions.remove(node_id);
                 self.updaters.remove(node_id);
                 self.node_textures.remove(node_id);
             }
@@ -153,6 +150,8 @@ impl ShaderGraphProcessor {
     fn render_shaders(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium) {
         // let shaders = &mut self.shaders;
         // let graph = &self.graph;
+
+        let mut errors: SparseSecondaryMap<NodeId, NodeError> = Default::default();
 
         for (output_id, output_target) in &mut self.output_targets {
 
@@ -169,27 +168,37 @@ impl ShaderGraphProcessor {
 
                         // surface.clear_color(0., 0., 0., 0.);
 
-                        let target = shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs));
-
-                        let surface = target.as_surface();
-
-                        let (w, h) = surface.get_dimensions();
-                        let size = (w/4, h/4);
-
-                        // node.user_data.
-                        // self.node_textures[node_id].borrow_mut()
                         let mut ui_texture = (*self.node_textures[node_id]).borrow_mut();
-                        ui_texture.update_size(facade, egui_glium, size);
-                        ui_texture.copy_from(&surface);
 
-                        Some(target)
+                        match shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs)) {
+                            Ok(target) => {
+                                let surface = target.as_surface();
+
+                                let (w, h) = surface.get_dimensions();
+                                let size = (w/4, h/4);
+        
+                                // node.user_data.
+                                // self.node_textures[node_id].borrow_mut()
+                                ui_texture.update_size(facade, egui_glium, size);
+                                ui_texture.copy_from(&surface);
+
+                                Some(target)
+                            }
+
+                            Err(err) => {
+                                errors.insert(node_id, err.into());
+                                None
+                            }
+                        }
                     } else {
                         None
                     }
                 }, &mut SecondaryMap::new());
             });
+        }
 
-            // println!("RENDERED {rendered_node_names} to {}", self.graph[output_id].label);
+        for (node_id, data) in self.graph.0.graph.nodes.iter_mut() {
+            data.user_data.render_error = errors.remove(node_id);
         }
     }
 
@@ -202,12 +211,22 @@ impl ShaderGraphProcessor {
                 .map(|(name, in_id)| (name.as_str(), &self.graph.0.graph.inputs[*in_id]))
                 .collect();
 
-            updater.update(
-                facade, 
-                &mut node.user_data, 
-                &inputs, 
-                &mut self.shaders[node_id]
-            )
+            if let Some(shader) = &mut self.shaders.get_mut(node_id) {
+                match updater.update(
+                    facade, 
+                    &mut node.user_data, 
+                    &inputs, 
+                    shader
+                ) {
+                    Ok(()) => {
+                        node.user_data.update_error = None
+                    },
+                    Err(err) => {
+                        node.user_data.update_error = Some(err.into())
+                    }
+                }
+            }
+
         }
     }
 

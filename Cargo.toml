@@ -14,7 +14,7 @@ spout_rust = { path = "./spout" }
 [dependencies]
 glium = "0.31.0"
 rand = "0.8.5"
-egui_node_graph = "0.3.0"
+egui_node_graph = {version="0.3.0", features=["persistence"]}
 egui = "0.18.1"
 eframe = "0.18.0"
 egui_glium = "0.18.0"
@@ -36,6 +36,7 @@ thiserror = "1.0.37"
 wavefront_obj = "10.0.0"
 glsl = "6.0.1"
 naga = { version="0.10.0", features=["glsl-in"] }
+anyhow = "1.0.66"
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"

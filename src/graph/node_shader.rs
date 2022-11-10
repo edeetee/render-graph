@@ -13,10 +13,10 @@ pub enum NodeShader {
 }
 
 impl NodeShader {
-    pub fn new(template: &NodeType, facade: &impl Facade) -> Option<Result<Self, IsfShaderLoadError>> {
+    pub fn new(template: &NodeType, facade: &impl Facade) -> Option<anyhow::Result<Self>> {
         match template {
             NodeType::Isf{info} => {
-                Some(IsfShader::new(facade, info).map(NodeShader::Isf))
+                Some(IsfShader::new(facade, info).map_err(anyhow::Error::new).map(NodeShader::Isf))
             },
             NodeType::SharedOut => {
                 Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new())))
@@ -35,25 +35,25 @@ impl NodeShader {
         facade: &impl Facade,
         textures: &mut TextureManager,
         inputs: ShaderInputs<'_>,
-    ) -> Rc<Texture2d> {
+    ) -> anyhow::Result<Rc<Texture2d>> {
         let color = textures.get_color(facade);
 
         match self {
             NodeShader::Expression(renderer) => {
                 let mut surface = color.as_surface();
                 surface.clear_color(0.0, 0.0, 0.0, 0.0);
-                renderer.draw(&mut surface, &inputs);
+                renderer.draw(&mut surface, &inputs)?;
             }
             NodeShader::Isf(isf) => {
                 let mut surface = color.as_surface();
                 surface.clear_color(0.0, 0.0, 0.0, 0.0);
-                isf.draw(&mut surface, &inputs);
+                isf.draw(&mut surface, &inputs)?;
             }
             NodeShader::Obj(obj) => {
                 let depth = textures.get_depth(facade);
                 let mut fb = SimpleFrameBuffer::with_depth_buffer(facade, color.as_ref(), depth.as_ref()).unwrap();
                 fb.clear_color_and_depth((0.0,0.0,0.0,0.0), f32::INFINITY);
-                obj.draw(&mut fb, &inputs).unwrap();
+                obj.draw(&mut fb, &inputs)?;
             }
             NodeShader::SpoutOut(spout_out) => {
                 //only send if input exists
@@ -64,7 +64,7 @@ impl NodeShader {
             }
         };
 
-        color
+        Ok(color)
     }
 }
 

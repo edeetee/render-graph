@@ -12,7 +12,7 @@ use slotmap::SecondaryMap;
 use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
 
 // #[derive(Default)]
-pub struct ShaderGraph(pub(super) EditorState, TreeState);
+pub struct ShaderGraph(pub EditorState, pub TreeState);
 
 impl Default for ShaderGraph {
     fn default() -> Self {

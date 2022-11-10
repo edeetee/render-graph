@@ -5,8 +5,14 @@ use isf::{Isf};
 
 use thiserror::Error;
 
+#[cfg(target_os="windows")]
 pub fn default_isf_path() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("shaders")
+    Path::new("C:\\ProgramData\\ISF")
+}
+
+#[cfg(target_os="macos")]
+pub fn default_isf_path() -> PathBuf {
+    Path::new("/Library/Graphics/ISF").to_path_buf()
 }
 
 pub fn parse_isf_shaders(path: impl AsRef<Path>) -> impl Iterator<Item = IsfInfo> {    

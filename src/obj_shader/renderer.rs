@@ -24,7 +24,7 @@ pub struct ObjRenderer{
 }
 
 impl ObjRenderer {
-    pub fn wnew(facade: &impl Facade) -> Result<Self, ProgramCreationError> {
+    pub fn new(facade: &impl Facade) -> Result<Self, ProgramCreationError> {
         let params = DrawParameters {
             dithering: true,
             smooth: Some(Smooth::Fastest),

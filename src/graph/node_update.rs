@@ -29,14 +29,14 @@ impl NodeUpdate {
         }
     }
 
-    pub fn update(&mut self, facade: &impl Facade, data: &mut NodeData, inputs: &InputParams<'_>, shader: &mut NodeShader) {
+    pub fn update(&mut self, facade: &impl Facade, data: &mut NodeData, inputs: &InputParams<'_>, shader: &mut NodeShader) -> anyhow::Result<()> {
         match (self, &mut data.template, shader) {
             (
                 NodeUpdate::Isf(updater),
                 NodeType::Isf { info: isf_info },
                 NodeShader::Isf(shader)
             ) => {
-                updater.reload_if_updated(facade, isf_info, shader);
+                updater.reload_if_updated(facade, isf_info, shader)?;
             },
 
             (
@@ -69,12 +69,13 @@ impl NodeUpdate {
                         }
                     }) 
                 {
-                    if let Some(inputs) = updater.update(facade, renderer, frag_source) {
-                        dbg!(inputs);
-                    }
+                    let inputs = updater.update(facade, renderer, frag_source)?;
+                    // dbg!(inputs);
                 }
             }
             _ => {}
         }
+
+        Ok(())
     }
 }

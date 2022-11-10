@@ -1,6 +1,6 @@
 use std::{fs::{File}, io::Read, time::Instant};
 
-use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}};
+use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}, DrawError};
 use isf::{Isf, Pass};
 
 use thiserror::Error;
@@ -25,6 +25,8 @@ impl IsfShader {
         let mut file = File::open(&isf.path)?;
         file.read_to_string(&mut source)?;
 
+        source = source.replace("gl_FragColor", "isf_FragColor");
+
         let passes = isf.def.passes.iter().map(|pass| {
             (pass.clone(), new_texture_2d(facade, (256, 256)).unwrap())
         })
@@ -43,7 +45,7 @@ impl IsfShader {
         })
     }
 
-    pub fn draw(&mut self, surface: &mut impl Surface, uniforms: &impl Uniforms) {
+    pub fn draw(&mut self, surface: &mut impl Surface, uniforms: &impl Uniforms) -> Result<(), DrawError> {
         let now = Instant::now();
         let time_delta = now - self.prev_frame_inst;
         let time_total = now - self.start_inst;
@@ -58,18 +60,20 @@ impl IsfShader {
         };
 
         if self.passes.is_empty() {
-            self.frag.draw(surface, &uniforms).unwrap();
+            self.frag.draw(surface, &uniforms)?;
         } else {
             let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
             for (_pass, tex) in &self.passes {
                 uniforms.pass_index += 1;
-                self.frag.draw(surface, &uniforms).unwrap();
+                self.frag.draw(surface, &uniforms)?;
                 surface.fill(&tex.as_surface(), filter);
             }
         }
 
         self.frame_count += 1;
+
+        Ok(())
     }
 }
 

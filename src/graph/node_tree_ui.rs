@@ -51,9 +51,10 @@ impl Default for TreeState {
             .map(LeafItem::new)
             .map(Tree::Leaf);
 
-        let isf_path = default_isf_path();
+        let cargo_shaders = Path::new(env!("CARGO_MANIFEST_DIR")).join("shaders");
+        let default_shaders = default_isf_path();
 
-        let isf_nodes = vec![isf_path.as_ref(), Path::new("C:\\ProgramData\\ISF")]
+        let isf_nodes = vec![cargo_shaders.as_ref(), default_shaders.as_ref()]
             .into_iter()
             .filter_map(load_isf_tree);
 

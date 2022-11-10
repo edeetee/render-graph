@@ -20,9 +20,35 @@ use super::{ node_types::NodeType};
 //     pub size: (u32, u32),
 // }
 
+#[derive(Default, Clone)]
+pub struct NodeError {
+    pub text: String
+}
+
+impl From<anyhow::Error> for NodeError {
+    fn from(err: anyhow::Error) -> Self {
+        Self { text: format!("{err:?}") }
+    }
+}
+
 pub struct NodeData {
     pub template: NodeType,
     pub texture: Weak<RefCell<UiTexture>>, // pub texture_cache: Option<ShaderData>
+    pub create_error: Option<NodeError>,
+    pub update_error: Option<NodeError>,
+    pub render_error: Option<NodeError>,
+}
+
+impl NodeData {
+    pub fn new(template: NodeType) -> Self {
+        Self {
+            template,
+            texture: Default::default(),
+            create_error: Default::default(),
+            update_error: Default::default(),
+            render_error: Default::default(),
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Display, Clone, Copy, Debug)]

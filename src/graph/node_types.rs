@@ -108,7 +108,7 @@ impl NodeTemplateTrait for NodeType {
     }
 
     fn user_data(&self) -> Self::NodeData {
-        NodeData { template: self.clone(), texture: Weak::default() }
+        NodeData::new(self.clone())
     }
 
     fn build_node(
