@@ -87,8 +87,8 @@ fn build_shader_from_snippet(snippet: &str) -> String {
                 GlType::Vec4 => snippet
             }
         },
-        Err(err) => {
-            eprintln!("{}", err);
+        Err(_err) => {
+            // eprintln!("{}", err);
             snippet
         }
     };

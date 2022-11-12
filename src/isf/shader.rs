@@ -88,7 +88,7 @@ struct IsfUniforms<'a, U: Uniforms> {
 
 impl <U: Uniforms> Uniforms for IsfUniforms<'_, U> {
     fn visit_values<'a, F: FnMut(&str, UniformValue<'a>)>(&'a self, mut f: F) {
-        f("FRAMEINDEX", self.frame_index.as_uniform_value());
+        f("FRAMEINDEX", UniformValue::SignedInt(self.frame_index as i32));
         f("TIMEDELTA", self.time_delta.as_uniform_value());
         f("TIME", self.time.as_uniform_value());
         f("PASSINDEX", self.pass_index.as_uniform_value());

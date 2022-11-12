@@ -1,0 +1,502 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 1,
+            "version": 1
+          },
+          "label": "Expression",
+          "inputs": [
+            [
+              "text",
+              {
+                "idx": 1,
+                "version": 1
+              }
+            ],
+            [
+              "pixels",
+              {
+                "idx": 2,
+                "version": 1
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 1,
+                "version": 1
+              }
+            ]
+          ],
+          "user_data": {
+            "template": {
+              "Expression": {
+                "inputs": null
+              }
+            }
+          }
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 2,
+            "version": 3
+          },
+          "label": "Stripes",
+          "inputs": [
+            [
+              "width",
+              {
+                "idx": 4,
+                "version": 3
+              }
+            ],
+            [
+              "offset",
+              {
+                "idx": 3,
+                "version": 3
+              }
+            ],
+            [
+              "vertical",
+              {
+                "idx": 5,
+                "version": 1
+              }
+            ],
+            [
+              "color1",
+              {
+                "idx": 6,
+                "version": 1
+              }
+            ],
+            [
+              "color2",
+              {
+                "idx": 7,
+                "version": 1
+              }
+            ],
+            [
+              "splitPos",
+              {
+                "idx": 8,
+                "version": 1
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 2,
+                "version": 3
+              }
+            ]
+          ],
+          "user_data": {
+            "template": {
+              "Isf": {
+                "info": {
+                  "name": "Stripes",
+                  "path": "/Users/edwardtaylor/dev/render-graph/shaders/Stripes.fs",
+                  "def": {
+                    "ISFVSN": "2",
+                    "VSN": null,
+                    "DESCRIPTION": null,
+                    "CATEGORIES": [
+                      "Geometry"
+                    ],
+                    "INPUTS": [
+                      {
+                        "NAME": "width",
+                        "TYPE": "float",
+                        "DEFAULT": 0.25,
+                        "MIN": null,
+                        "MAX": null,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      },
+                      {
+                        "NAME": "offset",
+                        "TYPE": "float",
+                        "DEFAULT": 0.0,
+                        "MIN": null,
+                        "MAX": null,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      },
+                      {
+                        "NAME": "vertical",
+                        "TYPE": "bool",
+                        "DEFAULT": false,
+                        "MIN": null,
+                        "MAX": null,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      },
+                      {
+                        "NAME": "color1",
+                        "TYPE": "color",
+                        "DEFAULT": [
+                          1.0,
+                          1.0,
+                          1.0,
+                          1.0
+                        ],
+                        "MIN": null,
+                        "MAX": null,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      },
+                      {
+                        "NAME": "color2",
+                        "TYPE": "color",
+                        "DEFAULT": [
+                          0.0,
+                          0.0,
+                          0.0,
+                          1.0
+                        ],
+                        "MIN": null,
+                        "MAX": null,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      },
+                      {
+                        "NAME": "splitPos",
+                        "TYPE": "float",
+                        "DEFAULT": 0.5,
+                        "MIN": 0.0,
+                        "MAX": 1.0,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      }
+                    ],
+                    "PASSES": [],
+                    "IMPORTED": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "version": 3
+      }
+    ],
+    "inputs": [
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 1,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Text": [
+              {
+                "value": "pixel.rg",
+                "min": null,
+                "max": null,
+                "default": "vec4(1.0,1.0,1.0,1.0)"
+              },
+              "Multiline"
+            ]
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 1,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 2,
+            "version": 1
+          },
+          "typ": "Texture2D",
+          "value": "None",
+          "kind": "ConnectionOnly",
+          "node": {
+            "idx": 1,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 3,
+            "version": 3
+          },
+          "typ": "None",
+          "value": {
+            "Float": {
+              "value": 0.0,
+              "min": null,
+              "max": null,
+              "default": 0.0
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 3
+          },
+          "shown_inline": true
+        },
+        "version": 3
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 4,
+            "version": 3
+          },
+          "typ": "None",
+          "value": {
+            "Float": {
+              "value": 0.25,
+              "min": null,
+              "max": null,
+              "default": 0.25
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 3
+          },
+          "shown_inline": true
+        },
+        "version": 3
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 5,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Bool": {
+              "value": false,
+              "min": null,
+              "max": null,
+              "default": false
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 3
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 6,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Color": {
+              "value": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ],
+              "min": null,
+              "max": null,
+              "default": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 3
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 7,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Color": {
+              "value": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "min": null,
+              "max": null,
+              "default": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 3
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 8,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Float": {
+              "value": 0.5,
+              "min": 0.0,
+              "max": 1.0,
+              "default": 0.5
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 3
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      }
+    ],
+    "outputs": [
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 1,
+            "version": 1
+          },
+          "node": {
+            "idx": 1,
+            "version": 1
+          },
+          "typ": "Texture2D"
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 2,
+            "version": 3
+          },
+          "node": {
+            "idx": 2,
+            "version": 3
+          },
+          "typ": "Texture2D"
+        },
+        "version": 3
+      }
+    ],
+    "connections": [
+      {
+        "value": null,
+        "version": 0
+      }
+    ]
+  },
+  "node_order": [
+    {
+      "idx": 1,
+      "version": 1
+    },
+    {
+      "idx": 2,
+      "version": 3
+    }
+  ],
+  "connection_in_progress": null,
+  "selected_node": null,
+  "node_positions": [
+    {
+      "value": null,
+      "version": 0
+    },
+    {
+      "value": {
+        "x": 221.01953,
+        "y": 196.16016
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "x": 65.484375,
+        "y": 38.640625
+      },
+      "version": 3
+    }
+  ],
+  "node_finder": null,
+  "pan_zoom": {
+    "pan": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "zoom": 1.0
+  },
+  "user_state": null
+}

@@ -24,7 +24,7 @@ isf = "0.1.0"
 gl = "0.14.0"
 
 tri-mesh = "0.5.0"
-glam = "0.21.3"
+glam = {version="0.21.3", features=["serde"]}
 
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }
@@ -37,6 +37,9 @@ wavefront_obj = "10.0.0"
 glsl = "6.0.1"
 naga = { version="0.10.0", features=["glsl-in"] }
 anyhow = "1.0.66"
+signal-hook = "0.3.14"
+serde_json = "1.0.87"
+serde = "1.0.147"
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"

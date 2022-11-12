@@ -3,6 +3,7 @@ use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path
 
 use isf::{Isf};
 
+use serde::{Serialize, Deserialize};
 use thiserror::Error;
 
 #[cfg(target_os="windows")]
@@ -49,7 +50,7 @@ pub enum IsfInfoReadError {
     ParseError(#[from] isf::ParseError),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct IsfInfo{
     pub name: String,
     pub path: PathBuf,

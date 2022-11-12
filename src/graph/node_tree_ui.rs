@@ -1,5 +1,7 @@
 use std::{path::{Path, PathBuf}, fmt::Display, fs::read_dir};
 
+use serde::Serialize;
+
 use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}};
 
 use super::{node_types::NodeType, def::ConnectionType};
@@ -7,7 +9,7 @@ use super::{node_types::NodeType, def::ConnectionType};
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 struct FilterState{
     image_inputs: bool,
     no_image_inputs: bool,

@@ -1,8 +1,10 @@
 
 
+use serde::{Serialize, Deserialize};
+
 use super::def::{ConnectionType, UiValue};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct InputDef {
     pub name: String,
     pub ty: ConnectionType,

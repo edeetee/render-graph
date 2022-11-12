@@ -1,5 +1,5 @@
 
-use std::{ops::{RangeInclusive}, path::Path};
+use std::{ops::{RangeInclusive}, path::Path, time::Instant};
 
 use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
@@ -9,12 +9,26 @@ use super::def::*;
 
 fn draw_error(ui: &mut egui::Ui, name: &str, error: &Option<NodeError>){
     if let Some(error) = &error {
+
+        // let err_time_diff = error.when.elapsed();
+        let err_elapsed_s = error.when.elapsed().as_secs_f32();
+        // error.when.elapsed()
+
+        let error_is_recent = err_elapsed_s < 1.0;
+
+        let color = if error_is_recent {
+            Color32::RED
+        } else {
+            Color32::GRAY
+        };
+
         egui::Frame::none()
             .inner_margin(2.0)
-            .stroke(Stroke::new(1.0, Color32::RED))
+            .stroke(Stroke::new(1.0, color))
             .show(ui, |ui| {
                 ui.set_min_size(ui.available_size());
-                ui.label(RichText::new(format!("ERROR in {name}")).code().color(Color32::RED));
+                ui.label(RichText::new(format!("Error in {name}")).code().color(Color32::LIGHT_RED));
+                ui.label(RichText::new(format!("{err_elapsed_s:.2}s ago")).small());
                 ui.add(Label::new(RichText::new(&error.text).code()).sense(Sense::click_and_drag()));
             });
     }

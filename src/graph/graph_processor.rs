@@ -34,7 +34,7 @@ pub struct OutputTarget {
 
 #[derive(Default)]
 pub struct ShaderGraphProcessor {
-    graph: ShaderGraph,
+    pub graph: ShaderGraph,
     texture_manager: TextureManager,
 
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
@@ -45,8 +45,15 @@ pub struct ShaderGraphProcessor {
 }
 
 impl ShaderGraphProcessor {
-    pub fn new() -> Self {
-        Default::default()
+    // pub fn new() -> Self {
+    //     Default::default()
+    // }
+
+    pub fn new(graph: ShaderGraph) -> ShaderGraphProcessor {
+        Self {
+            graph,
+            ..Default::default()
+        }
     }
 
     fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {

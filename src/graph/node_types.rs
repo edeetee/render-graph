@@ -5,10 +5,11 @@ use std::{rc::Weak, fmt::Display};
 
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use glam::Mat4;
+use serde::{Serialize, Deserialize};
 use super::{def::*, node_connections::{InputDef, OutputDef}};
 use crate::isf::meta::{IsfInfo};
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum NodeType {
     // #[cfg()]
     SharedOut,

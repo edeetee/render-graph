@@ -2,12 +2,13 @@
 
 
 
-use std::{rc::{Weak}, cell::RefCell, path::PathBuf};
+use std::{rc::{Weak}, cell::RefCell, path::PathBuf, time::Instant};
 
 use egui::{Rgba};
 use egui_node_graph::{GraphEditorState, UserResponseTrait};
 use glam::{Mat4, Vec3, EulerRot};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
+use serde::{Serialize, Deserialize};
 use strum::{Display};
 
 
@@ -20,22 +21,28 @@ use super::{ node_types::NodeType};
 //     pub size: (u32, u32),
 // }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct NodeError {
-    pub text: String
+    pub text: String,
+    pub when: Instant
 }
 
 impl From<anyhow::Error> for NodeError {
     fn from(err: anyhow::Error) -> Self {
-        Self { text: format!("{err:?}") }
+        Self { text: format!("{err:?}"), when: Instant::now() }
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct NodeData {
     pub template: NodeType,
+    #[serde(skip)]
     pub texture: Weak<RefCell<UiTexture>>, // pub texture_cache: Option<ShaderData>
+    #[serde(skip)]
     pub create_error: Option<NodeError>,
+    #[serde(skip)]
     pub update_error: Option<NodeError>,
+    #[serde(skip)]
     pub render_error: Option<NodeError>,
 }
 
@@ -51,7 +58,7 @@ impl NodeData {
     }
 }
 
-#[derive(PartialEq, Eq, Display, Clone, Copy, Debug)]
+#[derive(PartialEq, Eq, Display, Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum ConnectionType {
     // FrameBuffer,
     Texture2D,
@@ -60,7 +67,7 @@ pub enum ConnectionType {
     // Float,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RangedData<T> {
     pub value: T,
     pub min: Option<T>,
@@ -91,7 +98,7 @@ impl <T: PartialEq> PartialEq for RangedData<T>{
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Mat4UiData {
     pub mat: Mat4,
     pub rotation: (f32, f32, f32),
@@ -135,14 +142,14 @@ impl Mat4UiData {
     }
 }
 
-#[derive(Debug,Default, PartialEq, Clone)]
+#[derive(Debug,Default, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TextStyle {
     #[default]
     Oneline,
     Multiline
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum UiValue {
     Vec2(RangedData<[f32; 2]>),
     Float(RangedData<f32>),
@@ -178,10 +185,11 @@ impl UiValue {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GraphResponse;
 impl UserResponseTrait for GraphResponse {}
 
+#[derive(Serialize, Deserialize)]
 pub struct GraphState;
 
 pub(crate) type EditorState =
