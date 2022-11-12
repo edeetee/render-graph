@@ -4,7 +4,7 @@ A node graph renderer written in rust utilising [egui_node_graph](https://github
 
 I am developing this for the use case of live generative visual performances, where I want to do performant, intuitive experimentation without crashes.
 
-![screenshot](media/screenshot.jpg)
+![screenshot](media/screenshot.png)
 
 I come from Touchdesigner, a mature node graph system that has a tendency to crash when you push its boundaries.
 
@@ -17,6 +17,8 @@ I come from Touchdesigner, a mature node graph system that has a tendency to cra
 - Obj file render
     - Will cull objects if they have many vertices (WIP)
 - GL Expression OP
+- Auto save/load with serde
+- Show errors in UI
 
 ## Contributing
 
@@ -33,14 +35,14 @@ API is very much unstable at the moment. If you are interested in contributing, 
 - Hot reloading rust code
 - Bevy / rend3 integration
 - Full ISF spec
-- Serialization of the graph / files etc
 - Animation of parameters
+- Midi control UI
 - ISF Meta ops (more complex interface for handling racks + isf standard effects/transitions)
 - Continue reducing dependencies between structs
 - Support an SDF workflow
 - Support different texture sizes (options per node)
 - Sub shader input for obj render
-- Template system for nodes
+- Parameter template system for nodes
     - ISF transitions/effects
     - consistent midi controls
     - easy way to map simple control systems to complex operators / groups of operators

@@ -1,3 +1,5 @@
 **/target
 /.vs
 /rls
+
+.DS_Store
