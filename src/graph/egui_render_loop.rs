@@ -4,7 +4,7 @@ use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::graph::{def::EditorState, graph::ShaderGraph, self};
+use crate::graph::{def::{EditorState, ShaderNodeResponse}, graph::ShaderGraph, self};
 
 use super::ShaderGraphProcessor;
 
@@ -29,11 +29,25 @@ pub fn render_glium() {
 
     let mut egui_glium = EguiGlium::new(&display);
 
-
-    let mut shader_node_graph = match read_from_json_file(&default_save_path) {
+    let mut shader_node_graph = match read_from_json_file::<EditorState>(&default_save_path) {
         Ok(graph_state) => {
             println!("Loaded save file from {default_save_path:?}");
-            ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, tree: Default::default() })
+
+            let new_nodes = graph_state.graph.nodes.iter()
+                .map(|(node_id, ..)| egui_node_graph::NodeResponse::CreatedNode(node_id));
+
+            let new_connections = graph_state.graph.connections.iter()
+                .map(|(input, output)| egui_node_graph::NodeResponse::ConnectEventEnded{input, output: *output} );
+
+            let events: Vec<ShaderNodeResponse> = new_nodes.chain(new_connections).collect();
+
+            let mut shader_node_graph = ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, tree: Default::default() });
+
+            for event in events {
+                shader_node_graph.node_event(&display, &mut egui_glium, event);
+            }
+
+            shader_node_graph
         }
         Err(err) => {
             eprintln!("Failed to read default save {default_save_path:?} ({err:?}). Using new graph");

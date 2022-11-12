@@ -5,7 +5,7 @@
 use std::{rc::{Weak}, cell::RefCell, path::PathBuf, time::Instant};
 
 use egui::{Rgba};
-use egui_node_graph::{GraphEditorState, UserResponseTrait};
+use egui_node_graph::{GraphEditorState, UserResponseTrait, NodeResponse};
 use glam::{Mat4, Vec3, EulerRot};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
 use serde::{Serialize, Deserialize};
@@ -192,7 +192,6 @@ impl UserResponseTrait for GraphResponse {}
 #[derive(Serialize, Deserialize)]
 pub struct GraphState;
 
-pub(crate) type EditorState =
-    GraphEditorState<NodeData, ConnectionType, UiValue, NodeType, GraphState>;
-
+pub type ShaderNodeResponse = NodeResponse<GraphResponse, NodeData>;
+pub type EditorState = GraphEditorState<NodeData, ConnectionType, UiValue, NodeType, GraphState>;
 pub type Graph = egui_node_graph::graph::Graph<NodeData, ConnectionType, UiValue>;
