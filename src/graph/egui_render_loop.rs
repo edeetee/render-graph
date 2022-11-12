@@ -18,7 +18,7 @@ use super::ShaderGraphProcessor;
 pub fn render_glium() {
     // let model = model::Model::new(options.num_stars, Some(options.model_options));
     // let model = ();
-    let default_save_path = env::current_dir().unwrap().join("node_graph.json");
+    let default_save_path = env::current_exe().unwrap().parent().unwrap().join("render-graph-auto-save.json");
 
     let event_loop = glutin::event_loop::EventLoop::new();
 
@@ -28,12 +28,12 @@ pub fn render_glium() {
     println!("GL Version: {}", display.get_opengl_version_string());
 
     let mut egui_glium = EguiGlium::new(&display);
-    
+
 
     let mut shader_node_graph = match read_from_json_file(&default_save_path) {
         Ok(graph_state) => {
             println!("Loaded save file from {default_save_path:?}");
-            ShaderGraphProcessor::new(ShaderGraph(graph_state, Default::default()))
+            ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, tree: Default::default() })
         }
         Err(err) => {
             eprintln!("Failed to read default save {default_save_path:?} ({err:?}). Using new graph");
@@ -78,7 +78,7 @@ pub fn render_glium() {
                 shader_node_graph.update(&display);
 
                 if exit_signals.pending().count() != 0 {
-                    exit(control_flow, &shader_node_graph.graph.0);
+                    exit(control_flow, &shader_node_graph.graph.editor);
                 }
             }
             Event::RedrawEventsCleared => {
@@ -91,7 +91,7 @@ pub fn render_glium() {
 
                 if !egui_consumed_event {
                     if matches!(window_ev, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
-                        exit(control_flow, &shader_node_graph.graph.0);
+                        exit(control_flow, &shader_node_graph.graph.editor);
                     }
                 }
             },

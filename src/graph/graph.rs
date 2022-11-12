@@ -8,14 +8,11 @@ use slotmap::{SecondaryMap};
 use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
 
 // #[derive(Default)]
-pub struct ShaderGraph(pub EditorState, pub TreeState);
+pub struct ShaderGraph { pub editor: EditorState, pub tree: TreeState }
 
 impl Default for ShaderGraph {
     fn default() -> Self {
-        Self(
-            GraphEditorState::new(1.0, GraphState),
-            TreeState::default()
-        )
+        Self { editor: GraphEditorState::new(1.0, GraphState), tree: TreeState::default() }
     }
 }
 
@@ -23,13 +20,13 @@ impl Index<NodeId> for ShaderGraph {
     type Output = Node<NodeData>;
 
     fn index(&self, index: NodeId) -> &Self::Output {
-        &self.0.graph[index]
+        &self.editor.graph[index]
     }
 }
 
 impl IndexMut<NodeId> for ShaderGraph {
     fn index_mut(&mut self, index: NodeId) -> &mut Self::Output {
-        &mut self.0.graph[index]
+        &mut self.editor.graph[index]
     }
 }
 
@@ -38,7 +35,7 @@ pub type ProcessedInputs<'a, OUT> = Vec<(&'a str, &'a InputParam<ConnectionType,
 
 impl ShaderGraph {
     pub fn graph_ref(&self) -> &Graph<NodeData, ConnectionType, UiValue> {
-        &self.0.graph
+        &self.editor.graph
     }
 
     pub fn input_params(&self, node_id: NodeId) -> InputParams<'_> {
@@ -54,13 +51,13 @@ impl ShaderGraph {
     pub fn map_with_inputs<FOnNode, OUT: Clone>(&self, node_id: NodeId, f_on_node: &mut FOnNode, cache: &mut SecondaryMap<NodeId, Option<OUT>>) -> Option<OUT> 
         where FOnNode: FnMut(NodeId, ProcessedInputs<'_, OUT>) -> Option<OUT>
     {
-        let computed_inputs = self.0.graph[node_id].inputs.iter()
+        let computed_inputs = self.editor.graph[node_id].inputs.iter()
             .map(|(name, input_id)| {
                 //if input is connected, generate the value
 
-                let process_input = self.0.graph.connection(*input_id).map(|output_id| {
+                let process_input = self.editor.graph.connection(*input_id).map(|output_id| {
                     //we get to process a node!
-                    let input_node_id = self.0.graph[output_id].node;
+                    let input_node_id = self.editor.graph[output_id].node;
 
                     //add input to cache if doesn't exist
                     if !cache.contains_key(input_node_id){
@@ -71,7 +68,7 @@ impl ShaderGraph {
                     cache[input_node_id].clone()
                 }).flatten();
 
-                let input_param = &self.0.graph[*input_id];
+                let input_param = &self.editor.graph[*input_id];
 
                 (name.as_str(), input_param, process_input)
             })
@@ -85,16 +82,16 @@ impl ShaderGraph {
     pub fn add_node(&mut self, node_kind: &NodeType, position: egui::Pos2) -> NodeId {
         // println!("Adding node {node_kind:#?}");
 
-        let new_node = self.0.graph.add_node(
+        let new_node = self.editor.graph.add_node(
             node_kind.node_graph_label(),
             node_kind.user_data(),
             |graph, node_id| node_kind.build_node(graph, node_id),
         );
-        self.0.node_positions.insert(
+        self.editor.node_positions.insert(
             new_node,
             position,
         );
-        self.0.node_order.push(new_node);
+        self.editor.node_order.push(new_node);
 
         new_node
     }
@@ -105,7 +102,7 @@ impl ShaderGraph {
 
         egui::SidePanel::left("tree_view").show(ctx, |ui| {
 
-            if let Some(selected_item) = self.1.draw(ui) {
+            if let Some(selected_item) = self.tree.draw(ui) {
                 new_node_ty = Some(selected_item.ty.clone());
             }
 
@@ -118,18 +115,18 @@ impl ShaderGraph {
             let editor_rect = ui.max_rect();
 
             if let Some(node_ty) = new_node_ty {
-                let pos = editor_rect.left_top() - self.0.pan_zoom.pan;
+                let pos = editor_rect.left_top() - self.editor.pan_zoom.pan;
                 let new_node_id = self.add_node(&node_ty, pos);
                 responses.push(egui_node_graph::NodeResponse::CreatedNode(new_node_id));
             }
 
             if ui.ui_contains_pointer() {
-                self.0.pan_zoom.pan += ctx.input().scroll_delta;
+                self.editor.pan_zoom.pan += ctx.input().scroll_delta;
                 // self.0.pan_zoom.zoom *= ctx.input().zoom_delta();
                 // dbg!(self.0.pan_zoom.zoom);
             }
 
-            let mut graph_resp = self.0.draw_graph_editor(ui, AllNodeTypes);
+            let mut graph_resp = self.editor.draw_graph_editor(ui, AllNodeTypes);
 
             graph_resp.node_responses.append(&mut responses);
 

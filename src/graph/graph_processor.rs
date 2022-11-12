@@ -39,15 +39,12 @@ pub struct ShaderGraphProcessor {
 
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
+    
     shaders: SecondaryMap<NodeId, NodeShader>,
-
     updaters: SecondaryMap<NodeId, NodeUpdate>
 }
 
 impl ShaderGraphProcessor {
-    // pub fn new() -> Self {
-    //     Default::default()
-    // }
 
     pub fn new(graph: ShaderGraph) -> ShaderGraphProcessor {
         Self {
@@ -86,8 +83,6 @@ impl ShaderGraphProcessor {
                 let textures = Rc::new(RefCell::new(UiTexture::new(facade, egui_glium, (256, 256))));
                 self.graph[node_id].user_data.texture = Rc::downgrade(&textures);
                 self.node_textures.insert(node_id, textures);
-
-                // let node = &self.graph[node_id];
 
                 let template = &self.graph[node_id].user_data.template;
 
@@ -147,6 +142,7 @@ impl ShaderGraphProcessor {
                 self.updaters.remove(node_id);
                 self.node_textures.remove(node_id);
             }
+
             _ => {}
         }
     }
@@ -204,7 +200,7 @@ impl ShaderGraphProcessor {
             });
         }
 
-        for (node_id, data) in self.graph.0.graph.nodes.iter_mut() {
+        for (node_id, data) in self.graph.editor.graph.nodes.iter_mut() {
             data.user_data.render_error = errors.remove(node_id);
         }
     }
@@ -213,9 +209,9 @@ impl ShaderGraphProcessor {
         for (node_id, updater) in self.updaters.iter_mut() {
             let _template = &mut self.graph[node_id].user_data.template;
 
-            let node = &mut self.graph.0.graph.nodes[node_id];
+            let node = &mut self.graph.editor.graph.nodes[node_id];
             let inputs: Vec<_> = node.inputs.iter()
-                .map(|(name, in_id)| (name.as_str(), &self.graph.0.graph.inputs[*in_id]))
+                .map(|(name, in_id)| (name.as_str(), &self.graph.editor.graph.inputs[*in_id]))
                 .collect();
 
             if let Some(shader) = &mut self.shaders.get_mut(node_id) {
