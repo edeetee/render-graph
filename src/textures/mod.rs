@@ -124,8 +124,6 @@ impl UiTexture {
     }
 }
 
-pub type DefaultTexture = DepthTexture2d;
-
 #[derive(Debug)]
 pub struct TextureManager {
     color_textures: Vec<Rc<Texture2d>>,
@@ -133,12 +131,14 @@ pub struct TextureManager {
     res: (u32, u32)
 }
 
+pub const DEFAULT_RES: (u32, u32) = (512, 512);
+
 impl Default for TextureManager {
     fn default() -> Self {
         Self {
             color_textures: Vec::new(),
             depth_textures: Vec::new(),
-            res: (1920, 1080)
+            res: DEFAULT_RES
         }
     }
 }

@@ -39,7 +39,7 @@ pub struct ShaderGraphProcessor {
 
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
-    
+
     shaders: SecondaryMap<NodeId, NodeShader>,
     updaters: SecondaryMap<NodeId, NodeUpdate>
 }

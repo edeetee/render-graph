@@ -16,8 +16,6 @@ use super::ShaderGraphProcessor;
 // const default_save_location = PathB
 
 pub fn render_glium() {
-    // let model = model::Model::new(options.num_stars, Some(options.model_options));
-    // let model = ();
     let default_save_path = env::current_exe().unwrap().parent().unwrap().join("render-graph-auto-save.json");
 
     let event_loop = glutin::event_loop::EventLoop::new();
@@ -63,7 +61,6 @@ pub fn render_glium() {
         SIGINT,
         SIGQUIT,
     ]).unwrap();
-    
 
     event_loop.run(move |ev, _, control_flow| {
 

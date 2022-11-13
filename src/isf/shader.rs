@@ -1,20 +1,62 @@
-use std::{fs::{File}, io::Read, time::Instant};
+use std::{fs::{File}, io::Read, time::Instant, num::ParseIntError, str::FromStr};
 
 use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}, DrawError};
 use isf::{Isf, Pass};
 
+use strum::Display;
 use thiserror::Error;
-use crate::{fullscreen_shader::FullscreenFrag, util::GlProgramCreationError};
+use crate::{fullscreen_shader::FullscreenFrag, util::GlProgramCreationError, textures::DEFAULT_RES};
 use crate::textures::new_texture_2d;
 
 use super::meta::{IsfInfo};
 
 pub struct IsfShader {
     frag: FullscreenFrag,
-    passes: Vec<(Pass, Texture2d)>,
+    passes: Vec<PassTexture>,
+    res: (u32, u32),
     start_inst: Instant,
     prev_frame_inst: Instant,
     frame_count: u32,
+}
+
+struct PassTexture{
+    pass: Pass,
+    texture: Texture2d
+}
+
+#[derive(Error, Debug)]
+#[error("Could not parse pass size {0}")]
+pub struct PassParseError(String);
+
+fn default_or_parse<T: FromStr>(default: T, text: &Option<String>) -> Result<T, PassParseError> {
+    match text {
+        Some(text) => text.parse().map_err(|_| PassParseError(text.clone())),
+        None => Ok(default),
+    }
+}
+
+fn calculate_pass_size(pass: &Pass, (width, height): (u32, u32)) -> Result<(u32, u32), PassParseError> {
+    Ok((
+        default_or_parse(width, &pass.width)?,
+        default_or_parse(height, &pass.height)?,
+    ))
+}
+
+impl PassTexture {
+    fn new(facade: &impl Facade, pass: Pass, res: (u32, u32)) -> Result<PassTexture, PassParseError> {
+        let size = calculate_pass_size(&pass, res)?;
+
+        Ok(Self {
+            pass,
+            texture: new_texture_2d(facade, size).unwrap()
+        })
+    }
+
+    pub fn update_size(&mut self, facade: &impl Facade, size: (u32, u32)) {
+        //allow unwrap here as you cannot make a valid PassTexture with an unparsable pass size
+        let size = calculate_pass_size(&self.pass, size).unwrap();
+        self.texture = new_texture_2d(facade, size).unwrap()
+    }
 }
 
 impl IsfShader {
@@ -29,10 +71,13 @@ impl IsfShader {
             .replace("gl_FragColor", "isf_FragColor")
             .replace("varying", "out");
 
-        let passes = isf.def.passes.iter().map(|pass| {
-            (pass.clone(), new_texture_2d(facade, (256, 256)).unwrap())
-        })
-        .collect();
+        let res = DEFAULT_RES;
+
+        let passes = isf.def.passes.iter()
+            .map(|pass| {
+                PassTexture::new(facade, pass.clone(), res)
+            })
+            .collect::<Result<_,_>>()?;
 
         let now = Instant::now();
 
@@ -43,7 +88,8 @@ impl IsfShader {
             start_inst: now,
             prev_frame_inst: now,
             frame_count: 0,
-            passes
+            passes,
+            res
         })
     }
 
@@ -51,6 +97,8 @@ impl IsfShader {
         let now = Instant::now();
         let time_delta = now - self.prev_frame_inst;
         let time_total = now - self.start_inst;
+
+        // surface.get_dimensions()
 
         let mut uniforms = IsfUniforms {
             inner: uniforms,
@@ -64,12 +112,20 @@ impl IsfShader {
         if self.passes.is_empty() {
             self.frag.draw(surface, &uniforms)?;
         } else {
+            // let dimens = surface.get_dimensions();
+            // if dimens != self.res {
+            //     self.res = dimens;
+            //     for pass in &self.passes {
+            //         // pass.update_size(surface, dimens)
+            //     }
+            // }
+
             let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
 
-            for (_pass, tex) in &self.passes {
+            for pass_tex in &self.passes {
                 uniforms.pass_index += 1;
                 self.frag.draw(surface, &uniforms)?;
-                surface.fill(&tex.as_surface(), filter);
+                surface.fill(&pass_tex.texture.as_surface(), filter);
             }
         }
 
@@ -84,7 +140,7 @@ struct IsfUniforms<'a, U: Uniforms> {
     time_delta: f32,
     time: f32,
     pass_index: i32,
-    passes: &'a Vec<(Pass, Texture2d)>,
+    passes: &'a Vec<PassTexture>,
     inner: &'a U,
 }
 
@@ -94,9 +150,9 @@ impl <U: Uniforms> Uniforms for IsfUniforms<'_, U> {
         f("TIMEDELTA", self.time_delta.as_uniform_value());
         f("TIME", self.time.as_uniform_value());
         f("PASSINDEX", self.pass_index.as_uniform_value());
-        for (pass, tex) in self.passes {
+        for PassTexture { pass, texture } in self.passes {
             if let Some(name) = pass.target.as_ref() {
-                f(name, tex.as_uniform_value());
+                f(name, texture.as_uniform_value());
             }
         }
         self.inner.visit_values(f);
@@ -143,6 +199,10 @@ fn generate_isf_prefix(def: &Isf) -> String {
 pub enum IsfShaderLoadError {
     #[error("Load error {0}")]
     IoError(#[from] std::io::Error),
+    
     #[error("Compile error {0}")]
     CompileError(#[from] GlProgramCreationError),
+
+    #[error("Parse error {0}")]
+    PassParseError(#[from] PassParseError)
 }

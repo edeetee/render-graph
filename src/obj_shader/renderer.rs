@@ -4,7 +4,7 @@ use std::{time::Instant};
 use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError, IndexBuffer, Depth, BackfaceCullingMode};
 use tri_mesh::{MeshBuilder, prelude::Mesh};
 
-use crate::util::MultiUniforms;
+use crate::{util::MultiUniforms, textures::DEFAULT_RES};
 
 pub fn new_vertex_buffer(facade: &impl Facade, verts: &[VertexAttr]) -> VertexBuffer<VertexAttr> {
     VertexBuffer::immutable(facade, verts).unwrap()
@@ -64,7 +64,7 @@ impl ObjRenderer {
 
         let proj_matrix = glam::Mat4::perspective_rh(
             std::f32::consts::FRAC_2_PI, 
-            16.0/9.0, 
+            DEFAULT_RES.0 as f32/DEFAULT_RES.1 as f32, 
             0.01, 
             100.0
         ).to_cols_array_2d();
