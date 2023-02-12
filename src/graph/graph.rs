@@ -1,18 +1,20 @@
 use std::{ops::{Index, IndexMut}};
 
+use egui::{Rect, Pos2, Vec2};
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, NodeTemplateTrait};
 
 use serde::Serialize;
 use slotmap::{SecondaryMap};
+use crate::common::def::{ConnectionType, UiValue};
 
-use super::{def::{GraphState, NodeData, GraphResponse, ConnectionType, UiValue, EditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
+use super::{def::{GraphState, NodeData, GraphResponse, EditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
 
 // #[derive(Default)]
 pub struct ShaderGraph { pub editor: EditorState, pub tree: TreeState }
 
 impl Default for ShaderGraph {
     fn default() -> Self {
-        Self { editor: GraphEditorState::new(1.0, GraphState), tree: TreeState::default() }
+        Self { editor: GraphEditorState::new(1.0), tree: TreeState::default() }
     }
 }
 
@@ -83,9 +85,9 @@ impl ShaderGraph {
         // println!("Adding node {node_kind:#?}");
 
         let new_node = self.editor.graph.add_node(
-            node_kind.node_graph_label(),
-            node_kind.user_data(),
-            |graph, node_id| node_kind.build_node(graph, node_id),
+            node_kind.node_graph_label(&mut GraphState),
+            node_kind.user_data(&mut GraphState),
+            |graph, node_id| node_kind.build_node(graph, &mut GraphState, node_id),
         );
         self.editor.node_positions.insert(
             new_node,
@@ -97,19 +99,19 @@ impl ShaderGraph {
     }
 
     pub fn draw(&mut self, ctx: &egui::Context) -> egui_node_graph::GraphResponse<GraphResponse, NodeData> {
-
         let mut new_node_ty = None;
 
         egui::SidePanel::left("tree_view").show(ctx, |ui| {
-
             if let Some(selected_item) = self.tree.draw(ui) {
                 new_node_ty = Some(selected_item.ty.clone());
             }
-
         });
+        
 
         egui::CentralPanel::default().show(ctx, |ui| {
+            ui.set_clip_rect(ctx.available_rect());
             egui::widgets::global_dark_light_mode_switch(ui);
+
             let mut responses = vec![];
 
             let editor_rect = ui.max_rect();
@@ -122,11 +124,16 @@ impl ShaderGraph {
 
             if ui.ui_contains_pointer() {
                 self.editor.pan_zoom.pan += ctx.input().scroll_delta;
+
+                if let Some(point) = ctx.input().pointer.hover_pos() {
+                    let zoom_delta = ctx.input().zoom_delta();
+                    self.editor.pan_zoom.adjust_zoom(zoom_delta, point.to_vec2(), 0.001, 100.0);
+                }
                 // self.0.pan_zoom.zoom *= ctx.input().zoom_delta();
                 // dbg!(self.0.pan_zoom.zoom);
             }
 
-            let mut graph_resp = self.editor.draw_graph_editor(ui, AllNodeTypes);
+            let mut graph_resp = self.editor.draw_graph_editor(ui, AllNodeTypes, &mut GraphState);
 
             graph_resp.node_responses.append(&mut responses);
 

@@ -4,9 +4,8 @@ use serde::Serialize;
 
 use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}};
 
-use super::{node_types::NodeType, def::ConnectionType};
-
-
+use super::{node_types::NodeType, };
+use crate::common::def::ConnectionType;
 
 
 #[derive(Debug, Serialize)]
@@ -41,6 +40,7 @@ impl FilterState {
     }
 }
 
+///Holds the data for the tree vi
 pub struct TreeState{
     filter: FilterState,
     trees: Vec<Tree<LeafItem, BranchItem>>
@@ -81,6 +81,14 @@ impl TreeState {
             search_changed |= ui.toggle_value(&mut self.filter.no_image_inputs, "None").clicked();
         });
 
+        let open_state = if !search_changed{
+            None
+        } else if self.filter.text.is_empty() {
+            None
+        } else {
+            Some(true)
+        };
+
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.set_min_width(128.0);
 
@@ -92,11 +100,8 @@ impl TreeState {
                     });
                 }
 
-                if let Some(selected_item) = tree.draw(ui, &|item| item.visible) {
+                if let Some(selected_item) = tree.draw(ui, open_state, &|item| item.visible) {
                     new_item = Some(selected_item);
-                    
-                    
-                    // self.add
                 }
             }
         });

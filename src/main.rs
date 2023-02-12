@@ -7,6 +7,7 @@ mod tree_view;
 mod obj_shader;
 mod util;
 mod gl_expression;
+mod common;
 
 use graph::render_glium;
 

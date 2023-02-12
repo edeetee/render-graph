@@ -2,8 +2,9 @@ use core::convert::From;
 use core::default::Default;
 use egui::Rgba;
 use isf::{Input, InputType, InputValues};
-use super::node_connections::InputDef;
-use super::def::{ConnectionType, UiValue, RangedData};
+
+use crate::common::node_connections::InputDef;
+use crate::common::def::{ConnectionType, UiValue, RangedData};
 
 impl From<&InputType> for ConnectionType {
     fn from(ty: &InputType) -> Self {

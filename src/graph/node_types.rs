@@ -1,14 +1,17 @@
-
-
-
 use std::{rc::Weak, fmt::Display};
-
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use glam::Mat4;
 use serde::{Serialize, Deserialize};
-use super::{def::*, node_connections::{InputDef, OutputDef}};
+
+use super::def::{NodeData, GraphState};
+
 use crate::isf::meta::{IsfInfo};
 
+use crate::common::def::{ConnectionType, Mat4UiData, TextStyle, UiValue};
+use crate::common::node_connections::{InputDef, OutputDef};
+// use crate::common::node_
+
+///Enum of node types used to create an actual node
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub enum NodeType {
     // #[cfg()]
@@ -99,22 +102,24 @@ impl NodeTemplateTrait for NodeType {
     type NodeData = NodeData;
     type DataType = ConnectionType;
     type ValueType = UiValue;
+    type UserState = GraphState;
 
-    fn node_finder_label(&self) -> &str {
-        self.get_name()
+    fn node_finder_label(&self, user_state: &mut Self::UserState) -> std::borrow::Cow<str> {
+        self.get_name().into()
     }
 
-    fn node_graph_label(&self) -> String {
-        self.node_finder_label().into()
+    fn node_graph_label(&self, user_state: &mut Self::UserState) -> String {
+        self.node_finder_label(user_state).into()
     }
 
-    fn user_data(&self) -> Self::NodeData {
+    fn user_data(&self, user_state: &mut Self::UserState) -> Self::NodeData {
         NodeData::new(self.clone())
     }
 
     fn build_node(
         &self,
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
+        user_state: &mut Self::UserState,
         node_id: NodeId
     ) {
         for input in self.get_input_types() {
@@ -135,4 +140,5 @@ impl NodeTemplateTrait for NodeType {
             graph.add_output_param(node_id, output.name, output.ty);
         }
     }
+
 }

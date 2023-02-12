@@ -1,9 +1,12 @@
 
-use std::{ops::{RangeInclusive}, path::Path, time::Instant};
+use std::{ops::{RangeInclusive, RangeBounds, Bound}, path::Path};
 
 use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
+use glam::Vec3;
 
+
+use crate::common::def::{ConnectionType, UiValue, RangedData, TextStyle, Mat4UiData};
 
 use super::def::*;
 
@@ -45,7 +48,7 @@ impl NodeDataTrait for NodeData {
         ui: &mut egui::Ui,
         node_id: NodeId,
         graph: &Graph<Self, Self::DataType, Self::ValueType>,
-        _state: &Self::UserState,
+        _state: &mut Self::UserState,
     ) -> Vec<egui_node_graph::NodeResponse<Self::Response, Self>>
     where
         Self::Response: egui_node_graph::UserResponseTrait,
@@ -80,7 +83,7 @@ impl NodeDataTrait for NodeData {
 }
 
 impl DataTypeTrait<GraphState> for ConnectionType {
-    fn data_type_color(&self, _: &GraphState) -> egui::Color32 {
+    fn data_type_color(&self, _: &mut GraphState) -> egui::Color32 {
         let hue = match self {
             ConnectionType::Texture2D => 0.7,
             ConnectionType::None => 0.0,
@@ -94,48 +97,62 @@ impl DataTypeTrait<GraphState> for ConnectionType {
     }
 }
 
+fn get_val<T>(bound: Bound<T>) -> Option<T> {
+    match bound {
+        Bound::Included(v) => Some(v),
+        Bound::Excluded(v) => Some(v),
+        Bound::Unbounded => None,
+    }
+}
+
 fn horizontal_drags<const A: usize>(
     ui: &mut egui::Ui, 
     labels: &[&str; A],
-    data: &mut RangedData<[f32; A]>
+    min: Option<&[f32; A]>,
+    max: Option<&[f32; A]>,
+    values: &mut [f32; A],
 ) -> egui::InnerResponse<bool> {
 
     ui.horizontal(|ui| {
         let mut any_changed = false;
 
         for i in 0..A {
-            ui.label(labels[i].to_string());
+            // let range = &ranges[i];
+            // let value = &mut values[i];
+            let label = labels[i];
 
-            let speed = 0.01 * match data {
-                RangedData{
-                    min: Some(min),
-                    max: Some(max),
-                    ..
-                } => {
-                    (max[i]-min[i]).abs()
-                }
-                _ => {
-                    10.0
-                }
+            ui.label(label);
+
+            let min = min.map(|min| min[i]);
+            let max = max.map(|max| max[i]);
+
+            let speed =  match (min, max) {
+                (Some(min), Some(max)) => 0.01 * (max - min).abs(),
+                _ => 0.1
             };
 
-            let range = default_range_f32(
-                &data.min.map(|min| min[i]), 
-                &data.max.map(|max| max[i])
-            );
-
-            let drag_value_ui = DragValue::new(&mut data.value[i])
-                .speed(speed)
-                .clamp_range(range);
+            let drag_value_ui = DragValue::new(&mut values[i])
+                .speed(speed);
 
             if ui.add(drag_value_ui).changed() {
                 any_changed = true;
+            }
+
+
+            if let Some(min) = min {
+                values[i] = values[i].max(min);
+            }
+
+            if let Some(max) = max {
+                values[i] = values[i].min(max);
             }
         }
 
         any_changed
     })
 }
+
+// fn horizontal_drags_arr()
 
 fn default_range_f32(min: &Option<f32>, max: &Option<f32>) -> RangeInclusive<f32>{
     min.unwrap_or(0.0)..=max.unwrap_or(1.0)
@@ -147,19 +164,40 @@ fn default_range_i32(min: &Option<i32>, max: &Option<i32>) -> RangeInclusive<i32
 
 impl WidgetValueTrait for UiValue {
     type Response = GraphResponse;
+    type UserState = GraphState;
+    type NodeData = NodeData;
 
-    fn value_widget(&mut self, param_name: &str, ui: &mut egui::Ui) -> Vec<Self::Response> {
+    fn value_widget(
+        &mut self,
+        param_name: &str,
+        _node_id: NodeId,
+        ui: &mut egui::Ui,
+        _user_state: &mut Self::UserState,
+        _node_data: &Self::NodeData,
+    ) -> Vec<Self::Response> {
 
         let _changed = match self {
 
             UiValue::Vec2 (data) => {
                 ui.label(param_name);
-                horizontal_drags(ui, &["x", "y"], data).inner
+                horizontal_drags(
+                    ui, 
+                    &["x", "y"], 
+                    data.min.as_ref(),
+                    data.max.as_ref(),
+                    &mut data.value, 
+                ).inner
             }
 
             UiValue::Vec4(data) => {
                 ui.label(param_name);
-                horizontal_drags(ui, &["r", "g", "b", "a"], data).inner
+                horizontal_drags(
+                    ui, 
+                    &["r", "g", "b", "a"], 
+                    data.min.as_ref(),
+                    data.max.as_ref(),
+                    &mut data.value, 
+                ).inner
             }
 
             UiValue::Color(RangedData { value, .. }) => {
@@ -251,16 +289,20 @@ impl WidgetValueTrait for UiValue {
                         changed |= ui.add(DragValue::new(&mut mat.scale)).changed()
                     });
 
-                    ui.horizontal(|ui| {
-                        ui.label("tx");
-                        changed |= ui.add(DragValue::new(&mut mat.translation.x)).changed();
+                    // let tx
+                    let mut slice = mat.translation.to_array();
 
-                        ui.label("ty");
-                        changed |= ui.add(DragValue::new(&mut mat.translation.y)).changed();
+                    changed |= horizontal_drags(
+                        ui, 
+                        &["tx", "ty", "tz"], 
+                        None,
+                        None, 
+                        &mut slice
+                    ).inner;
 
-                        ui.label("tz");
-                        changed |= ui.add(DragValue::new(&mut mat.translation.z)).changed();
-                    });
+                    mat.translation = Vec3::from_slice(&slice);
+                    
+
 
                     ui.horizontal(|ui| {
                         ui.label("rx");

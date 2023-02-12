@@ -4,9 +4,9 @@ use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::graph::{def::{EditorState, ShaderNodeResponse}, graph::ShaderGraph, self};
+use crate::graph::{graph::ShaderGraph, self};
 
-use super::ShaderGraphProcessor;
+use super::{ShaderGraphProcessor, def::{EditorState, ShaderNodeResponse}};
 
 // const DEFAULT_FULLSCREEN_MODE: Option<Fullscreen> = Some(Fullscreen::Borderless(None));
 
@@ -25,7 +25,7 @@ pub fn render_glium() {
     println!("GL Vendor: {}", display.get_opengl_vendor_string());
     println!("GL Version: {}", display.get_opengl_version_string());
 
-    let mut egui_glium = EguiGlium::new(&display);
+    let mut egui_glium = EguiGlium::new(&display, &event_loop);
 
     let mut shader_node_graph = match read_from_json_file::<EditorState>(&default_save_path) {
         Ok(graph_state) => {

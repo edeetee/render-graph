@@ -7,7 +7,8 @@ use glium::backend::Facade;
 
 use crate::{isf::{updater::IsfUpdater}, obj_shader::loader::ObjLoader, gl_expression::GlExpressionUpdater};
 
-use super::{node_types::NodeType, def::{NodeData, UiValue}, node_shader::NodeShader, graph::InputParams};
+use super::{node_types::NodeType, def::{NodeData}, node_shader::NodeShader, graph::InputParams};
+use crate::common::def::UiValue;
 
 
 pub enum NodeUpdate {

@@ -1,6 +1,6 @@
 use std::{fs::{File}, io::Read, time::Instant, num::ParseIntError, str::FromStr};
 
-use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}, DrawError};
+use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}, DrawError, program::Uniform};
 use isf::{Isf, Pass};
 
 use strum::Display;
@@ -22,6 +22,14 @@ pub struct IsfShader {
 struct PassTexture{
     pass: Pass,
     texture: Texture2d
+}
+
+impl Uniforms for PassTexture {
+    fn visit_values<'a, F: FnMut(&str, UniformValue<'a>)>(&'a self, mut f: F) {
+        if let Some(name) = self.pass.target.as_ref() {
+            f(name, self.texture.as_uniform_value());
+        }
+    }
 }
 
 #[derive(Error, Debug)]
@@ -58,6 +66,8 @@ impl PassTexture {
         self.texture = new_texture_2d(facade, size).unwrap()
     }
 }
+
+use meval::{Expr, Context};
 
 impl IsfShader {
     pub fn new(facade: &impl Facade, isf: &IsfInfo) -> Result<Self, IsfShaderLoadError> {
@@ -98,8 +108,6 @@ impl IsfShader {
         let time_delta = now - self.prev_frame_inst;
         let time_total = now - self.start_inst;
 
-        // surface.get_dimensions()
-
         let mut uniforms = IsfUniforms {
             inner: uniforms,
             time_delta: time_delta.as_secs_f32(),
@@ -112,6 +120,7 @@ impl IsfShader {
         if self.passes.is_empty() {
             self.frag.draw(surface, &uniforms)?;
         } else {
+            //TODO: Update dimensions of surfaces
             // let dimens = surface.get_dimensions();
             // if dimens != self.res {
             //     self.res = dimens;

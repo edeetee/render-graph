@@ -5,6 +5,7 @@ use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Unifor
 use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph::{ProcessedInputs}};
 use crate::{isf::shader::{IsfShader, IsfShaderLoadError}, obj_shader::renderer::ObjRenderer, textures::{TextureManager}, gl_expression::GlExpressionRenderer};
 
+/// Holds shaders for the fast rendering loop
 pub enum NodeShader {
     Isf(IsfShader),
     SpoutOut(SpoutOutShader),

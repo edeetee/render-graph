@@ -14,10 +14,11 @@ use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use crate::textures::{UiTexture, TextureManager};
 
+use crate::common::def::*;
+
 use super::{
     def::{self, *},
     graph::ShaderGraph,
-    node_types::NodeType,
     node_shader::ShaderInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
 
@@ -169,16 +170,16 @@ impl ShaderGraphProcessor {
                     if let Some(shader) = self.shaders.get_mut(node_id) {
                         // let mut surface = target.as_surface();
 
-                        // surface.clear_color(0., 0., 0., 0.);
 
                         let mut ui_texture = (*self.node_textures[node_id]).borrow_mut();
 
                         match shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs)) {
                             Ok(target) => {
                                 let surface = target.as_surface();
+                                // surface.clear_color(0., 0., 0., 0.);
 
                                 let (w, h) = surface.get_dimensions();
-                                let size = (w/4, h/4);
+                                let size = (w, h);
         
                                 // node.user_data.
                                 // self.node_textures[node_id].borrow_mut()
@@ -252,6 +253,8 @@ impl ShaderGraphProcessor {
         }
 
         self.render_shaders(display, egui_glium);
+
+        // egui_glium.egui_ctx
 
         egui_glium.paint(display, &mut frame);
 
