@@ -28,6 +28,7 @@ impl From<anyhow::Error> for NodeError {
 #[derive(Serialize, Deserialize)]
 pub struct NodeData {
     pub template: NodeType,
+    
     #[serde(skip)]
     pub texture: Weak<RefCell<UiTexture>>, // pub texture_cache: Option<ShaderData>
     #[serde(skip)]

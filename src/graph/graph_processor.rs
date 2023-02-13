@@ -81,7 +81,8 @@ impl ShaderGraphProcessor {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
                 // self.node_textures.insert(node_id, textures);
-                let textures = Rc::new(RefCell::new(UiTexture::new(facade, egui_glium, (256, 256))));
+                let ui_texture = UiTexture::new(facade, egui_glium, (256, 256));
+                let textures = Rc::new(RefCell::new(ui_texture));
                 self.graph[node_id].user_data.texture = Rc::downgrade(&textures);
                 self.node_textures.insert(node_id, textures);
 
@@ -243,6 +244,9 @@ impl ShaderGraphProcessor {
 
         let _needs_repaint = egui_glium.run(display, |ctx| {
             // ctx.tex_manager()
+            // for node_id in self.graph.graph_ref().iter_nodes() {
+            //     let pos = self.graph.editor.node_positions
+            // }
             graph_response = Some(self.graph.draw(ctx));
         });
 

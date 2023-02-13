@@ -1,7 +1,7 @@
-use std::rc::Rc;
+use std::{rc::Rc, sync::RwLock};
 
 // use super::{def::{ComputedNodeInput, NodeTypes}, shaders::Shader};
-use egui::TextureId;
+use egui::{TextureId, TextureHandle};
 use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
@@ -95,6 +95,7 @@ impl UiTexture {
     }
 
     pub fn update_size(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, size: (u32, u32)) {
+        //we need to completely replace the texture instead of just updating it
         if self.screen.borrow_tex().dimensions() != size {
             let new_screen = ScreenTexture::generate(facade, egui_glium, size);
 
@@ -108,6 +109,8 @@ impl UiTexture {
 
     pub fn copy_from(&mut self, surface: &impl Surface){
         let filter = glium::uniforms::MagnifySamplerFilter::Linear;
+
+        // SimpleFrameBuffer 
 
         surface.fill(
             self.screen.borrow_fb(),
@@ -123,6 +126,7 @@ impl UiTexture {
         self.screen.borrow_id().clone()
     }
 }
+
 
 #[derive(Debug)]
 pub struct TextureManager {

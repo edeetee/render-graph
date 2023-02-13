@@ -50,9 +50,10 @@ impl <T: PartialEq> PartialEq for RangedData<T>{
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Mat4UiData {
     pub mat: Mat4,
-    pub rotation: (f32, f32, f32),
+    ///Rotation in degrees
+    pub rotation: [f32; 3],
     pub scale: f32,
-    pub translation: Vec3
+    pub translation: [f32; 3]
 }
 
 const EULER_ORDER: EulerRot = EulerRot::ZXY;
@@ -60,10 +61,11 @@ const EULER_ORDER: EulerRot = EulerRot::ZXY;
 impl From<Mat4> for Mat4UiData {
     fn from(value: Mat4) -> Self {
         let decomposed = value.to_scale_rotation_translation();
+        let rot_tuple = decomposed.1.to_euler(EULER_ORDER);
         Self {
             scale: decomposed.0.length_squared()/3.0,
-            rotation: decomposed.1.to_euler(EULER_ORDER),
-            translation: decomposed.2,
+            rotation: [rot_tuple.0.to_degrees(), rot_tuple.1.to_degrees(), rot_tuple.2.to_degrees()],
+            translation: decomposed.2.to_array(),
             mat: value,
         }
     }
@@ -72,7 +74,7 @@ impl From<Mat4> for Mat4UiData {
 impl Mat4UiData {
     pub fn new_view() -> Self {
         let mut new = Self {
-            translation: Vec3::new(0.0, 0.0, -5.0),
+            translation: [0.0, 0.0, -5.0],
             mat: Mat4::IDENTITY,
             scale: 1.0,
             rotation: Default::default()
@@ -83,10 +85,15 @@ impl Mat4UiData {
         new
     }
 
+    ///Called to update the actual matrix value
     pub fn update_mat(&mut self) {
         self.mat = Mat4::IDENTITY
-            * Mat4::from_euler(EULER_ORDER, self.rotation.2, self.rotation.0, self.rotation.1)
-            * Mat4::from_translation(self.translation)
+            * Mat4::from_euler(EULER_ORDER, 
+                self.rotation[2].to_radians(), 
+                self.rotation[0].to_radians(), 
+                self.rotation[1].to_radians()
+            )
+            * Mat4::from_translation(Vec3::from_array(self.translation))
             * Mat4::from_scale(Vec3::new(self.scale, self.scale, self.scale))
     }
 }

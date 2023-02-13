@@ -55,24 +55,29 @@ impl NodeDataTrait for NodeData {
     {
         let node = &graph[node_id];
 
-        egui::Frame::none()
-            .stroke(Stroke::new(1.0, Color32::LIGHT_GRAY))
-            .show(ui, |ui| {
-                ui.set_min_size(ui.available_size());
-
-                if let Some(tex) = &node.user_data.texture.upgrade() {
-                    let width = ui.available_width();
-                    let tex = tex.borrow();
-                    let (tex_w, tex_h) = tex.size();
-                    let height = tex_h as f32 * width / tex_w as f32;
-        
-                    ui.image(tex.clone_screen_tex_id(), [width, height]);
-                } else {
-                    ui.label("NO IMAGE AVAILABLE");
-                }
-
+        // if ui.ui_contains_pointer() {
+        //     egui::Area
+        // }
+        if ui.ui_contains_pointer() {
+            egui::show_tooltip_at_pointer(ui.ctx(), egui::Id::new("img_hover"), |ui| {
+                egui::Frame::none()
+                    .stroke(Stroke::new(1.0, Color32::LIGHT_GRAY))
+                    .show(ui, |ui| {
+                        // ui.set_min_size(ui.available_size());
+    
+                        if let Some(tex) = &node.user_data.texture.upgrade() {
+                            let width = 200.0;
+                            let tex = tex.borrow();
+                            let (tex_w, tex_h) = tex.size();
+                            let height = tex_h as f32 * width / tex_w as f32;
+                
+                            ui.image(tex.clone_screen_tex_id(), [width, height]);
+                        } else {
+                            ui.label("NO IMAGE AVAILABLE");
+                        }
+                    });
             });
-        
+        }
 
         draw_error(ui, "Init", &node.user_data.create_error);
         draw_error(ui, "Update", &node.user_data.update_error);
@@ -105,11 +110,34 @@ fn get_val<T>(bound: Bound<T>) -> Option<T> {
     }
 }
 
+enum UiLimit<T> {
+    Clamp(Option<T>, Option<T>),
+    Loop(T, T),
+    None
+}
+
+impl <T> UiLimit<T> {
+    fn min(&self) -> Option<&T> {
+        match self {
+            UiLimit::Clamp(min, _) => min.as_ref(),
+            UiLimit::Loop(min, _) => Some(min),
+            UiLimit::None => None,
+        }
+    }
+
+    fn max(&self) -> Option<&T> {
+        match self {
+            UiLimit::Clamp(_, max) => max.as_ref(),
+            UiLimit::Loop(_, max) => Some(max),
+            UiLimit::None => None,
+        }
+    }
+}
+
 fn horizontal_drags<const A: usize>(
     ui: &mut egui::Ui, 
     labels: &[&str; A],
-    min: Option<&[f32; A]>,
-    max: Option<&[f32; A]>,
+    limits: UiLimit<&[f32; A]>,
     values: &mut [f32; A],
 ) -> egui::InnerResponse<bool> {
 
@@ -123,8 +151,8 @@ fn horizontal_drags<const A: usize>(
 
             ui.label(label);
 
-            let min = min.map(|min| min[i]);
-            let max = max.map(|max| max[i]);
+            let min = limits.min().map(|min| min[i]);
+            let max = limits.max().map(|max| max[i]);
 
             let speed =  match (min, max) {
                 (Some(min), Some(max)) => 0.01 * (max - min).abs(),
@@ -138,13 +166,30 @@ fn horizontal_drags<const A: usize>(
                 any_changed = true;
             }
 
+            match limits {
+                UiLimit::Loop(min, max) => {
+                    let sum = (max[i] - min[i]).abs();
+    
+                    let mut temp_val = values[i];
+    
+                    //center at 0
+                    temp_val -= min[i];
+                    temp_val %= sum;
+                    temp_val += min[i];
+    
+                    values[i] = temp_val;
+                },
 
-            if let Some(min) = min {
-                values[i] = values[i].max(min);
-            }
-
-            if let Some(max) = max {
-                values[i] = values[i].min(max);
+                UiLimit::Clamp(_, _) => {
+                    if let Some(min) = min {
+                        values[i] = values[i].max(min);
+                    }
+        
+                    if let Some(max) = max {
+                        values[i] = values[i].min(max);
+                    }
+                },
+                UiLimit::None => {},
             }
         }
 
@@ -183,8 +228,9 @@ impl WidgetValueTrait for UiValue {
                 horizontal_drags(
                     ui, 
                     &["x", "y"], 
-                    data.min.as_ref(),
-                    data.max.as_ref(),
+                    UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
+                    // ,
+                    // ,
                     &mut data.value, 
                 ).inner
             }
@@ -194,8 +240,7 @@ impl WidgetValueTrait for UiValue {
                 horizontal_drags(
                     ui, 
                     &["r", "g", "b", "a"], 
-                    data.min.as_ref(),
-                    data.max.as_ref(),
+                    UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
                     &mut data.value, 
                 ).inner
             }
@@ -290,30 +335,22 @@ impl WidgetValueTrait for UiValue {
                     });
 
                     // let tx
-                    let mut slice = mat.translation.to_array();
+                    // let mut slice = mat.translation.to_array();
 
                     changed |= horizontal_drags(
                         ui, 
                         &["tx", "ty", "tz"], 
-                        None,
-                        None, 
-                        &mut slice
+                        UiLimit::None,
+                        &mut mat.translation
                     ).inner;
 
-                    mat.translation = Vec3::from_slice(&slice);
-                    
-
-
-                    ui.horizontal(|ui| {
-                        ui.label("rx");
-                        changed |= ui.drag_angle(&mut mat.rotation.0).changed();
-
-                        ui.label("ry");
-                        changed |= ui.drag_angle(&mut mat.rotation.1).changed();
-
-                        ui.label("rz");
-                        changed |= ui.drag_angle(&mut mat.rotation.2).changed();
-                    });
+                    // mat.translation = Vec3::from_slice(&slice);
+                    changed |= horizontal_drags(
+                        ui, 
+                        &["rx", "ry", "rz"], 
+                        UiLimit::Loop(&[0f32; 3], &[360f32; 3]),
+                        &mut mat.rotation
+                    ).inner;
                 });
 
                 if changed {
