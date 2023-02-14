@@ -1,4 +1,4 @@
-use std::{rc::Weak, fmt::Display};
+use std::{fmt::Display};
 use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use glam::Mat4;
 use serde::{Serialize, Deserialize};
@@ -104,7 +104,7 @@ impl NodeTemplateTrait for NodeType {
     type ValueType = UiValue;
     type UserState = GraphState;
 
-    fn node_finder_label(&self, user_state: &mut Self::UserState) -> std::borrow::Cow<str> {
+    fn node_finder_label(&self, _user_state: &mut Self::UserState) -> std::borrow::Cow<str> {
         self.get_name().into()
     }
 
@@ -112,14 +112,14 @@ impl NodeTemplateTrait for NodeType {
         self.node_finder_label(user_state).into()
     }
 
-    fn user_data(&self, user_state: &mut Self::UserState) -> Self::NodeData {
+    fn user_data(&self, _user_state: &mut Self::UserState) -> Self::NodeData {
         NodeData::new(self.clone())
     }
 
     fn build_node(
         &self,
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
-        user_state: &mut Self::UserState,
+        _user_state: &mut Self::UserState,
         node_id: NodeId
     ) {
         for input in self.get_input_types() {

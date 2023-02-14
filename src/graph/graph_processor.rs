@@ -1,5 +1,5 @@
 use std::{
-    rc::Rc, time::SystemTime, cell::RefCell,
+    rc::Rc, cell::RefCell,
 };
 
 use egui_glium::EguiGlium;

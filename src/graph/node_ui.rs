@@ -1,13 +1,13 @@
 
-use std::{ops::{RangeInclusive, RangeBounds, Bound}, path::Path};
+use std::{ops::{RangeInclusive}, path::Path};
 
 use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense, InnerResponse, Response, Ui, Area, Frame, Id, Order, Layout, Align};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
-use glam::Vec3;
+
 use serde::{Serialize, Deserialize};
 
 
-use crate::common::def::{ConnectionType, UiValue, RangedData, TextStyle, Mat4UiData, DataUpdater};
+use crate::common::def::{ConnectionType, UiValue, RangedData, TextStyle, DataUpdater};
 
 use super::def::*;
 
@@ -100,14 +100,6 @@ impl DataTypeTrait<GraphState> for ConnectionType {
 
     fn name(&self) -> std::borrow::Cow<str> {
         self.to_string().into()
-    }
-}
-
-fn get_val<T>(bound: Bound<T>) -> Option<T> {
-    match bound {
-        Bound::Included(v) => Some(v),
-        Bound::Excluded(v) => Some(v),
-        Bound::Unbounded => None,
     }
 }
 
@@ -486,7 +478,9 @@ impl WidgetValueTrait for UiValue {
             }
         }
 
-        
+        if param_response.changed {
+            user_state.editing_param = None;
+        }
 
         // if let Some(popup_response) = popup_response {
         //     if ui.rect_contains_pointer(popup_response.response.rect) {
@@ -504,8 +498,4 @@ impl WidgetValueTrait for UiValue {
 
         vec![]
     }
-}
-
-fn draw_matrix(_ui: &egui::Ui, _v: &mut Mat4UiData) {
-
 }

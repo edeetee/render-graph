@@ -1,9 +1,9 @@
-use std::{fs::{File}, io::Read, time::Instant, num::ParseIntError, str::FromStr};
+use std::{fs::{File}, io::Read, time::Instant, str::FromStr};
 
-use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}, DrawError, program::Uniform};
+use glium::{backend::Facade, Surface, Texture2d, uniforms::{AsUniformValue, Uniforms, UniformValue}, DrawError};
 use isf::{Isf, Pass};
 
-use strum::Display;
+
 use thiserror::Error;
 use crate::{fullscreen_shader::FullscreenFrag, util::GlProgramCreationError, textures::DEFAULT_RES};
 use crate::textures::new_texture_2d;
@@ -13,7 +13,7 @@ use super::meta::{IsfInfo};
 pub struct IsfShader {
     frag: FullscreenFrag,
     passes: Vec<PassTexture>,
-    res: (u32, u32),
+    // res: (u32, u32),
     start_inst: Instant,
     prev_frame_inst: Instant,
     frame_count: u32,
@@ -67,7 +67,7 @@ impl PassTexture {
     }
 }
 
-use meval::{Expr, Context};
+
 
 impl IsfShader {
     pub fn new(facade: &impl Facade, isf: &IsfInfo) -> Result<Self, IsfShaderLoadError> {
@@ -99,7 +99,7 @@ impl IsfShader {
             prev_frame_inst: now,
             frame_count: 0,
             passes,
-            res
+            // res
         })
     }
 

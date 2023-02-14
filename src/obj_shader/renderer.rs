@@ -121,13 +121,13 @@ impl ObjRenderer {
     }
 }
 
-pub fn buffers_from_data<V: glium::Vertex,I: glium::index::Index>(facade: &impl Facade, verts: &[V], indices: &[I]) -> (glium::VertexBuffer<V>, glium::IndexBuffer<I>) {
-    let vert_buffer = VertexBuffer::immutable(facade, verts).unwrap();
+// pub fn buffers_from_data<V: glium::Vertex,I: glium::index::Index>(facade: &impl Facade, verts: &[V], indices: &[I]) -> (glium::VertexBuffer<V>, glium::IndexBuffer<I>) {
+//     let vert_buffer = VertexBuffer::immutable(facade, verts).unwrap();
 
-    let index_buffer = IndexBuffer::immutable(facade, index::PrimitiveType::TrianglesList, indices).unwrap();
+//     let index_buffer = IndexBuffer::immutable(facade, index::PrimitiveType::TrianglesList, indices).unwrap();
 
-    (vert_buffer, index_buffer)
-}
+//     (vert_buffer, index_buffer)
+// }
 
 pub fn vertices_from_mesh(mesh: &Mesh) -> Vec<VertexAttr> {
     mesh.vertex_iter()

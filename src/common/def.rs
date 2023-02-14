@@ -1,8 +1,8 @@
-use std::{path::PathBuf, default, ops::RangeInclusive, fmt::Debug};
+use std::{path::PathBuf, fmt::Debug};
 use egui::{Rgba};
 use glam::{Mat4, Vec3, EulerRot};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
-use itertools::Itertools;
+
 use serde::{Serialize, Deserialize};
 use strum::{Display};
 

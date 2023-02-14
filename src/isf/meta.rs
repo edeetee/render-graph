@@ -1,4 +1,4 @@
-use std::{fmt::{Display, Formatter}, fs::{read_dir, read_to_string}, path::{Path, PathBuf}, ffi::{OsStr, OsString}};
+use std::{fmt::{Display, Formatter}, fs::{read_to_string}, path::{Path, PathBuf}, ffi::{OsStr, OsString}};
 
 
 use isf::{Isf};
@@ -15,28 +15,6 @@ pub fn default_isf_path() -> PathBuf {
 pub fn default_isf_path() -> PathBuf {
     Path::new("/Library/Graphics/ISF").to_path_buf()
 }
-
-pub fn parse_isf_shaders(path: impl AsRef<Path>) -> impl Iterator<Item = IsfInfo> {    
-    read_dir(path)
-        .unwrap()
-        .into_iter()
-        .filter_map(|file| {
-            let path  = file.unwrap().path();
-
-            match IsfInfo::new_from_path(&path) {
-                Ok(isf) => {
-                    Some(isf)
-                },
-                Err(err) => {
-                    if matches!(err, IsfInfoReadError::ParseError(_)) {
-                        eprintln!("Error parsing isf_meta file ({path:?}): {err}");
-                    }
-                    None
-                },
-            }
-        })
-}
-
 
 #[derive(Error, Debug)]
 pub enum IsfInfoReadError {

@@ -1,4 +1,4 @@
-use glium::{Texture2d, GlObject};
+use glium::{Texture2d};
 
 #[cfg(target_os="windows")]
 use spout_rust::SpoutSender;
@@ -19,7 +19,7 @@ impl SpoutOutShader {
         }
     }
 
-    pub fn send(&mut self, texture: &Texture2d) {
+    pub fn send(&mut self, _texture: &Texture2d) {
         #[cfg(target_os="windows")]
         self.spout.send_texture(gl::TEXTURE_2D, texture.get_id(), texture.width(), texture.height());
     }

@@ -1,6 +1,6 @@
 use glium::{backend::Facade, Surface, uniforms::Uniforms, program::UniformBlock, DrawError};
 use glsl::{syntax::{Expr, Identifier}, parser::Parse};
-use naga::{front::glsl::Options, ShaderStage};
+use naga::{ShaderStage};
 
 use crate::{fullscreen_shader::FullscreenFrag, util::GlProgramCreationError};
 
@@ -105,7 +105,7 @@ fn build_shader_from_snippet(snippet: &str) -> String {
     }}
     ");
 
-    let naga_result = parser.parse(
+    let _naga_result = parser.parse(
         &ShaderStage::Fragment.into(),
         &shader_str
     );
@@ -131,7 +131,7 @@ impl GlExpressionUpdater {
         };
         
         if should_update_frag {
-            let result = renderer.set_shader(facade, &new_frag)?;
+            let _result = renderer.set_shader(facade, &new_frag)?;
             self.frag_source = Some(new_frag);
         }
 

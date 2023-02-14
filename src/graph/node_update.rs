@@ -70,7 +70,7 @@ impl NodeUpdate {
                         }
                     }) 
                 {
-                    let inputs = updater.update(facade, renderer, frag_source)?;
+                    let _inputs = updater.update(facade, renderer, frag_source)?;
                     // dbg!(inputs);
                 }
             }
