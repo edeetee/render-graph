@@ -10,11 +10,20 @@ use crate::common::def::{ConnectionType, UiValue};
 use super::{def::{GraphState, NodeData, GraphResponse, EditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
 
 // #[derive(Default)]
-pub struct ShaderGraph { pub editor: EditorState, pub tree: TreeState }
+pub struct ShaderGraph { 
+    pub editor: EditorState, 
+    pub state: GraphState,
+    pub tree: TreeState 
+}
+
 
 impl Default for ShaderGraph {
     fn default() -> Self {
-        Self { editor: GraphEditorState::new(1.0), tree: TreeState::default() }
+        Self { 
+            editor: GraphEditorState::new(1.0), 
+            state: GraphState::default(),
+            tree: TreeState::default()
+        }
     }
 }
 
@@ -85,9 +94,9 @@ impl ShaderGraph {
         // println!("Adding node {node_kind:#?}");
 
         let new_node = self.editor.graph.add_node(
-            node_kind.node_graph_label(&mut GraphState),
-            node_kind.user_data(&mut GraphState),
-            |graph, node_id| node_kind.build_node(graph, &mut GraphState, node_id),
+            node_kind.node_graph_label(&mut self.state),
+            node_kind.user_data(&mut self.state),
+            |graph, node_id| node_kind.build_node(graph, &mut self.state, node_id),
         );
         self.editor.node_positions.insert(
             new_node,
@@ -133,8 +142,8 @@ impl ShaderGraph {
                 // dbg!(self.0.pan_zoom.zoom);
             }
 
-            let mut graph_resp = self.editor.draw_graph_editor(ui, AllNodeTypes, &mut GraphState);
-
+            let mut graph_resp = self.editor.draw_graph_editor(ui, AllNodeTypes, &mut self.state);
+            self.editor.node_finder = None;
             graph_resp.node_responses.append(&mut responses);
 
             graph_resp

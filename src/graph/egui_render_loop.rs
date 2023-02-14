@@ -1,10 +1,10 @@
-use std::{path::{PathBuf, Path}, env, fs::File};
+use std::{path::{PathBuf, Path}, env, fs::File, collections::HashMap};
 
 use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::graph::{graph::ShaderGraph, self};
+use crate::graph::{graph::ShaderGraph, self, def::GraphState};
 
 use super::{ShaderGraphProcessor, def::{EditorState, ShaderNodeResponse}};
 
@@ -39,7 +39,7 @@ pub fn render_glium() {
 
             let events: Vec<ShaderNodeResponse> = new_nodes.chain(new_connections).collect();
 
-            let mut shader_node_graph = ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, tree: Default::default() });
+            let mut shader_node_graph = ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, ..Default::default() });
 
             for event in events {
                 shader_node_graph.node_event(&display, &mut egui_glium, event);

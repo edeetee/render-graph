@@ -1,12 +1,13 @@
 
 use std::{ops::{RangeInclusive, RangeBounds, Bound}, path::Path};
 
-use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense};
+use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense, InnerResponse, Response, Ui, Area, Frame, Id, Order, Layout, Align};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
 use glam::Vec3;
+use serde::{Serialize, Deserialize};
 
 
-use crate::common::def::{ConnectionType, UiValue, RangedData, TextStyle, Mat4UiData};
+use crate::common::def::{ConnectionType, UiValue, RangedData, TextStyle, Mat4UiData, DataUpdater};
 
 use super::def::*;
 
@@ -207,6 +208,70 @@ fn default_range_i32(min: &Option<i32>, max: &Option<i32>) -> RangeInclusive<i32
     min.unwrap_or(0)..=max.unwrap_or(1)
 }
 
+#[derive(Serialize, Deserialize)]
+pub enum UpdaterUiState {
+    None,
+    Editing
+}
+
+struct ParamUiResponse {
+    response: Response,
+    changed: bool
+}
+
+impl From<InnerResponse<Response>> for ParamUiResponse {
+    fn from(value: InnerResponse<Response>) -> Self {
+        Self {
+            changed: value.response.changed() || value.inner.changed(),
+            response: value.response
+        }
+    }
+}
+
+impl From<InnerResponse<bool>> for ParamUiResponse {
+    fn from(value: InnerResponse<bool>) -> Self {
+        Self {
+            changed: value.response.changed() || value.inner,
+            response: value.response
+        }
+    }
+}
+
+impl From<Response> for ParamUiResponse {
+    fn from(value: Response) -> Self {
+        Self {
+            changed: value.changed(),
+            response: value
+        }
+    }
+}
+
+pub fn popup<R>(
+    ui: &Ui,
+    popup_id: Id,
+    widget_response: &Response,
+    add_contents: impl FnOnce(&mut Ui) -> R,
+) -> InnerResponse<R> {
+    Area::new(popup_id)
+        .order(Order::Foreground)
+        .fixed_pos(widget_response.rect.left_bottom())
+        .show(ui.ctx(), |ui| {
+            // Note: we use a separate clip-rect for this area, so the popup can be outside the parent.
+            // See https://github.com/emilk/egui/issues/825
+            let frame = Frame::popup(ui.style());
+            let frame_margin = frame.inner_margin + frame.outer_margin;
+            frame
+                .show(ui, |ui| {
+                    ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
+                        ui.set_width(widget_response.rect.width() - frame_margin.sum().x);
+                        add_contents(ui)
+                    })
+                    .inner
+                })
+                .inner
+        })
+}
+
 impl WidgetValueTrait for UiValue {
     type Response = GraphResponse;
     type UserState = GraphState;
@@ -215,14 +280,13 @@ impl WidgetValueTrait for UiValue {
     fn value_widget(
         &mut self,
         param_name: &str,
-        _node_id: NodeId,
+        node_id: NodeId,
         ui: &mut egui::Ui,
-        _user_state: &mut Self::UserState,
+        user_state: &mut Self::UserState,
         _node_data: &Self::NodeData,
     ) -> Vec<Self::Response> {
 
-        let _changed = match self {
-
+        let param_response: ParamUiResponse = match self {
             UiValue::Vec2 (data) => {
                 ui.label(param_name);
                 horizontal_drags(
@@ -232,7 +296,7 @@ impl WidgetValueTrait for UiValue {
                     // ,
                     // ,
                     &mut data.value, 
-                ).inner
+                ).into()
             }
 
             UiValue::Vec4(data) => {
@@ -242,14 +306,14 @@ impl WidgetValueTrait for UiValue {
                     &["r", "g", "b", "a"], 
                     UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
                     &mut data.value, 
-                ).inner
+                ).into()
             }
 
             UiValue::Color(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
-                }).inner.changed()
+                }).into()
             }
 
             UiValue::Float (RangedData { value, min, max, .. }) => {
@@ -257,21 +321,21 @@ impl WidgetValueTrait for UiValue {
                     ui.label(param_name);
                     // ui.add(DragValue::new(value))
                     ui.add(Slider::new(value, default_range_f32(min, max)).clamp_to_range(false))
-                }).inner.changed()
+                }).into()
             }
 
             UiValue::Long(RangedData { value, min, max, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
-                }).inner.changed()
+                }).into()
             },
 
             UiValue::Bool(RangedData { value, .. }) => {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.checkbox(value, "")
-                }).inner.changed()
+                }).into()
             }
 
             UiValue::Path(path) => {
@@ -320,7 +384,7 @@ impl WidgetValueTrait for UiValue {
                     }
 
                     open_resp
-                }).inner.changed()
+                }).into()
             }
 
             UiValue::Mat4(mat) => {
@@ -351,13 +415,13 @@ impl WidgetValueTrait for UiValue {
                         UiLimit::Loop(&[0f32; 3], &[360f32; 3]),
                         &mut mat.rotation
                     ).inner;
-                });
 
-                if changed {
-                    mat.update_mat();
-                }
+                    if changed {
+                        mat.update_mat();
+                    }
 
-                changed
+                    changed
+                }).into()
             }
 
             UiValue::Text(RangedData { value, .. }, style) => {
@@ -369,11 +433,74 @@ impl WidgetValueTrait for UiValue {
                     };
                     ui.set_max_width(256.0);
                     ui.add_sized(ui.available_size(), widget)
-                }).inner.changed()
+                }).into()
             }
 
-            UiValue::None => { ui.label(param_name); false }
+            UiValue::None => { ui.label(param_name).into() }
         };
+
+
+        let param_key = (node_id, param_name.to_string());
+
+        let animator_popup_id = ui.make_persistent_id(param_key.clone());
+
+        if ui.rect_contains_pointer(param_response.response.rect) && ui.input().pointer.secondary_clicked() {
+            user_state.editing_param = Some(param_key.clone());
+        }
+        
+        if user_state.editing_param.as_ref() == Some(&param_key) {
+            let popup_response = popup(&ui, 
+                animator_popup_id, 
+                &param_response.response,
+                |ui|{
+                    ui.horizontal(|ui| {
+    
+                        let animator = user_state.animations.get_mut(&param_key);
+                        let mut delete = false;
+                        match animator {
+                            Some(updater) => {
+                                match updater {
+                                    DataUpdater::FloatSpeed(f32_speed) => {
+                                        delete |= ui.button("REMOVE").clicked();
+                                        ui.add(egui::Slider::new(f32_speed, -1.0..=1.0));
+                                    },
+                                    
+                                }
+                            },
+                            None => {
+                                if ui.button("ANIMATE").clicked() {
+                                    user_state.animations.insert(param_key.clone(), DataUpdater::FloatSpeed(0.0));
+                                }
+                            },
+                        }
+        
+                        if delete {
+                            user_state.animations.remove(&param_key);
+                        }
+                    })
+                }
+            );
+
+            if popup_response.response.clicked_elsewhere() && param_response.response.clicked_elsewhere() {
+                user_state.editing_param = None;
+            }
+        }
+
+        
+
+        // if let Some(popup_response) = popup_response {
+        //     if ui.rect_contains_pointer(popup_response.response.rect) {
+        //         ui.memory().open_popup(animator_popup_id); 
+        //     }
+        // }
+
+        // if let Some(popup_response) = popup_response {
+        //     let input = ui.input();
+        //     if input.pointer.primary_clicked() && !ui.rect_contains_pointer(popup_response.response.rect) {
+        //         user_state.editing_param = None;
+        //     }
+        // }
+
 
         vec![]
     }

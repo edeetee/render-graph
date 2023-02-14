@@ -105,6 +105,12 @@ pub enum TextStyle {
     Multiline
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DataUpdater {
+    ///Changes this per second
+    FloatSpeed(f32)
+}
+
 #[derive(Default, Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum UiValue {
     Vec2(RangedData<[f32; 2]>),
@@ -116,6 +122,7 @@ pub enum UiValue {
     Text(RangedData<String>, TextStyle),
     Path(Option<PathBuf>),
     Mat4(Mat4UiData),
+    
     #[default]
     None,
 }

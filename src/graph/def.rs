@@ -1,17 +1,17 @@
 
-use std::{rc::{Weak}, cell::RefCell, path::PathBuf, time::Instant};
+use std::{rc::{Weak}, cell::RefCell, path::PathBuf, time::Instant, collections::HashMap};
 
 use egui::{Rgba};
-use egui_node_graph::{GraphEditorState, UserResponseTrait, NodeResponse};
+use egui_node_graph::{GraphEditorState, UserResponseTrait, NodeResponse, NodeId};
 use glam::{Mat4, Vec3, EulerRot};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
 use serde::{Serialize, Deserialize};
 use strum::{Display};
 
 
-use crate::{textures::UiTexture, common::def::{ConnectionType, UiValue}};
+use crate::{textures::UiTexture, common::def::{ConnectionType, UiValue, DataUpdater}};
 
-use super::node_types::NodeType;
+use super::{node_types::NodeType, node_ui::UpdaterUiState};
 
 #[derive(Clone)]
 pub struct NodeError {
@@ -55,8 +55,11 @@ impl NodeData {
 pub struct GraphResponse;
 impl UserResponseTrait for GraphResponse {}
 
-#[derive(Serialize, Deserialize)]
-pub struct GraphState;
+#[derive(Default, Serialize, Deserialize)]
+pub struct GraphState {
+    pub animations: HashMap<(NodeId, String), DataUpdater>,
+    pub editing_param: Option<(NodeId, String)>
+}
 
 pub type ShaderNodeResponse = NodeResponse<GraphResponse, NodeData>;
 pub type EditorState = GraphEditorState<NodeData, ConnectionType, UiValue, NodeType, GraphState>;

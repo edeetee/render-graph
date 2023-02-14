@@ -243,10 +243,6 @@ impl ShaderGraphProcessor {
         let mut graph_response = None;
 
         let _needs_repaint = egui_glium.run(display, |ctx| {
-            // ctx.tex_manager()
-            // for node_id in self.graph.graph_ref().iter_nodes() {
-            //     let pos = self.graph.editor.node_positions
-            // }
             graph_response = Some(self.graph.draw(ctx));
         });
 
@@ -257,8 +253,6 @@ impl ShaderGraphProcessor {
         }
 
         self.render_shaders(display, egui_glium);
-
-        // egui_glium.egui_ctx
 
         egui_glium.paint(display, &mut frame);
 
