@@ -1,8 +1,17 @@
 
-
 use serde::{Serialize, Deserialize};
+use strum::Display;
 
-use super::def::{ConnectionType, UiValue};
+use super::def::{UiValue};
+
+#[derive(PartialEq, Eq, Display, Clone, Copy, Debug, Serialize, Deserialize)]
+pub enum ConnectionType {
+    // FrameBuffer,
+    Texture2D,
+    None
+    // Vec2,
+    // Float,
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct InputDef {

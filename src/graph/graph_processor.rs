@@ -14,7 +14,7 @@ use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use crate::{textures::{UiTexture, TextureManager}, common::animation::UpdateInfo};
 
-use crate::common::def::*;
+use crate::common::{def::*, connections::ConnectionType};
 
 use super::{
     def::{self, *},

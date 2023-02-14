@@ -1,16 +1,8 @@
 
 use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}};
-
-
 use egui_node_graph::{GraphEditorState, UserResponseTrait, NodeResponse, NodeId};
-
-
 use serde::{Serialize, Deserialize};
-
-
-
-use crate::{textures::UiTexture, common::{def::{ConnectionType, UiValue}, animation::DataUpdater}};
-
+use crate::{textures::UiTexture, common::{def::{UiValue}, animation::DataUpdater, connections::ConnectionType}};
 use super::{node_types::NodeType};
 
 #[derive(Clone)]

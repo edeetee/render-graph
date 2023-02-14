@@ -2,10 +2,9 @@ use std::{path::{Path, PathBuf}, fmt::Display, fs::read_dir};
 
 use serde::Serialize;
 
-use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}};
+use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}, common::connections::ConnectionType};
 
 use super::{node_types::NodeType, };
-use crate::common::def::ConnectionType;
 
 
 #[derive(Debug, Serialize)]

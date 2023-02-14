@@ -5,10 +5,11 @@ use serde::{Serialize, Deserialize};
 
 use super::def::{NodeData, GraphState};
 
+use crate::common::mat4_ui::Mat4UiData;
 use crate::isf::meta::{IsfInfo};
 
-use crate::common::def::{ConnectionType, Mat4UiData, TextStyle, UiValue};
-use crate::common::node_connections::{InputDef, OutputDef};
+use crate::common::def::{TextStyle, UiValue};
+use crate::common::connections::{InputDef, OutputDef, ConnectionType};
 // use crate::common::node_
 
 ///Enum of node types used to create an actual node

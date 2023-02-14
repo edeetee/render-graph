@@ -5,7 +5,7 @@ use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, NodeTem
 
 
 use slotmap::{SecondaryMap};
-use crate::common::def::{ConnectionType, UiValue};
+use crate::common::{def::{UiValue}, connections::ConnectionType};
 
 use super::{def::{GraphState, NodeData, GraphResponse, EditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
 
