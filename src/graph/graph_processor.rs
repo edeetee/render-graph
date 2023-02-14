@@ -1,5 +1,5 @@
 use std::{
-    rc::Rc, cell::RefCell,
+    rc::Rc, cell::RefCell, time::Instant, default,
 };
 
 use egui_glium::EguiGlium;
@@ -12,7 +12,7 @@ use glium::{
 
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use crate::textures::{UiTexture, TextureManager};
+use crate::{textures::{UiTexture, TextureManager}, common::animation::UpdateInfo};
 
 use crate::common::def::*;
 
@@ -33,6 +33,15 @@ pub struct OutputTarget {
     fb: SimpleFrameBuffer<'this>,
 }
 
+pub struct UpdateTracker {
+    last_update: Instant
+}
+impl Default for UpdateTracker {
+    fn default() -> Self {
+        Self { last_update: Instant::now() }
+    }
+}
+
 #[derive(Default)]
 pub struct ShaderGraphProcessor {
     pub graph: ShaderGraph,
@@ -42,7 +51,9 @@ pub struct ShaderGraphProcessor {
     node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
 
     shaders: SecondaryMap<NodeId, NodeShader>,
-    updaters: SecondaryMap<NodeId, NodeUpdate>
+    updaters: SecondaryMap<NodeId, NodeUpdate>,
+
+    update_info: UpdateTracker
 }
 
 impl ShaderGraphProcessor {
@@ -231,8 +242,24 @@ impl ShaderGraphProcessor {
                     }
                 }
             }
-
         }
+
+        let elapsed_since_update = self.update_info.last_update.elapsed();
+        let update_info = UpdateInfo::new(elapsed_since_update);
+        
+        for ((node_id, param_name), animation) in &self.graph.state.animations {
+            let maybe_input = self.graph.graph_ref()
+                .nodes[*node_id].inputs.iter()
+                .find(|(input_name, _)| input_name == param_name);
+
+            if let Some((_, input_id)) = maybe_input {
+                let input_id = *input_id;
+                let input_param = &mut self.graph.editor.graph.inputs[input_id].value;
+                animation.update_value(input_param, &update_info);
+            }
+        }
+
+        self.update_info.last_update = Instant::now();
     }
 
     pub fn draw(&mut self, display: &Display, egui_glium: &mut EguiGlium) {

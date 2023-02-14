@@ -1,13 +1,12 @@
 
-use std::{ops::{RangeInclusive}, path::Path};
+use std::{ops::{RangeInclusive}, path::Path, rc::{Rc, Weak}, cell::RefCell};
 
-use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense, InnerResponse, Response, Ui, Area, Frame, Id, Order, Layout, Align};
+use egui::{DragValue, color_picker::{color_edit_button_rgba}, Slider, color::Hsva, RichText, Color32, Stroke, Label, Sense, InnerResponse, Response, Ui, Area, Frame, Id, Order, Layout, Align, Widget, Vec2};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, WidgetValueTrait, DataTypeTrait};
 
 use serde::{Serialize, Deserialize};
 
-
-use crate::common::def::{ConnectionType, UiValue, RangedData, TextStyle, DataUpdater};
+use crate::{common::{def::{ConnectionType, UiValue, RangedData, TextStyle}, ui_util::{horizontal_drags, UiLimit}, animation::DataUpdater}, textures::UiTexture};
 
 use super::def::*;
 
@@ -38,6 +37,44 @@ fn draw_error(ui: &mut egui::Ui, name: &str, error: &Option<NodeError>){
     }
 }
 
+enum ImageScale {
+    MaxWidth(f32),
+    MaxSize(f32)
+}
+
+fn show_image(ui: &mut Ui, texture: Weak<RefCell<UiTexture>>, scale: ImageScale) -> Response {
+    egui::Frame::none()
+        .stroke(Stroke::new(1.0, Color32::BLACK))
+        .show(ui, |ui| {
+            // ui.set_min_size(ui.available_size());
+
+            if let Some(tex) = texture.upgrade() {
+                let tex = tex.borrow();
+
+                // let width = 200.0;
+                let (tex_w, tex_h) = tex.size();
+                let tex_size = glam::Vec2::new(tex_w as f32, tex_h as f32);
+
+                let img_size = match scale {
+                    ImageScale::MaxWidth(width) => {
+                        let height = tex_size.x * width / tex_size.y;
+                        glam::Vec2::new(width, height)
+                    },
+                    ImageScale::MaxSize(max_size) => {
+                        glam::Vec2::new(tex_size.x, tex_size.y).clamp_length_max(max_size)
+                    },
+                };
+                
+                // Vec2::ONE.m
+                // let height = tex_h as f32 * width / tex_w as f32;
+    
+                ui.image(tex.clone_screen_tex_id(), img_size.to_array())
+            } else {
+                ui.label("NO IMAGE AVAILABLE")
+            }
+        }).response
+}
+
 impl NodeDataTrait for NodeData {
     type Response = GraphResponse;
     type UserState = GraphState;
@@ -49,34 +86,29 @@ impl NodeDataTrait for NodeData {
         ui: &mut egui::Ui,
         node_id: NodeId,
         graph: &Graph<Self, Self::DataType, Self::ValueType>,
-        _state: &mut Self::UserState,
+        state: &mut Self::UserState,
     ) -> Vec<egui_node_graph::NodeResponse<Self::Response, Self>>
     where
         Self::Response: egui_node_graph::UserResponseTrait,
     {
         let node = &graph[node_id];
 
-        // if ui.ui_contains_pointer() {
-        //     egui::Area
-        // }
+        let show_tex = state.visible_nodes.contains(&node_id);
+
+        if show_tex {
+            if show_image(ui, node.user_data.texture.clone(), ImageScale::MaxWidth(ui.available_width())).interact(egui::Sense::click()).clicked() {
+                state.visible_nodes.remove(&node_id);
+            }
+            ;
+        } else {
+            if show_image(ui, node.user_data.texture.clone(), ImageScale::MaxSize(50.0)).interact(egui::Sense::click()).clicked() {
+                state.visible_nodes.insert(node_id);
+            }
+        }
+
         if ui.ui_contains_pointer() {
             egui::show_tooltip_at_pointer(ui.ctx(), egui::Id::new("img_hover"), |ui| {
-                egui::Frame::none()
-                    .stroke(Stroke::new(1.0, Color32::LIGHT_GRAY))
-                    .show(ui, |ui| {
-                        // ui.set_min_size(ui.available_size());
-    
-                        if let Some(tex) = &node.user_data.texture.upgrade() {
-                            let width = 200.0;
-                            let tex = tex.borrow();
-                            let (tex_w, tex_h) = tex.size();
-                            let height = tex_h as f32 * width / tex_w as f32;
-                
-                            ui.image(tex.clone_screen_tex_id(), [width, height]);
-                        } else {
-                            ui.label("NO IMAGE AVAILABLE");
-                        }
-                    });
+                show_image(ui, node.user_data.texture.clone(), ImageScale::MaxSize(200.0))
             });
         }
 
@@ -103,92 +135,6 @@ impl DataTypeTrait<GraphState> for ConnectionType {
     }
 }
 
-enum UiLimit<T> {
-    Clamp(Option<T>, Option<T>),
-    Loop(T, T),
-    None
-}
-
-impl <T> UiLimit<T> {
-    fn min(&self) -> Option<&T> {
-        match self {
-            UiLimit::Clamp(min, _) => min.as_ref(),
-            UiLimit::Loop(min, _) => Some(min),
-            UiLimit::None => None,
-        }
-    }
-
-    fn max(&self) -> Option<&T> {
-        match self {
-            UiLimit::Clamp(_, max) => max.as_ref(),
-            UiLimit::Loop(_, max) => Some(max),
-            UiLimit::None => None,
-        }
-    }
-}
-
-fn horizontal_drags<const A: usize>(
-    ui: &mut egui::Ui, 
-    labels: &[&str; A],
-    limits: UiLimit<&[f32; A]>,
-    values: &mut [f32; A],
-) -> egui::InnerResponse<bool> {
-
-    ui.horizontal(|ui| {
-        let mut any_changed = false;
-
-        for i in 0..A {
-            // let range = &ranges[i];
-            // let value = &mut values[i];
-            let label = labels[i];
-
-            ui.label(label);
-
-            let min = limits.min().map(|min| min[i]);
-            let max = limits.max().map(|max| max[i]);
-
-            let speed =  match (min, max) {
-                (Some(min), Some(max)) => 0.01 * (max - min).abs(),
-                _ => 0.1
-            };
-
-            let drag_value_ui = DragValue::new(&mut values[i])
-                .speed(speed);
-
-            if ui.add(drag_value_ui).changed() {
-                any_changed = true;
-            }
-
-            match limits {
-                UiLimit::Loop(min, max) => {
-                    let sum = (max[i] - min[i]).abs();
-    
-                    let mut temp_val = values[i];
-    
-                    //center at 0
-                    temp_val -= min[i];
-                    temp_val %= sum;
-                    temp_val += min[i];
-    
-                    values[i] = temp_val;
-                },
-
-                UiLimit::Clamp(_, _) => {
-                    if let Some(min) = min {
-                        values[i] = values[i].max(min);
-                    }
-        
-                    if let Some(max) = max {
-                        values[i] = values[i].min(max);
-                    }
-                },
-                UiLimit::None => {},
-            }
-        }
-
-        any_changed
-    })
-}
 
 // fn horizontal_drags_arr()
 
@@ -431,7 +377,6 @@ impl WidgetValueTrait for UiValue {
             UiValue::None => { ui.label(param_name).into() }
         };
 
-
         let param_key = (node_id, param_name.to_string());
 
         let animator_popup_id = ui.make_persistent_id(param_key.clone());
@@ -451,17 +396,14 @@ impl WidgetValueTrait for UiValue {
                         let mut delete = false;
                         match animator {
                             Some(updater) => {
-                                match updater {
-                                    DataUpdater::FloatSpeed(f32_speed) => {
-                                        delete |= ui.button("REMOVE").clicked();
-                                        ui.add(egui::Slider::new(f32_speed, -1.0..=1.0));
-                                    },
-                                    
-                                }
+                                delete |= ui.button("REMOVE").clicked();
+                                updater.ui(ui);
                             },
                             None => {
                                 if ui.button("ANIMATE").clicked() {
-                                    user_state.animations.insert(param_key.clone(), DataUpdater::FloatSpeed(0.0));
+                                    if let Some(updater) = DataUpdater::from_param(self) {
+                                        user_state.animations.insert(param_key.clone(), updater);
+                                    }
                                 }
                             },
                         }

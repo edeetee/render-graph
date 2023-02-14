@@ -115,7 +115,6 @@ impl ShaderGraph {
                 new_node_ty = Some(selected_item.ty.clone());
             }
         });
-        
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.set_clip_rect(ctx.available_rect());

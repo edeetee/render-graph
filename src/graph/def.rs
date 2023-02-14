@@ -1,5 +1,5 @@
 
-use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::HashMap};
+use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}};
 
 
 use egui_node_graph::{GraphEditorState, UserResponseTrait, NodeResponse, NodeId};
@@ -9,7 +9,7 @@ use serde::{Serialize, Deserialize};
 
 
 
-use crate::{textures::UiTexture, common::def::{ConnectionType, UiValue, DataUpdater}};
+use crate::{textures::UiTexture, common::{def::{ConnectionType, UiValue}, animation::DataUpdater}};
 
 use super::{node_types::NodeType};
 
@@ -58,7 +58,8 @@ impl UserResponseTrait for GraphResponse {}
 #[derive(Default, Serialize, Deserialize)]
 pub struct GraphState {
     pub animations: HashMap<(NodeId, String), DataUpdater>,
-    pub editing_param: Option<(NodeId, String)>
+    pub editing_param: Option<(NodeId, String)>,
+    pub visible_nodes: HashSet<NodeId>
 }
 
 pub type ShaderNodeResponse = NodeResponse<GraphResponse, NodeData>;
