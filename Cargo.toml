@@ -41,6 +41,7 @@ signal-hook = "0.3.14"
 serde_json = "1.0.87"
 serde = "1.0.147"
 meval = "0.2.0"
+delegate = "0.9.0"
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"

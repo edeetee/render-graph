@@ -50,7 +50,7 @@ impl UserResponseTrait for GraphResponse {}
 #[derive(Default, Serialize, Deserialize)]
 pub struct GraphState {
     pub animations: HashMap<(NodeId, String), DataUpdater>,
-    pub editing_param: Option<(NodeId, String)>,
+    pub param_with_popup: Option<(NodeId, String)>,
     pub visible_nodes: HashSet<NodeId>
 }
 

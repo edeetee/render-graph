@@ -60,14 +60,24 @@ impl From<&InputType> for UiValue {
             },
             InputType::Point2d(v) => UiValue::Vec2(v.into()),
             InputType::Bool(v) => UiValue::Bool(v.default.unwrap_or_default().into()),
-            InputType::Long(v) => UiValue::Long(
-                RangedData {
+            InputType::Long(v) => {
+                let data = RangedData {
                     value: v.default.unwrap_or_default(),
                     min: v.min.or_else(|| v.values.iter().min().copied()),
                     max: v.max.or_else(|| v.values.iter().max().copied()),
                     default: v.default
+                };
+
+                if v.labels.is_empty() {
+                    UiValue::Long(data)
+                } else {
+                    let mapping = v.labels.clone().into_iter()
+                        .zip(v.values.clone().into_iter())
+                        .collect();
+
+                    UiValue::Menu(data,mapping)
                 }
-            ),
+            },
             
             InputType::Event => UiValue::Bool(false.into()),
 

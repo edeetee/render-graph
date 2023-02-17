@@ -5,7 +5,7 @@ use egui::{InnerResponse, Response, Id, Ui, Area, Order, Frame, Layout, color_pi
 use egui_node_graph::{WidgetValueTrait, NodeId};
 use serde::{Serialize, Deserialize};
 
-use crate::common::{def::{UiValue, RangedData, TextStyle}, ui_util::{horizontal_drags, UiLimit}, animation::DataUpdater};
+use crate::common::{def::{UiValue, RangedData, TextStyle, Reset}, ui_util::{horizontal_drags, UiLimit}, animation::DataUpdater};
 
 use super::def::{GraphResponse, GraphState, NodeData};
 
@@ -74,7 +74,7 @@ pub fn popup<R>(
             frame
                 .show(ui, |ui| {
                     ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {
-                        ui.set_width(widget_response.rect.width() - frame_margin.sum().x);
+                        // ui.set_wisdth(widget_response.rect.width() - frame_margin.sum().x);
                         add_contents(ui)
                     })
                     .inner
@@ -137,6 +137,26 @@ impl WidgetValueTrait for UiValue {
                 ui.horizontal(|ui| {
                     ui.label(param_name);
                     ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
+                }).into()
+            },
+
+            UiValue::Menu(
+                RangedData { value, .. }, 
+                ref label_mapping
+            ) => {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(param_name);
+
+                    let mut changed = false;
+
+                    for (label, val_for_label) in label_mapping {
+                        if ui.selectable_label(val_for_label == value, label).clicked() {
+                            *value = *val_for_label;
+                            changed = true;
+                        }
+                    }
+
+                    changed
                 }).into()
             },
 
@@ -253,46 +273,54 @@ impl WidgetValueTrait for UiValue {
         let animator_popup_id = ui.make_persistent_id(param_key.clone());
 
         if ui.rect_contains_pointer(param_response.response.rect) && ui.input().pointer.secondary_clicked() {
-            user_state.editing_param = Some(param_key.clone());
+            user_state.param_with_popup = Some(param_key.clone());
         }
         
-        if user_state.editing_param.as_ref() == Some(&param_key) {
+        if user_state.param_with_popup.as_ref() == Some(&param_key) {
             let popup_response = popup(&ui, 
                 animator_popup_id, 
                 &param_response.response,
                 |ui|{
-                    ui.horizontal(|ui| {
+                    ui.vertical(|ui| {
+                        if ui.button("RESET").clicked() {
+                            self.reset();
+                        }
+
+                        ui.horizontal(|ui| {
     
-                        let animator = user_state.animations.get_mut(&param_key);
-                        let mut delete = false;
-                        match animator {
-                            Some(updater) => {
-                                delete |= ui.button("REMOVE").clicked();
-                                updater.ui(ui);
-                            },
-                            None => {
-                                if ui.button("ANIMATE").clicked() {
-                                    if let Some(updater) = DataUpdater::from_param(self) {
-                                        user_state.animations.insert(param_key.clone(), updater);
+                            let animator = user_state.animations.get_mut(&param_key);
+                            let mut delete = false;
+    
+                            match animator {
+                                Some(updater) => {
+                                    delete |= ui.button("REMOVE").clicked();
+                                    updater.ui(ui);
+                                },
+                                None => {
+                                    if ui.button("ANIMATE").clicked() {
+                                        if let Some(updater) = DataUpdater::from_param(self) {
+                                            user_state.animations.insert(param_key.clone(), updater);
+                                        }
                                     }
-                                }
-                            },
-                        }
-        
-                        if delete {
-                            user_state.animations.remove(&param_key);
-                        }
+                                },
+                            }
+            
+                            if delete {
+                                user_state.animations.remove(&param_key);
+                            }
+                        })
                     })
+                    
                 }
             );
 
-            if popup_response.response.clicked_elsewhere() && param_response.response.clicked_elsewhere() {
-                user_state.editing_param = None;
+            if (popup_response.response.clicked_elsewhere() && param_response.response.clicked_elsewhere()) || param_response.response.clicked() {
+                user_state.param_with_popup = None;
             }
         }
 
         if param_response.changed {
-            user_state.editing_param = None;
+            user_state.param_with_popup = None;
         }
 
         // if let Some(popup_response) = popup_response {

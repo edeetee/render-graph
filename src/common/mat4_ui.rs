@@ -1,15 +1,24 @@
 use glam::{Mat4, Vec3, EulerRot, Quat};
 use serde::{Serialize, Deserialize};
 
+use super::def::Reset;
+
 ///Transformation data with helper data for human editing
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub struct Mat4UiData {
     pub mat: Mat4,
+    initial: Mat4,
 
     ///Rotation in degrees
     pub rotation: [f32; 3],
     pub scale: f32,
     pub translation: [f32; 3]
+}
+
+impl Reset for Mat4UiData {
+    fn reset(&mut self) {
+        *self = self.initial.into();
+    }
 }
 
 const EULER_ORDER: EulerRot = EulerRot::ZXY;
@@ -22,6 +31,7 @@ impl From<Mat4> for Mat4UiData {
             scale: decomposed.0.length_squared()/3.0,
             rotation: [rot_tuple.0.to_degrees(), rot_tuple.1.to_degrees(), rot_tuple.2.to_degrees()],
             translation: decomposed.2.to_array(),
+            initial: value.clone(),
             mat: value,
         }
     }
@@ -33,10 +43,12 @@ impl Mat4UiData {
             translation: [0.0, 0.0, -5.0],
             mat: Mat4::IDENTITY,
             scale: 1.0,
-            rotation: Default::default()
+            rotation: Default::default(),
+            initial: Mat4::IDENTITY
         };
 
         new.update_mat();
+        new.initial = new.mat;
 
         new
     }
