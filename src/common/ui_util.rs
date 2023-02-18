@@ -1,4 +1,4 @@
-use egui::DragValue;
+use egui::{DragValue, Response};
 
 pub enum UiLimit<T> {
     Clamp(Option<T>, Option<T>),

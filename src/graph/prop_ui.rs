@@ -1,15 +1,13 @@
 
 use std::{path::Path, ops::RangeInclusive};
 
-use egui::{InnerResponse, Response, Id, Ui, Area, Order, Frame, Layout, color_picker::color_edit_button_rgba, Slider, DragValue, Widget, Align};
+use egui::{InnerResponse, Response, Id, Ui, Area, Order, Frame, Layout, color_picker::color_edit_button_rgba, Slider, DragValue, Widget, Align, Stroke, Color32, Rounding};
 use egui_node_graph::{WidgetValueTrait, NodeId};
 use serde::{Serialize, Deserialize};
 
 use crate::common::{def::{UiValue, RangedData, TextStyle, Reset}, ui_util::{horizontal_drags, UiLimit}, animation::DataUpdater};
 
 use super::def::{GraphResponse, GraphState, NodeData};
-
-
 
 fn default_range_f32(min: &Option<f32>, max: &Option<f32>) -> RangeInclusive<f32>{
     min.unwrap_or(0.0)..=max.unwrap_or(1.0)
@@ -83,6 +81,179 @@ pub fn popup<R>(
         })
 }
 
+fn draw_param(param: &mut UiValue, ui: &mut Ui, param_name: &str) -> ParamUiResponse {
+    match param {
+        UiValue::Vec2 (data) => {
+            ui.label(param_name);
+            horizontal_drags(
+                ui, 
+                &["x", "y"], 
+                UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
+                &mut data.value, 
+            ).into()
+        }
+
+        UiValue::Vec4(data) => {
+            ui.label(param_name);
+            horizontal_drags(
+                ui, 
+                &["r", "g", "b", "a"], 
+                UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
+                &mut data.value, 
+            ).into()
+        }
+
+        UiValue::Color(RangedData { value, .. }) => {
+            ui.horizontal(|ui| {
+                ui.label(param_name);
+                color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
+            }).into()
+        }
+
+        UiValue::Float (RangedData { value, min, max, .. }) => {
+            ui.horizontal(|ui| {
+                ui.label(param_name);
+                // ui.add(DragValue::new(value))
+                ui.add(Slider::new(value, default_range_f32(min, max)).clamp_to_range(false).fixed_decimals(2))
+            }).into()
+        }
+
+        UiValue::Long(RangedData { value, min, max, .. }) => {
+            ui.horizontal(|ui| {
+                ui.label(param_name);
+                ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
+            }).into()
+        },
+
+        UiValue::Menu(
+            RangedData { value, .. }, 
+            ref label_mapping
+        ) => {
+            ui.horizontal_wrapped(|ui| {
+                ui.label(param_name);
+
+                let mut changed = false;
+
+                for (label, val_for_label) in label_mapping {
+                    if ui.selectable_label(val_for_label == value, label).clicked() {
+                        *value = *val_for_label;
+                        changed = true;
+                    }
+                }
+
+                changed
+            }).into()
+        },
+
+        UiValue::Bool(RangedData { value, .. }) => {
+            ui.horizontal(|ui| {
+                ui.label(param_name);
+                ui.checkbox(value, "")
+            }).into()
+        }
+
+        UiValue::Path(path) => {
+            ui.horizontal(|ui| {
+                ui.label(param_name);
+
+                let path_text = if let Some(path) = path {
+                    if let Some(path_str) = path.to_str() {
+                        let max_length = 30;
+
+                        if max_length < path_str.len() {
+                            &path_str[path_str.len()-max_length..]
+                        } else {
+                            path_str
+                        }
+                    } else {
+                        "???"
+                    }
+                } else {
+                    "Open"
+                };
+                let open_resp = ui.button(path_text);
+
+                if ui.ui_contains_pointer() {
+                    let files = &ui.ctx().input().raw.dropped_files;
+                    if let Some(file) = files.iter().next() {
+                        if file.path.is_some() {
+                            *path = file.path.clone();
+                        }
+                    }
+                }
+
+                if open_resp.clicked() {
+                    let open_dir = path.as_deref().map(Path::to_str).flatten().unwrap_or(&"~");
+
+                    let new_path = native_dialog::FileDialog::new()
+                        .set_location(open_dir)
+                        .add_filter("OBJ file", &["obj"])
+                        // .add_filter("JPEG Image", &["jpg", "jpeg"])
+                        .show_open_single_file()
+                        .unwrap();
+
+                    if new_path.is_some() {
+                        *path = new_path;
+                    }
+                }
+
+                open_resp
+            }).into()
+        }
+
+        UiValue::Mat4(mat) => {
+            let mut changed = false;
+
+            ui.vertical(|ui| {
+                ui.label(param_name);
+
+                ui.horizontal(|ui| {
+                    ui.label("s");
+                    changed |= ui.add(DragValue::new(&mut mat.scale)).changed()
+                });
+
+                // let tx
+                // let mut slice = mat.translation.to_array();
+
+                changed |= horizontal_drags(
+                    ui, 
+                    &["tx", "ty", "tz"], 
+                    UiLimit::None,
+                    &mut mat.translation
+                ).inner;
+
+                // mat.translation = Vec3::from_slice(&slice);
+                changed |= horizontal_drags(
+                    ui, 
+                    &["rx", "ry", "rz"], 
+                    UiLimit::Loop(&[0f32; 3], &[360f32; 3]),
+                    &mut mat.rotation
+                ).inner;
+
+                if changed {
+                    mat.update_mat();
+                }
+
+                changed
+            }).into()
+        }
+
+        UiValue::Text(RangedData { value, .. }, style) => {
+            ui.horizontal(|ui| {
+                ui.label(param_name);
+                let widget = match style {
+                    TextStyle::Oneline => egui::TextEdit::singleline(value),
+                    TextStyle::Multiline => egui::TextEdit::multiline(value).code_editor()
+                };
+                ui.set_max_width(256.0);
+                ui.add_sized(ui.available_size(), widget)
+            }).into()
+        }
+
+        UiValue::None => { ui.label(param_name).into() }
+    }
+}
+
 impl WidgetValueTrait for UiValue {
     type Response = GraphResponse;
     type UserState = GraphState;
@@ -97,181 +268,27 @@ impl WidgetValueTrait for UiValue {
         _node_data: &Self::NodeData,
     ) -> Vec<Self::Response> {
 
-        let param_response: ParamUiResponse = match self {
-            UiValue::Vec2 (data) => {
-                ui.label(param_name);
-                horizontal_drags(
-                    ui, 
-                    &["x", "y"], 
-                    UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
-                    &mut data.value, 
-                ).into()
-            }
+        let param_key = (node_id, param_name.to_string());
 
-            UiValue::Vec4(data) => {
-                ui.label(param_name);
-                horizontal_drags(
-                    ui, 
-                    &["r", "g", "b", "a"], 
-                    UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
-                    &mut data.value, 
-                ).into()
-            }
+        let is_animating = user_state.animations.contains_key(&param_key);
 
-            UiValue::Color(RangedData { value, .. }) => {
-                ui.horizontal(|ui| {
-                    ui.label(param_name);
-                    color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
-                }).into()
-            }
-
-            UiValue::Float (RangedData { value, min, max, .. }) => {
-                ui.horizontal(|ui| {
-                    ui.label(param_name);
-                    // ui.add(DragValue::new(value))
-                    ui.add(Slider::new(value, default_range_f32(min, max)).clamp_to_range(false).fixed_decimals(2))
-                }).into()
-            }
-
-            UiValue::Long(RangedData { value, min, max, .. }) => {
-                ui.horizontal(|ui| {
-                    ui.label(param_name);
-                    ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
-                }).into()
-            },
-
-            UiValue::Menu(
-                RangedData { value, .. }, 
-                ref label_mapping
-            ) => {
-                ui.horizontal_wrapped(|ui| {
-                    ui.label(param_name);
-
-                    let mut changed = false;
-
-                    for (label, val_for_label) in label_mapping {
-                        if ui.selectable_label(val_for_label == value, label).clicked() {
-                            *value = *val_for_label;
-                            changed = true;
-                        }
-                    }
-
-                    changed
-                }).into()
-            },
-
-            UiValue::Bool(RangedData { value, .. }) => {
-                ui.horizontal(|ui| {
-                    ui.label(param_name);
-                    ui.checkbox(value, "")
-                }).into()
-            }
-
-            UiValue::Path(path) => {
-                ui.horizontal(|ui| {
-                    ui.label(param_name);
-
-                    let path_text = if let Some(path) = path {
-                        if let Some(path_str) = path.to_str() {
-                            let max_length = 30;
-
-                            if max_length < path_str.len() {
-                                &path_str[path_str.len()-max_length..]
-                            } else {
-                                path_str
-                            }
-                        } else {
-                            "???"
-                        }
-                    } else {
-                        "Open"
-                    };
-                    let open_resp = ui.button(path_text);
-
-                    if ui.ui_contains_pointer() {
-                        let files = &ui.ctx().input().raw.dropped_files;
-                        if let Some(file) = files.iter().next() {
-                            if file.path.is_some() {
-                                *path = file.path.clone();
-                            }
-                        }
-                    }
-
-                    if open_resp.clicked() {
-                        let open_dir = path.as_deref().map(Path::to_str).flatten().unwrap_or(&"~");
-
-                        let new_path = native_dialog::FileDialog::new()
-                            .set_location(open_dir)
-                            .add_filter("OBJ file", &["obj"])
-                            // .add_filter("JPEG Image", &["jpg", "jpeg"])
-                            .show_open_single_file()
-                            .unwrap();
-
-                        if new_path.is_some() {
-                            *path = new_path;
-                        }
-                    }
-
-                    open_resp
-                }).into()
-            }
-
-            UiValue::Mat4(mat) => {
-                let mut changed = false;
-
-                ui.vertical(|ui| {
-                    ui.label(param_name);
-
-                    ui.horizontal(|ui| {
-                        ui.label("s");
-                        changed |= ui.add(DragValue::new(&mut mat.scale)).changed()
-                    });
-
-                    // let tx
-                    // let mut slice = mat.translation.to_array();
-
-                    changed |= horizontal_drags(
-                        ui, 
-                        &["tx", "ty", "tz"], 
-                        UiLimit::None,
-                        &mut mat.translation
-                    ).inner;
-
-                    // mat.translation = Vec3::from_slice(&slice);
-                    changed |= horizontal_drags(
-                        ui, 
-                        &["rx", "ry", "rz"], 
-                        UiLimit::Loop(&[0f32; 3], &[360f32; 3]),
-                        &mut mat.rotation
-                    ).inner;
-
-                    if changed {
-                        mat.update_mat();
-                    }
-
-                    changed
-                }).into()
-            }
-
-            UiValue::Text(RangedData { value, .. }, style) => {
-                ui.horizontal(|ui| {
-                    ui.label(param_name);
-                    let widget = match style {
-                        TextStyle::Oneline => egui::TextEdit::singleline(value),
-                        TextStyle::Multiline => egui::TextEdit::multiline(value).code_editor()
-                    };
-                    ui.set_max_width(256.0);
-                    ui.add_sized(ui.available_size(), widget)
-                }).into()
-            }
-
-            UiValue::None => { ui.label(param_name).into() }
+        let param_frame_color = if is_animating {
+            Color32::WHITE
+        } else {
+            Color32::TRANSPARENT
         };
 
-        // param_response.response.
-        // ui.
+        let param_response: ParamUiResponse = Frame::none()
+            .rounding(2.0)
+            .inner_margin(4.0)
+            .stroke(Stroke{
+                width: 2.0,
+                color: param_frame_color,
+            })
+            .show(ui, |ui| {
+                draw_param(self, ui, param_name)
+            }).inner;
 
-        let param_key = (node_id, param_name.to_string());
 
         let animator_popup_id = ui.make_persistent_id(param_key.clone());
 
