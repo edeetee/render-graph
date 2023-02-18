@@ -1,6 +1,7 @@
 use std::{ops::{Index, IndexMut}};
 
 
+use egui::{Widget, RichText};
 use egui_node_graph::{GraphEditorState, NodeId, Node, InputParam, Graph, NodeTemplateTrait};
 
 
@@ -115,6 +116,33 @@ impl ShaderGraph {
                 new_node_ty = Some(selected_item.ty.clone());
             }
         });
+
+        if !self.state.animations.is_empty() {
+            egui::SidePanel::left("animators").show(ctx, |ui| {
+                let mut removal = None;
+                for (key, updater) in &mut self.state.animations {
+                    let (node_id, param_name) = key;
+
+                    let node = &self.editor.graph.nodes[*node_id];
+
+                    ui.vertical(|ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new(format!("{}.{}", node.label, param_name)));
+                            if ui.button("REMOVE").clicked() {
+                                removal = Some(key.clone());
+                            }
+                        });
+                        updater.ui(ui);
+                    });
+                    
+                }
+
+                if let Some(removal) = removal {
+                    self.state.animations.remove(&removal);
+                }
+
+            });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.set_clip_rect(ctx.available_rect());
