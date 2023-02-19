@@ -57,3 +57,4 @@ pub struct GraphState {
 pub type ShaderNodeResponse = NodeResponse<GraphResponse, NodeData>;
 pub type EditorState = GraphEditorState<NodeData, ConnectionType, UiValue, NodeType, GraphState>;
 pub type Graph = egui_node_graph::graph::Graph<NodeData, ConnectionType, UiValue>;
+

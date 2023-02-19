@@ -6,8 +6,6 @@ I am developing this for the use case of live generative visual performances, wh
 
 ![screenshot](media/screenshot.png)
 
-I come from Touchdesigner, a mature node graph system that has a tendency to crash when you push its boundaries.
-
 ## Features
 - Spout (Windows texture sharing)
 - ISF shader support
@@ -19,6 +17,12 @@ I come from Touchdesigner, a mature node graph system that has a tendency to cra
 - GL Expression OP
 - Auto save/load with serde
 - Show errors in UI
+
+## Inspirations
+https://github.com/dfranx/SHADERed
+
+https://derivative.ca/
+
 
 ## Contributing
 
@@ -48,3 +52,4 @@ API is very much unstable at the moment. If you are interested in contributing, 
     - easy way to map simple control systems to complex operators / groups of operators
     - Better than CHOPs
 - Temporal reprojection for low fps
+- Ability to use different runtimes (bevy, VSTs)

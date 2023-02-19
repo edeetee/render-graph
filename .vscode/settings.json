@@ -8,5 +8,6 @@
         "nannou",
         "Srgb"
     ],
-    "autoHide.autoHideSideBar": false
+    "autoHide.autoHideSideBar": false,
+    "rust-analyzer.cargo.features": ["vst_plugin"]
 }

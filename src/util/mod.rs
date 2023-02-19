@@ -1,5 +1,21 @@
+use std::fs::File;
+use std::path::Path;
 use glium::{uniforms::{Uniforms, UniformValue, AsUniformValue}, ProgramCreationError};
+use serde::de::DeserializeOwned;
+use serde::Serialize;
 use thiserror::Error;
+
+pub fn write_to_json_file(path: &Path, data: &impl Serialize) -> anyhow::Result<()> {
+    let file = File::create(path)?;
+    serde_json::to_writer_pretty(file, data)?;
+
+    Ok(())
+}
+
+pub fn read_from_json_file<T: DeserializeOwned>(path: &Path) -> anyhow::Result<T> {
+    let file = File::open(path)?;
+    Ok(serde_json::from_reader(file)?)
+}
 
 pub struct MultiUniforms<'a, T: Uniforms> {
     // name: &'a str,

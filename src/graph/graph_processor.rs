@@ -1,5 +1,5 @@
 use std::{
-    rc::Rc, cell::RefCell, time::Instant, default,
+    rc::Rc, cell::RefCell, time::Instant, default, path::PathBuf,
 };
 
 use egui_glium::EguiGlium;
@@ -12,7 +12,7 @@ use glium::{
 
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use crate::{textures::{UiTexture, TextureManager}, common::animation::UpdateInfo};
+use crate::{textures::{UiTexture, TextureManager}, common::animation::UpdateInfo, util::read_from_json_file};
 
 use crate::common::{def::*, connections::ConnectionType};
 
@@ -65,6 +65,35 @@ impl ShaderGraphProcessor {
         }
     }
 
+    pub fn load_from_file_or_default(file: &PathBuf, facade: &impl Facade, egui_glium: &mut EguiGlium) -> Self {
+
+        match read_from_json_file::<EditorState>(file) {
+            Ok(graph_state) => {
+                println!("Loaded save file from {file:?}");
+    
+                let new_nodes = graph_state.graph.nodes.iter()
+                    .map(|(node_id, ..)| egui_node_graph::NodeResponse::CreatedNode(node_id));
+    
+                let new_connections = graph_state.graph.connections.iter()
+                    .map(|(input, output)| egui_node_graph::NodeResponse::ConnectEventEnded{input, output: *output} );
+    
+                let events: Vec<ShaderNodeResponse> = new_nodes.chain(new_connections).collect();
+    
+                let mut shader_node_graph = ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, ..Default::default() });
+    
+                for event in events {
+                    shader_node_graph.graph_event(facade, egui_glium, event);
+                }
+    
+                shader_node_graph
+            }
+            Err(err) => {
+                eprintln!("Failed to read default save {file:?} ({err:?}). Using new graph");
+                ShaderGraphProcessor::default()
+            },
+        }
+    }
+
     fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
         // let is_output_target = node.outputs(&self.graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
@@ -83,7 +112,7 @@ impl ShaderGraphProcessor {
         self.output_targets.insert(node_id, output_target);
     }
 
-    pub fn node_event(
+    pub fn graph_event(
         &mut self,
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
@@ -275,7 +304,7 @@ impl ShaderGraphProcessor {
 
         if let Some(response) = graph_response {
             for event in response.node_responses {
-                self.node_event(display, egui_glium, event);
+                self.graph_event(display, egui_glium, event);
             }
         }
 

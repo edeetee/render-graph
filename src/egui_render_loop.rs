@@ -4,9 +4,10 @@ use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::graph::{graph::ShaderGraph};
+use crate::graph::{graph::{ShaderGraph, self}, ShaderGraphProcessor, def::{EditorState, ShaderNodeResponse}, renderer::Renderer};
+use crate::util::{read_from_json_file, write_to_json_file};
 
-use super::{ShaderGraphProcessor, def::{EditorState, ShaderNodeResponse}};
+// use super::{};
 
 // const DEFAULT_FULLSCREEN_MODE: Option<Fullscreen> = Some(Fullscreen::Borderless(None));
 
@@ -21,38 +22,11 @@ pub fn render_glium() {
     let event_loop = glutin::event_loop::EventLoop::new();
 
     let display = create_display(&event_loop);
-
+    
     println!("GL Vendor: {}", display.get_opengl_vendor_string());
     println!("GL Version: {}", display.get_opengl_version_string());
 
-    let mut egui_glium = EguiGlium::new(&display, &event_loop);
-
-    let mut shader_node_graph = match read_from_json_file::<EditorState>(&default_save_path) {
-        Ok(graph_state) => {
-            println!("Loaded save file from {default_save_path:?}");
-
-            let new_nodes = graph_state.graph.nodes.iter()
-                .map(|(node_id, ..)| egui_node_graph::NodeResponse::CreatedNode(node_id));
-
-            let new_connections = graph_state.graph.connections.iter()
-                .map(|(input, output)| egui_node_graph::NodeResponse::ConnectEventEnded{input, output: *output} );
-
-            let events: Vec<ShaderNodeResponse> = new_nodes.chain(new_connections).collect();
-
-            let mut shader_node_graph = ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, ..Default::default() });
-
-            for event in events {
-                shader_node_graph.node_event(&display, &mut egui_glium, event);
-            }
-
-            shader_node_graph
-        }
-        Err(err) => {
-            eprintln!("Failed to read default save {default_save_path:?} ({err:?}). Using new graph");
-            ShaderGraphProcessor::default()
-        },
-    };
-    
+    let renderer = Renderer::new(&display);
 
     use signal_hook::consts::*;
 
@@ -111,18 +85,6 @@ pub fn render_glium() {
     });
 }
 
-fn write_to_json_file(path: &Path, data: &impl Serialize) -> anyhow::Result<()> {
-    let file = File::create(path)?;
-    serde_json::to_writer_pretty(file, data)?;
-
-    Ok(())
-}
-
-fn read_from_json_file<T: DeserializeOwned>(path: &Path) -> anyhow::Result<T> {
-    let file = File::open(path)?;
-    Ok(serde_json::from_reader(file)?)
-}
-
 fn create_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {
     let window_builder = glutin::window::WindowBuilder::new()
         .with_resizable(true)
@@ -137,6 +99,7 @@ fn create_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Disp
         .with_srgb(true)
         .with_hardware_acceleration(Some(true))
         .with_stencil_buffer(0)
+        // .window
         .with_vsync(true);
 
     glium::Display::new(window_builder, context_builder, event_loop).unwrap()
