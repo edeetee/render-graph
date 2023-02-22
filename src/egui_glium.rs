@@ -4,7 +4,7 @@ use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow};
 use serde::{Serialize, de::DeserializeOwned};
 
-use crate::graph::{graph::{ShaderGraph, self}, ShaderGraphProcessor, def::{EditorState, ShaderNodeResponse}, renderer::Renderer};
+use crate::graph::{def::{GraphEditorState, NodeResponse}, GraphUi};
 use crate::util::{read_from_json_file, write_to_json_file};
 
 // use super::{};
@@ -26,7 +26,8 @@ pub fn render_glium() {
     println!("GL Vendor: {}", display.get_opengl_vendor_string());
     println!("GL Version: {}", display.get_opengl_version_string());
 
-    let renderer = Renderer::new(&display);
+    let mut egui_glium = EguiGlium::new(&display, &event_loop);
+    let mut graph_ui = GraphUi::load_from_file_or_default(&default_save_path, &display, &mut egui_glium);
 
     use signal_hook::consts::*;
 
@@ -38,11 +39,11 @@ pub fn render_glium() {
 
     event_loop.run(move |ev, _, control_flow| {
 
-        let exit = |control_flow: &mut ControlFlow, graph_state: &EditorState| {
+        let exit = |control_flow: &mut ControlFlow, editor: &GraphEditorState| {
             // shader_node_graph.
             println!("EXITING");
 
-            match write_to_json_file(&default_save_path, graph_state) {
+            match write_to_json_file(&default_save_path, editor) {
                 Ok(_) => {
                     println!("Saved graph state to {default_save_path:?}")
                 },
@@ -57,13 +58,13 @@ pub fn render_glium() {
         match ev {
             Event::RedrawRequested(_) => {
                 // egui_glium.egui_winit.take_egui_input(window)
-                shader_node_graph.draw(&display, &mut egui_glium);
+                graph_ui.process_frame(&display, &mut egui_glium);
             },
             Event::MainEventsCleared => {
-                shader_node_graph.update(&display);
+                graph_ui.update(&display);
 
                 if exit_signals.pending().count() != 0 {
-                    exit(control_flow, &shader_node_graph.graph.editor);
+                    exit(control_flow, graph_ui.editor());
                 }
             }
             Event::RedrawEventsCleared => {
@@ -76,7 +77,7 @@ pub fn render_glium() {
 
                 if !egui_consumed_event {
                     if matches!(window_ev, WindowEvent::CloseRequested | WindowEvent::Destroyed) {
-                        exit(control_flow, &shader_node_graph.graph.editor);
+                        exit(control_flow, graph_ui.editor());
                     }
                 }
             },

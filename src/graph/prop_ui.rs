@@ -7,7 +7,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::common::{def::{UiValue, RangedData, TextStyle, Reset}, ui_util::{horizontal_drags, UiLimit}, animation::DataUpdater};
 
-use super::def::{GraphResponse, GraphState, NodeData};
+use super::def::{GraphResponse, GraphState, UiNodeData};
 
 fn default_range_f32(min: &Option<f32>, max: &Option<f32>) -> RangeInclusive<f32>{
     min.unwrap_or(0.0)..=max.unwrap_or(1.0)
@@ -257,7 +257,7 @@ fn draw_param(param: &mut UiValue, ui: &mut Ui, param_name: &str) -> ParamUiResp
 impl WidgetValueTrait for UiValue {
     type Response = GraphResponse;
     type UserState = GraphState;
-    type NodeData = NodeData;
+    type NodeData = UiNodeData;
 
     fn value_widget(
         &mut self,

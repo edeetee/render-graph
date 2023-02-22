@@ -13,10 +13,10 @@ mod common;
 #[cfg(feature="vst_plugin")]
 mod vst_plugin;
 
-mod egui_render_loop;
+mod egui_glium;
 
-use graph::render_glium;
+// use graph::render_glium;
 
 fn main() {
-    render_glium();
+    egui_glium::render_glium();
 }

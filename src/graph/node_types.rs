@@ -3,7 +3,7 @@ use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
 use glam::Mat4;
 use serde::{Serialize, Deserialize};
 
-use super::def::{NodeData, GraphState};
+use super::def::{UiNodeData, GraphState};
 
 use crate::common::mat4_ui::Mat4UiData;
 use crate::isf::meta::{IsfInfo};
@@ -100,7 +100,7 @@ impl NodeTemplateIter for AllNodeTypes {
 }
 
 impl NodeTemplateTrait for NodeType {
-    type NodeData = NodeData;
+    type NodeData = UiNodeData;
     type DataType = ConnectionType;
     type ValueType = UiValue;
     type UserState = GraphState;
@@ -114,7 +114,7 @@ impl NodeTemplateTrait for NodeType {
     }
 
     fn user_data(&self, _user_state: &mut Self::UserState) -> Self::NodeData {
-        NodeData::new(self.clone())
+        UiNodeData::new(self.clone())
     }
 
     fn build_node(

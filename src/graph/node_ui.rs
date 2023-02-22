@@ -74,7 +74,7 @@ fn show_image(ui: &mut Ui, texture: Weak<RefCell<UiTexture>>, scale: ImageScale)
         }).response
 }
 
-impl NodeDataTrait for NodeData {
+impl NodeDataTrait for UiNodeData {
     type Response = GraphResponse;
     type UserState = GraphState;
     type DataType = ConnectionType;

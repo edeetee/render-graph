@@ -7,7 +7,7 @@ use glium::backend::Facade;
 
 use crate::{isf::{updater::IsfUpdater}, obj_shader::loader::ObjLoader, gl_expression::GlExpressionUpdater};
 
-use super::{node_types::NodeType, def::{NodeData}, node_shader::NodeShader, graph::InputParams};
+use super::{node_types::NodeType, def::{UiNodeData}, node_shader::NodeShader, graph::InputParams};
 use crate::common::def::UiValue;
 
 
@@ -30,8 +30,8 @@ impl NodeUpdate {
         }
     }
 
-    pub fn update(&mut self, facade: &impl Facade, data: &mut NodeData, inputs: &InputParams<'_>, shader: &mut NodeShader) -> anyhow::Result<()> {
-        match (self, &mut data.template, shader) {
+    pub fn update(&mut self, facade: &impl Facade, template: &mut NodeType, inputs: &InputParams<'_>, shader: &mut NodeShader) -> anyhow::Result<()> {
+        match (self, template, shader) {
             (
                 NodeUpdate::Isf(updater),
                 NodeType::Isf { info: isf_info },

@@ -1,6 +1,6 @@
 
 use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}};
-use egui_node_graph::{GraphEditorState, UserResponseTrait, NodeResponse, NodeId};
+use egui_node_graph::{UserResponseTrait, NodeId};
 use serde::{Serialize, Deserialize};
 use crate::{textures::UiTexture, common::{def::{UiValue}, animation::DataUpdater, connections::ConnectionType}};
 use super::{node_types::NodeType};
@@ -18,7 +18,7 @@ impl From<anyhow::Error> for NodeError {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct NodeData {
+pub struct UiNodeData {
     pub template: NodeType,
     
     #[serde(skip)]
@@ -31,7 +31,7 @@ pub struct NodeData {
     pub render_error: Option<NodeError>,
 }
 
-impl NodeData {
+impl UiNodeData {
     pub fn new(template: NodeType) -> Self {
         Self {
             template,
@@ -54,7 +54,6 @@ pub struct GraphState {
     pub visible_nodes: HashSet<NodeId>
 }
 
-pub type ShaderNodeResponse = NodeResponse<GraphResponse, NodeData>;
-pub type EditorState = GraphEditorState<NodeData, ConnectionType, UiValue, NodeType, GraphState>;
-pub type Graph = egui_node_graph::graph::Graph<NodeData, ConnectionType, UiValue>;
-
+pub type NodeResponse = egui_node_graph::NodeResponse<GraphResponse, UiNodeData>;
+pub type GraphEditorState = egui_node_graph::GraphEditorState<UiNodeData, ConnectionType, UiValue, NodeType, GraphState>;
+pub type Graph = egui_node_graph::graph::Graph<UiNodeData, ConnectionType, UiValue>;

@@ -3,8 +3,9 @@
 //! The editor window is blank. Clicking anywhere in the window will print "Click!" to stdout.
 
 use core::ffi::c_void;
-use glium::{Display, glutin::{window::WindowBuilder, ContextBuilder, event_loop::EventLoopWindowTarget}, backend::glutin};
-use ::glutin::{config::ConfigTemplateBuilder, surface::SurfaceAttributesBuilder};
+use glium::backend::{Context, Facade};
+// use glium::{Display, glutin::{window::WindowBuilder, ContextBuilder, event_loop::{EventLoopWindowTarget, EventLoop}}, backend::{glutin::{GlutinBackend}, Facade}};
+use glutin::{config::ConfigTemplateBuilder, surface::SurfaceAttributesBuilder, context::ContextAttributesBuilder, display::Display, prelude::*};
 use vst::{
     editor::Editor,
     plugin::{HostCallback, Info, Plugin},
@@ -98,8 +99,8 @@ struct MyRenderer;
 
 impl MyRenderer {
     pub fn new<W: raw_window_handle::HasRawWindowHandle>(_handle: W) -> Self {
-        EventLoopWindowTarget::
-        WindowBuilder::new().build(window_target)
+        // EventLoopWindowTarget::
+        // WindowBuilder::new().build(window_target)
         // let display = ContextBuilder::new().build_windowed(wb, el)
         let ct = ConfigTemplateBuilder::new()
             .compatible_with_native_window(_handle)
@@ -108,11 +109,20 @@ impl MyRenderer {
         let sa = SurfaceAttributesBuilder::new()
             .build(_handle, WINDOW_DIMENSIONS.0, WINDOW_DIMENSIONS.1);
 
-        // sa.
+        let display = unsafe {
+                Display::new(raw_window_handle::RawDisplayHandle::AppKit(()), glutin::display::DisplayApiPreference::Cgl)
+                    .unwrap()
+        };
 
+        let context = unsafe {
+            let config = display.find_configs(ct);
 
-        // c
-        // let cb = ContextBuilder::new().build_windowed(wb, el)
+            display.create_context(&config, &sa)
+        }.unwrap();
+
+        let glium_backend = glium::backend::glutin::headless::Headless::new(context)
+            .unwrap();
+
         
         Self
     }

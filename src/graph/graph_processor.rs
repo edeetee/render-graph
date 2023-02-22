@@ -18,7 +18,7 @@ use crate::common::{def::*, connections::ConnectionType};
 
 use super::{
     def::{self, *},
-    graph::ShaderGraph,
+    graph::{GraphUtils},
     node_shader::ShaderInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
 
@@ -44,7 +44,7 @@ impl Default for UpdateTracker {
 
 #[derive(Default)]
 pub struct ShaderGraphProcessor {
-    pub graph: ShaderGraph,
+    // pub graph: ShaderGraph,
     texture_manager: TextureManager,
 
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
@@ -57,45 +57,8 @@ pub struct ShaderGraphProcessor {
 }
 
 impl ShaderGraphProcessor {
-
-    pub fn new(graph: ShaderGraph) -> ShaderGraphProcessor {
-        Self {
-            graph,
-            ..Default::default()
-        }
-    }
-
-    pub fn load_from_file_or_default(file: &PathBuf, facade: &impl Facade, egui_glium: &mut EguiGlium) -> Self {
-
-        match read_from_json_file::<EditorState>(file) {
-            Ok(graph_state) => {
-                println!("Loaded save file from {file:?}");
-    
-                let new_nodes = graph_state.graph.nodes.iter()
-                    .map(|(node_id, ..)| egui_node_graph::NodeResponse::CreatedNode(node_id));
-    
-                let new_connections = graph_state.graph.connections.iter()
-                    .map(|(input, output)| egui_node_graph::NodeResponse::ConnectEventEnded{input, output: *output} );
-    
-                let events: Vec<ShaderNodeResponse> = new_nodes.chain(new_connections).collect();
-    
-                let mut shader_node_graph = ShaderGraphProcessor::new(ShaderGraph { editor: graph_state, ..Default::default() });
-    
-                for event in events {
-                    shader_node_graph.graph_event(facade, egui_glium, event);
-                }
-    
-                shader_node_graph
-            }
-            Err(err) => {
-                eprintln!("Failed to read default save {file:?} ({err:?}). Using new graph");
-                ShaderGraphProcessor::default()
-            },
-        }
-    }
-
     fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
-        // let is_output_target = node.outputs(&self.graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
+        // let is_output_target = node.outputs(&graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
         let output_target = OutputTargetBuilder {
             rb: RenderBuffer::new(
@@ -112,21 +75,23 @@ impl ShaderGraphProcessor {
         self.output_targets.insert(node_id, output_target);
     }
 
+    ///Call with the response of the graph editor ui to update the slotmaps
     pub fn graph_event(
         &mut self,
+        graph: &mut Graph,
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
-        event: NodeResponse<def::GraphResponse, NodeData>,
+        event: NodeResponse<def::GraphResponse, UiNodeData>,
     ) {
         match event {
             egui_node_graph::NodeResponse::CreatedNode(node_id) => {
                 // self.node_textures.insert(node_id, textures);
                 let ui_texture = UiTexture::new(facade, egui_glium, (256, 256));
                 let textures = Rc::new(RefCell::new(ui_texture));
-                self.graph[node_id].user_data.texture = Rc::downgrade(&textures);
+                graph[node_id].user_data.texture = Rc::downgrade(&textures);
                 self.node_textures.insert(node_id, textures);
 
-                let template = &self.graph[node_id].user_data.template;
+                let template = &graph[node_id].user_data.template;
 
                 //only add if needed ()s
                 if let Some(shader) = NodeShader::new(template, facade) {
@@ -139,24 +104,24 @@ impl ShaderGraphProcessor {
                             }
                         }
                         Err(err) => {
-                            self.graph[node_id].user_data.create_error = Some(err.into());
+                            graph[node_id].user_data.create_error = Some(err.into());
                             // eprintln!("Error {:#?} creating shader for node: {:#?} {:#?}", err, template, node_id);
                         }
                     }
                 }
 
-                let template = &self.graph[node_id].user_data.template;
+                let template = &graph[node_id].user_data.template;
 
                 if let Some(updater) = NodeUpdate::new(template) {
                     self.updaters.insert(node_id, updater);
                 }
 
                 //remove output target if not needed
-                for input in self.graph[node_id].inputs(self.graph.graph_ref()) {
+                for input in graph[node_id].inputs(graph) {
                     if input.typ == ConnectionType::Texture2D {
-                        let connected_output = self.graph.graph_ref().connection(input.id);
+                        let connected_output = graph.connection(input.id);
                         if let Some(output_id) = connected_output {
-                            let connected_node_id = self.graph.graph_ref()[output_id].node;
+                            let connected_node_id = graph[output_id].node;
 
                             self.output_targets.remove(connected_node_id);
                         }
@@ -168,14 +133,14 @@ impl ShaderGraphProcessor {
 
             //may create new output target
             NodeResponse::DisconnectEvent { output: output_id, .. } => {
-                if let Some(output) = self.graph.graph_ref().try_get_output(output_id){
+                if let Some(output) = graph.try_get_output(output_id){
                     self.add_dangling_output(facade, output.node);
                 }
             }
 
             NodeResponse::ConnectEventEnded { output, .. } => {
                 self.output_targets
-                    .remove(self.graph.graph_ref()[output].node);
+                    .remove(graph[output].node);
             }
 
             NodeResponse::DeleteNodeFull { node_id, .. } => {
@@ -192,9 +157,9 @@ impl ShaderGraphProcessor {
     ///Processes each shader in the output_targets list from start to end
     /// Generates ui textures
     /// processes inputs
-    fn render_shaders(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium) {
+    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, egui_glium: &mut EguiGlium) {
         // let shaders = &mut self.shaders;
-        // let graph = &self.graph;
+        // let graph = &graph;
 
         let mut errors: SparseSecondaryMap<NodeId, NodeError> = Default::default();
 
@@ -203,7 +168,7 @@ impl ShaderGraphProcessor {
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
 
-                self.graph.map_with_inputs(output_id, &mut |node_id, inputs| {
+                graph.map_with_inputs(output_id, &mut |node_id, inputs| {
 
                     // let target = self.texture_manager.get_color(facade);
 
@@ -242,24 +207,24 @@ impl ShaderGraphProcessor {
             });
         }
 
-        for (node_id, data) in self.graph.editor.graph.nodes.iter_mut() {
+        for (node_id, data) in graph.nodes.iter_mut() {
             data.user_data.render_error = errors.remove(node_id);
         }
     }
 
-    pub fn update(&mut self, facade: &impl Facade) {
+    pub fn update(&mut self, graph: &mut Graph, state: &GraphState, facade: &impl Facade) {
         for (node_id, updater) in self.updaters.iter_mut() {
-            let _template = &mut self.graph[node_id].user_data.template;
+            let _template = &mut graph[node_id].user_data.template;
 
-            let node = &mut self.graph.editor.graph.nodes[node_id];
+            let node = &mut graph.nodes[node_id];
             let inputs: Vec<_> = node.inputs.iter()
-                .map(|(name, in_id)| (name.as_str(), &self.graph.editor.graph.inputs[*in_id]))
+                .map(|(name, in_id)| (name.as_str(), &graph.inputs[*in_id]))
                 .collect();
 
             if let Some(shader) = &mut self.shaders.get_mut(node_id) {
                 match updater.update(
                     facade, 
-                    &mut node.user_data, 
+                    &mut node.user_data.template, 
                     &inputs, 
                     shader
                 ) {
@@ -276,14 +241,14 @@ impl ShaderGraphProcessor {
         let elapsed_since_update = self.update_info.last_update.elapsed();
         let update_info = UpdateInfo::new(elapsed_since_update);
         
-        for ((node_id, param_name), animation) in &self.graph.state.animations {
-            let maybe_input = self.graph.graph_ref()
+        for ((node_id, param_name), animation) in &state.animations {
+            let maybe_input = graph
                 .nodes[*node_id].inputs.iter()
                 .find(|(input_name, _)| input_name == param_name);
 
             if let Some((_, input_id)) = maybe_input {
                 let input_id = *input_id;
-                let input_param = &mut self.graph.editor.graph.inputs[input_id].value;
+                let input_param = &mut graph.inputs[input_id].value;
                 animation.update_value(input_param, &update_info);
             }
         }
@@ -291,27 +256,5 @@ impl ShaderGraphProcessor {
         self.update_info.last_update = Instant::now();
     }
 
-    pub fn draw(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
-        let mut frame = display.draw();
-
-        frame.clear_color_and_depth((1., 1., 1., 1.), 0.);
-
-        let mut graph_response = None;
-
-        let _needs_repaint = egui_glium.run(display, |ctx| {
-            graph_response = Some(self.graph.draw(ctx));
-        });
-
-        if let Some(response) = graph_response {
-            for event in response.node_responses {
-                self.graph_event(display, egui_glium, event);
-            }
-        }
-
-        self.render_shaders(display, egui_glium);
-
-        egui_glium.paint(display, &mut frame);
-
-        frame.finish().unwrap();
-    }
+    
 }
