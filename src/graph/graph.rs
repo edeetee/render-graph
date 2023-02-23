@@ -1,14 +1,14 @@
-use std::{ops::{Index, IndexMut}, path::PathBuf};
+use std::{path::PathBuf};
 
 
-use egui::{Widget, RichText};
-use egui_node_graph::{NodeId, Node, InputParam, NodeTemplateTrait};
+
+use egui_node_graph::{NodeId, InputParam};
 
 
 use slotmap::{SecondaryMap};
-use crate::{common::{def::{UiValue}, connections::ConnectionType}, util::read_from_json_file, graph::{def::NodeResponse, ShaderGraphProcessor}};
+use crate::{common::{def::{UiValue}, connections::ConnectionType}, util::read_from_json_file, graph::{def::NodeResponse}};
 
-use super::{def::{GraphState, UiNodeData, GraphResponse, Graph, GraphEditorState}, node_types::{AllNodeTypes, NodeType}, node_tree_ui::TreeState};
+use super::{def::{Graph, GraphEditorState}};
 
 // #[derive(Default)]
 

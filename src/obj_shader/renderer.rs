@@ -1,4 +1,4 @@
-use std::{time::Instant, ops::Index};
+use std::{time::Instant};
 
 
 use genmesh::{Vertices, generators::{SharedVertex, IndexedPolygon}, Triangulate};

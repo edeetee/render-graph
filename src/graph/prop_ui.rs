@@ -1,7 +1,7 @@
 
 use std::{path::Path, ops::RangeInclusive};
 
-use egui::{InnerResponse, Response, Id, Ui, Area, Order, Frame, Layout, color_picker::color_edit_button_rgba, Slider, DragValue, Widget, Align, Stroke, Color32, Rounding};
+use egui::{InnerResponse, Response, Id, Ui, Area, Order, Frame, Layout, color_picker::color_edit_button_rgba, Slider, DragValue, Widget, Align, Stroke, Color32};
 use egui_node_graph::{WidgetValueTrait, NodeId};
 use serde::{Serialize, Deserialize};
 
@@ -68,7 +68,7 @@ pub fn popup<R>(
             // Note: we use a separate clip-rect for this area, so the popup can be outside the parent.
             // See https://github.com/emilk/egui/issues/825
             let frame = Frame::popup(ui.style());
-            let frame_margin = frame.inner_margin + frame.outer_margin;
+            let _frame_margin = frame.inner_margin + frame.outer_margin;
             frame
                 .show(ui, |ui| {
                     ui.with_layout(Layout::top_down_justified(Align::LEFT), |ui| {

@@ -5,7 +5,7 @@ use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId, NodeTemplateTrait};
 use glium::{backend::Facade, Display, Surface};
 
-use super::{ShaderGraphProcessor, def::{GraphEditorState, GraphState, GraphResponse, UiNodeData, Graph}, node_tree_ui::TreeState, node_types::{NodeType, AllNodeTypes}, graph::load_from_file_or_default};
+use super::{ShaderGraphProcessor, def::{GraphEditorState, GraphState, GraphResponse, UiNodeData}, node_tree_ui::TreeState, node_types::{NodeType, AllNodeTypes}, graph::load_from_file_or_default};
 
 pub struct GraphUi {
     processor: ShaderGraphProcessor,

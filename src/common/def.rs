@@ -1,5 +1,5 @@
 use std::{path::PathBuf, fmt::Debug};
-use delegate::delegate;
+
 use egui::{Rgba};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
 

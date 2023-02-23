@@ -1,4 +1,4 @@
-use std::{path::{Path, PathBuf}, time::{SystemTime}, fs::read_to_string};
+use std::{path::{Path, PathBuf}, time::{SystemTime}};
 
 use genmesh::{Triangulate, Vertices};
 use glium::backend::Facade;

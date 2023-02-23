@@ -1,20 +1,19 @@
 use std::{
-    rc::Rc, cell::RefCell, time::Instant, default, path::PathBuf,
+    rc::Rc, cell::RefCell, time::Instant,
 };
 
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId, NodeResponse};
 use glium::{
     backend::Facade,
-    Display,
     framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface,
 };
 
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use crate::{textures::{UiTexture, TextureManager}, common::animation::UpdateInfo, util::read_from_json_file};
+use crate::{textures::{UiTexture, TextureManager}, common::animation::UpdateInfo};
 
-use crate::common::{def::*, connections::ConnectionType};
+use crate::common::{connections::ConnectionType};
 
 use super::{
     def::{self, *},

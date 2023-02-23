@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use egui::{Ui, Widget};
-use glam::{Vec3, Vec3A, Mat4, Quat};
+use glam::{Vec3, Quat};
 use serde::{Serialize, Deserialize};
 
 use super::{def::UiValue, ui_util::horizontal_drags};
