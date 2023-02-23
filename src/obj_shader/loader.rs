@@ -1,10 +1,10 @@
 use std::{path::{Path, PathBuf}, time::{SystemTime}};
 
-use genmesh::{Triangulate, Vertices};
+use genmesh::{Triangulate, Vertices, LruIndexer, Indexer};
 use glium::backend::Facade;
 use obj::{ObjData, SimplePolygon};
 
-use super::renderer::{VertexAttr, ObjRenderer};
+use super::renderer::{PosVertex, ObjRenderer, PosNormVertex, Data};
 
 pub struct ObjLoader {
     cur_file: Option<PathBuf>,
@@ -36,23 +36,11 @@ impl ObjLoader {
         if do_load {
             println!("Updating obj from {path:?}");
 
-            // let obj_source = read_to_string(path).unwrap();
-            // let wavefront_objs = wavefront_obj::obj::parse(obj_source).unwrap();
-
             let objs = obj::Obj::load(path)?;
-            // objs.data.
-            // // objs.
 
-            let (verts, indices) = vertices_and_indices(objs.data);
+            let data = vertices_and_indices(objs.data);
 
-            // let mesh = MeshBuilder::new()
-            //     .with_positions(verts.iter().flat_map(|v|v.position.iter()).map(|f| *f as f64).collect_vec())
-            //     .with_indices(indices)
-            //     .build().unwrap();
-
-            // mesh.
-
-            renderer.set_tri_data(facade, &verts, &indices);
+            renderer.update_data(facade, data);
 
             self.cur_file = Some(path.to_path_buf());
         }
@@ -61,18 +49,52 @@ impl ObjLoader {
     }
 }
 
-fn vertices_and_indices(objs: ObjData) -> (Vec<VertexAttr>, Vec<u32>) {
-    let positions = objs.position.iter().cloned().map(VertexAttr::new).collect();
 
-    let indices = objs.objects.iter().flat_map(|obj| {
-        obj.groups.iter().flat_map(|group| {
-            group.polys.iter().cloned().map(SimplePolygon::into_genmesh)
+
+fn vertices_and_indices(objs: ObjData) -> Data {
+    let ObjData { 
+        position, 
+        texture, 
+        normal, 
+        objects, 
+        material_libs 
+    } = objs;
+
+    let indices = objects.iter()
+        .flat_map(|obj| {
+            obj.groups.iter().flat_map(|group| {
+                group.polys.iter().cloned().map(SimplePolygon::into_genmesh)
+            })
         })
-    })
         .triangulate()
-        .vertices()
-        .map(|index| index.0 as u32)
-        .collect();
+        .vertices();
 
-    (positions, indices)
+    // let positions = position.into_iter();
+
+    if normal.is_empty() {
+        Data::Pos(
+            position.into_iter().map(PosVertex::new).collect(), 
+            indices.map(|index|index.0 as u32).collect()
+        )
+    } else {
+        let mut vertices: Vec<PosNormVertex> = vec![];
+        let mut lru = LruIndexer::new(8, |_,b| {
+            vertices.push(PosNormVertex::from(b));
+        });
+
+        let indices = indices.map(|index| {
+            let vertex: genmesh::Vertex = genmesh::Vertex{
+                pos: position[index.0].into(),
+                normal: index.2.map(|index| normal[index]).unwrap_or([0.0,1.0,0.0]).into()
+            }.into();
+
+            lru.index(vertex) as u32
+        }).collect();
+        
+
+        // todo!()
+        Data::PosNorm(
+            vertices, indices
+        )
+    }
 }

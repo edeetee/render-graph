@@ -2,17 +2,13 @@ use std::{time::Instant};
 
 
 use genmesh::{Vertices, generators::{SharedVertex, IndexedPolygon}, Triangulate};
-use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError, IndexBuffer, Depth, BackfaceCullingMode};
+use glium::{VertexBuffer, implement_vertex, index::{self, IndexBufferAny}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError, IndexBuffer, Depth, BackfaceCullingMode, vertex::VertexBufferAny};
 
 use crate::{util::MultiUniforms, textures::DEFAULT_RES};
 
-pub fn new_vertex_buffer(facade: &impl Facade, verts: &[VertexAttr]) -> VertexBuffer<VertexAttr> {
+pub fn new_vertex_buffer<T: glium::Vertex>(facade: &impl Facade, verts: &[T]) -> VertexBuffer<T> {
     VertexBuffer::immutable(facade, verts).unwrap()
 }
-
-// pub fn new_index_buffers(facade: &impl Facade, indices: &[[u32]]) -> IndexBuffer<IndexAttr> {
-
-// }
 
 pub fn new_index_buffer<T: glium::index::Index>(facade: &impl Facade, indices: &[T]) -> IndexBuffer<T> {
     IndexBuffer::immutable(facade, index::PrimitiveType::TrianglesList, indices).unwrap()
@@ -20,8 +16,8 @@ pub fn new_index_buffer<T: glium::index::Index>(facade: &impl Facade, indices: &
 
 pub struct ObjRenderer{
     program: Program,
-    vert_buffer: VertexBuffer<VertexAttr>,
-    index_buffer: IndexBuffer<u32>,
+    vert_buffer: VertexBufferAny,
+    index_buffer: IndexBufferAny,
     params: DrawParameters<'static>,
     start: Instant,
     proj_matrix: [[f32; 4]; 4],
@@ -55,15 +51,15 @@ impl ObjRenderer {
 
         let cube = genmesh::generators::Cube::new();
 
-        let vertices: Vec<_> = cube.shared_vertex_iter().map(VertexAttr::from).collect();
+        let vertices: Vec<_> = cube.shared_vertex_iter().map(PosNormVertex::from).collect();
         let indices: Vec<_> = cube.indexed_polygon_iter().triangulate().vertices().map(|vertex| vertex as u32).collect();
     
         let program = Program::from_source(
             facade,
-            &include_str!("obj.vert"),
+            &include_str!("pos_and_norm.vert"),
             &include_str!("obj.frag"),
             None
-        )?;
+        ).unwrap(); 
 
         let proj_matrix = glam::Mat4::perspective_rh(
             std::f32::consts::FRAC_2_PI, 
@@ -75,18 +71,42 @@ impl ObjRenderer {
         Ok(Self{
             params,
             start: Instant::now(),
-            vert_buffer: new_vertex_buffer(facade, &vertices),
-            index_buffer: new_index_buffer(facade, &indices),
+            vert_buffer: new_vertex_buffer(facade, &vertices).into(),
+            index_buffer: new_index_buffer(facade, &indices).into(),
             program,
             proj_matrix
         })
     }
 
-    pub fn set_tri_data(&mut self, facade: &impl Facade, verts: &[VertexAttr], indices: &[u32]) {
-        
-        self.vert_buffer = new_vertex_buffer(facade, verts);
-        self.index_buffer = new_index_buffer(facade, indices);
+    pub fn update_data(&mut self, facade: &impl Facade, data: Data) {
+        match data {
+            Data::Pos(verts, indices) => {
+                self.vert_buffer = new_vertex_buffer(facade, &verts).into();
+                self.index_buffer = new_index_buffer(facade, &indices).into();
+                self.program = Program::from_source(
+                    facade,
+                    &include_str!("pos_only.vert"),
+                    &include_str!("obj.frag"),
+                    None
+                ).unwrap();
+            },
+            Data::PosNorm(verts, indices) => {
+                self.vert_buffer = new_vertex_buffer(facade, &verts).into();
+                self.index_buffer = new_index_buffer(facade, &indices).into();
+                self.program = Program::from_source(
+                    facade,
+                    &include_str!("pos_and_norm.vert"),
+                    &include_str!("obj.frag"),
+                    None
+                ).unwrap();
+            },
+        }
     }
+
+    // pub fn update_positions_and_normals(&mut self, facade: &impl Facade, verts: &[PosNormVertex], indices: &[u32]) {
+    //     self.vert_buffer = new_vertex_buffer(facade, verts).into();
+    //     self.index_buffer = new_index_buffer(facade, indices); 
+    // }
 
     /// Draws the object to the surface
     /// !!! MUST contain a depth buffer
@@ -112,8 +132,6 @@ impl ObjRenderer {
             next: uniforms
         };
 
-        // surface.dra
-
         surface.draw(
             &self.vert_buffer,
             &self.index_buffer,
@@ -126,18 +144,47 @@ impl ObjRenderer {
     }
 }
 
+pub enum Data {
+    Pos(Vec<PosVertex>, Vec<u32>),
+    PosNorm(Vec<PosNormVertex>, Vec<u32>)
+}
+
 #[derive(Copy, Clone)]
-pub struct VertexAttr {
+pub struct PosVertex {
     pub position: [f32; 3]
 }
 
-impl VertexAttr {
+impl PosVertex {
     pub fn new(position: [f32; 3]) -> Self {
         Self { position }
     }
 }
 
-impl From<genmesh::Vertex> for VertexAttr {
+#[derive(Copy, Clone)]
+pub struct PosNormVertex {
+    pub position: [f32; 3],
+    pub normal: [f32; 3]
+}
+
+impl PosNormVertex {
+    pub fn new((position, normal): ([f32;3], [f32;3])) -> Self {
+        Self {
+            position,
+            normal
+        }
+    }
+}
+
+impl From<genmesh::Vertex> for PosNormVertex {
+    fn from(value: genmesh::Vertex) -> Self {
+        Self {
+            position: [value.pos.x, value.pos.y, value.pos.z],
+            normal: [value.normal.x, value.normal.y, value.normal.z] 
+        }
+    }
+}
+
+impl From<genmesh::Vertex> for PosVertex {
     fn from(value: genmesh::Vertex) -> Self {
         Self {
             position: [value.pos.x, value.pos.y, value.pos.z]
@@ -145,4 +192,5 @@ impl From<genmesh::Vertex> for VertexAttr {
     }
 }
 
-implement_vertex!(VertexAttr, position);
+implement_vertex!(PosVertex, position);
+implement_vertex!(PosNormVertex, position, normal);
