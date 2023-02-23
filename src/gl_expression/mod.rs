@@ -57,12 +57,13 @@ fn parse_gl_type(expr: &Expr) -> GlType {
     match expr {
         Expr::FloatConst(_) => GlType::Float,
         Expr::Dot(_, Identifier(iden)) => GlType::from_length(iden.len()),
-        Expr::FunCall(glsl::syntax::FunIdentifier::Identifier(Identifier(fun_ident)), _) => {
+        Expr::FunCall(glsl::syntax::FunIdentifier::Identifier(Identifier(fun_ident)), args) => {
             match fun_ident.as_str() {
                 "vec2" => GlType::Vec2,
                 "vec3" => GlType::Vec3,
+                "vec4" => GlType::Vec4,
                 // "length" => GlType::Float,
-                _ => GlType::Vec4
+                _ => args.first().map(parse_gl_type).unwrap_or(GlType::Vec4)
             }
         }
         Expr::Binary(_, a, b) => parse_gl_type(a).max(parse_gl_type(b)),

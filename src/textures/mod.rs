@@ -45,6 +45,7 @@ impl ScreenTexture {
             .painter
             .register_native_texture(tex.clone());
 
+
         ScreenTextureBuilder {
             id,
             tex,

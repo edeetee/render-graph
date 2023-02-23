@@ -3,7 +3,8 @@
 //! The editor window is blank. Clicking anywhere in the window will print "Click!" to stdout.
 
 use core::ffi::c_void;
-use glium::backend::{Context, Facade};
+use egui_glium::EguiGlium;
+use glium::{backend::{Context, Facade}, glutin::WindowedContext};
 // use glium::{Display, glutin::{window::WindowBuilder, ContextBuilder, event_loop::{EventLoopWindowTarget, EventLoop}}, backend::{glutin::{GlutinBackend}, Facade}};
 use glutin::{config::ConfigTemplateBuilder, surface::SurfaceAttributesBuilder, context::ContextAttributesBuilder, display::Display, prelude::*};
 use vst::{
@@ -120,9 +121,16 @@ impl MyRenderer {
             display.create_context(&config, &sa)
         }.unwrap();
 
-        let glium_backend = glium::backend::glutin::headless::Headless::new(context)
+        let glium_ctx = glium::backend::glutin::headless::Headless::new(context)
             .unwrap();
 
+        // context.make_current(surface)
+
+        // let windowed_ctx = WindowedContext::
+
+        // let glium_display = glium::Display
+        
+        // EguiGlium::new(display, event_loop)
         
         Self
     }

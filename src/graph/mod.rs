@@ -9,9 +9,8 @@ mod node_tree_ui;
 mod prop_ui;
 mod graph_ui;
 
-pub(crate) mod graph;
-pub(crate) mod def;
+mod graph;
 
 pub use graph_processor::ShaderGraphProcessor;
 pub use graph_ui::GraphUi;
-// pub use egui_render_loop::render_glium;
+pub mod def;

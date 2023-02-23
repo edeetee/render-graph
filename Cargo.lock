@@ -467,6 +467,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64a4b57c8f4e3a2e9ac07e0f6abc9c24b6fc9e1b54c3478cfb598f3d0023e51c"
 dependencies = [
  "approx",
+ "mint",
  "num-traits 0.1.43",
  "rand 0.4.6",
 ]
@@ -1119,6 +1120,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fed34cd105917e91daa4da6b3728c47b068749d6a62c59811f06ed2ac71d9da7"
 
 [[package]]
+name = "genmesh"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "093d52460513e54346e440eadad05a799378654001d7c3a384c3d1e59b5f1e9f"
+dependencies = [
+ "cgmath",
+ "mint",
+]
+
+[[package]]
 name = "gethostname"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1672,6 +1683,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "mint"
+version = "0.5.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e53debba6bda7a793e5f99b8dacf19e626084f525f7829104ba9898f367d85ff"
+
+[[package]]
 name = "mio"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1928,6 +1945,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "obj"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "059c95245738cdc7b40078cdd51a23200252a4c0a0a6dd005136152b3f467a4a"
+dependencies = [
+ "genmesh",
 ]
 
 [[package]]
@@ -2338,6 +2364,7 @@ dependencies = [
  "egui_glium",
  "egui_node_graph",
  "enum_dispatch",
+ "genmesh",
  "gl",
  "glam",
  "glium",
@@ -2348,6 +2375,7 @@ dependencies = [
  "meval",
  "naga",
  "native-dialog",
+ "obj",
  "ouroboros",
  "rand 0.8.5",
  "raw-window-handle 0.5.0",

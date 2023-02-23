@@ -176,7 +176,6 @@ impl ShaderGraphProcessor {
                     if let Some(shader) = self.shaders.get_mut(node_id) {
                         // let mut surface = target.as_surface();
 
-
                         let mut ui_texture = (*self.node_textures[node_id]).borrow_mut();
 
                         match shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs)) {
@@ -184,12 +183,12 @@ impl ShaderGraphProcessor {
                                 let surface = target.as_surface();
                                 // surface.clear_color(0., 0., 0., 0.);
 
-                                let (w, h) = surface.get_dimensions();
-                                let size = (w, h);
+                                // let (w, h) = ;
+                                // let size = (w, h);
         
                                 // node.user_data.
                                 // self.node_textures[node_id].borrow_mut()
-                                ui_texture.update_size(facade, egui_glium, size);
+                                ui_texture.update_size(facade, egui_glium, surface.get_dimensions());
                                 ui_texture.copy_from(&surface);
 
                                 Some(target)

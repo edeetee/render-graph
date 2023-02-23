@@ -1,4 +1,4 @@
-use std::{time::Instant};
+use std::{time::Instant, ops::Index};
 
 
 use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError, IndexBuffer, Depth, BackfaceCullingMode};
@@ -10,7 +10,11 @@ pub fn new_vertex_buffer(facade: &impl Facade, verts: &[VertexAttr]) -> VertexBu
     VertexBuffer::immutable(facade, verts).unwrap()
 }
 
-pub fn new_index_buffer(facade: &impl Facade, indices: &[u32]) -> IndexBuffer<u32> {
+// pub fn new_index_buffers(facade: &impl Facade, indices: &[[u32]]) -> IndexBuffer<IndexAttr> {
+
+// }
+
+pub fn new_index_buffer<T: glium::index::Index>(facade: &impl Facade, indices: &[T]) -> IndexBuffer<T> {
     IndexBuffer::immutable(facade, index::PrimitiveType::TrianglesList, indices).unwrap()
 }
 
@@ -109,6 +113,8 @@ impl ObjRenderer {
             next: uniforms
         };
 
+        // surface.dra
+
         surface.draw(
             &self.vert_buffer,
             &self.index_buffer,
@@ -139,6 +145,12 @@ pub fn vertices_from_mesh(mesh: &Mesh) -> Vec<VertexAttr> {
 #[derive(Copy, Clone)]
 pub struct VertexAttr {
     pub position: [f32; 3]
+}
+
+impl VertexAttr {
+    pub fn new(position: [f32; 3]) -> Self {
+        Self { position }
+    }
 }
 
 implement_vertex!(VertexAttr, position);

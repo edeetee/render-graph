@@ -52,6 +52,8 @@ glutin = {version="0.30.6"}
 vst = {version="0.3.0", optional=true}
 vst_window = {version="0.3.0", optional=true}
 raw-window-handle = {version="0.5.0", optional=true}
+obj = { version = "0.10.2", features = ["genmesh"] }
+genmesh = "0.6.2"
 
 
 # clap = { version = "3.2.8", features = ["derive"] }
