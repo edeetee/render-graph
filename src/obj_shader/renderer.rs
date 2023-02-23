@@ -1,8 +1,8 @@
 use std::{time::Instant, ops::Index};
 
 
+use genmesh::{Vertices, generators::{SharedVertex, IndexedPolygon}, Triangulate};
 use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms, AsUniformValue}, ProgramCreationError, IndexBuffer, Depth, BackfaceCullingMode};
-use tri_mesh::{MeshBuilder, prelude::Mesh};
 
 use crate::{util::MultiUniforms, textures::DEFAULT_RES};
 
@@ -51,13 +51,12 @@ impl ObjRenderer {
     }
 
     pub fn new_with_params(facade: &impl Facade, params: DrawParameters<'static>) -> Result<Self, ProgramCreationError> {
-        let mesh = MeshBuilder::new().cube().build().unwrap();
+        // let mesh = MeshBuilder::new().cube().build().unwrap();
 
-        let vertices: Vec<_> = vertices_from_mesh(&mesh);
+        let cube = genmesh::generators::Cube::new();
 
-        let indices = mesh.indices_buffer();
-
-        // let default_obj = Object::new(facade, &vertices, &indices);
+        let vertices: Vec<_> = cube.shared_vertex_iter().map(VertexAttr::from).collect();
+        let indices: Vec<_> = cube.indexed_polygon_iter().triangulate().vertices().map(|vertex| vertex as u32).collect();
     
         let program = Program::from_source(
             facade,
@@ -127,21 +126,6 @@ impl ObjRenderer {
     }
 }
 
-// pub fn buffers_from_data<V: glium::Vertex,I: glium::index::Index>(facade: &impl Facade, verts: &[V], indices: &[I]) -> (glium::VertexBuffer<V>, glium::IndexBuffer<I>) {
-//     let vert_buffer = VertexBuffer::immutable(facade, verts).unwrap();
-
-//     let index_buffer = IndexBuffer::immutable(facade, index::PrimitiveType::TrianglesList, indices).unwrap();
-
-//     (vert_buffer, index_buffer)
-// }
-
-pub fn vertices_from_mesh(mesh: &Mesh) -> Vec<VertexAttr> {
-    mesh.vertex_iter()
-        .map(|id| mesh.vertex_position(id).map(|n| n as f32))
-        .map(|v| VertexAttr { position: v.into() })
-        .collect()
-}
-
 #[derive(Copy, Clone)]
 pub struct VertexAttr {
     pub position: [f32; 3]
@@ -150,6 +134,14 @@ pub struct VertexAttr {
 impl VertexAttr {
     pub fn new(position: [f32; 3]) -> Self {
         Self { position }
+    }
+}
+
+impl From<genmesh::Vertex> for VertexAttr {
+    fn from(value: genmesh::Vertex) -> Self {
+        Self {
+            position: [value.pos.x, value.pos.y, value.pos.z]
+        }
     }
 }
 

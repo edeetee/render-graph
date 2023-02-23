@@ -1,13 +1,8 @@
 use std::{path::{Path, PathBuf}, time::{SystemTime}, fs::read_to_string};
 
-use genmesh::{Triangle, Quad, Triangulate, Vertices};
+use genmesh::{Triangulate, Vertices};
 use glium::backend::Facade;
-use itertools::Itertools;
-use obj::{ObjData, SimplePolygon, IndexTuple};
-use tri_mesh::{MeshBuilder};
-use wavefront_obj::obj::ObjSet;
-
-use crate::obj_shader::renderer::vertices_from_mesh;
+use obj::{ObjData, SimplePolygon};
 
 use super::renderer::{VertexAttr, ObjRenderer};
 
@@ -81,50 +76,3 @@ fn vertices_and_indices(objs: ObjData) -> (Vec<VertexAttr>, Vec<u32>) {
 
     (positions, indices)
 }
-
-// fn tri_data_from_wavefront(objs: ObjSet) -> (Vec<VertexAttr>, Vec<u32>) {
-//     let mut positions = Vec::new();
-//     let mut indices = Vec::new();
-
-//     for (_i, obj) in objs.objects.iter().enumerate() { // Objects consisting of several meshes with different materials
-//         if obj.vertices.is_empty() || 16 <= obj.vertices.len() {
-//             println!("- obj{}: {}v {}g", obj.name, obj.vertices.len(), obj.geometry.len());
-//             continue;
-//         } else {
-//             println!("+ obj{}: {}v {}g {}t", obj.name, obj.vertices.len(), obj.geometry.len(), obj.tex_vertices.len());
-//         }
-
-//         let start_index = positions.len();
-
-//         positions.extend(obj.vertices.iter()
-//             .map(|v| {
-//                 VertexAttr {
-//                     position: [v.x as f32, -v.y as f32, v.z as f32]
-//                 }
-//             })
-//         );
-
-//         // obj.tex_vertices
-
-//         for geo in &obj.geometry {
-//             //index group per geometry
-//             let geo_indices = geo.shapes.iter().flat_map(|primitive| { // All triangles with same material
-//                 match primitive.primitive {
-//                     wavefront_obj::obj::Primitive::Triangle(a, b, c) => {
-//                         vec![
-//                             (start_index + a.0) as u32,
-//                             (start_index + b.0) as u32,
-//                             (start_index + c.0) as u32
-//                         ].into_iter()
-//                     },
-//                     _ => vec![].into_iter()
-//                 }
-//             });
-//             indices.extend(geo_indices);
-//         }
-//     }
-
-//     (positions, indices)
-
-//     // (positions, indices)
-// }

@@ -26,7 +26,6 @@ itertools = "0.10.2"
 isf = "0.1.0"
 gl = "0.14.0"
 
-tri-mesh = "0.5.0"
 glam = {version="0.21.3", features=["serde"]}
 
 strum_macros = "0.24"
@@ -36,7 +35,6 @@ slotmap = "1.0.6"
 native-dialog = "0.6.3"
 enum_dispatch = "0.3.8"
 thiserror = "1.0.37"
-wavefront_obj = "10.0.0"
 glsl = "6.0.1"
 naga = { version="0.10.0", features=["glsl-in"] }
 anyhow = "1.0.66"
