@@ -1,65 +1,11 @@
 use std::{rc::Rc};
 
-// use super::{def::{ComputedNodeInput, NodeTypes}, shaders::Shader};
-use egui::{TextureId};
-use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
-    framebuffer::SimpleFrameBuffer,
-    Surface,
     texture::{SrgbTexture2d, DepthTexture2d}, Texture2d,
 };
 
-use ouroboros::self_referencing;
-
-#[self_referencing]
-struct ScreenTexture {
-    tex: Rc<SrgbTexture2d>,
-    id: TextureId,
-
-    #[borrows(tex)]
-    #[covariant]
-    fb: SimpleFrameBuffer<'this>
-}
-
-pub fn new_texture_srgb_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Result<SrgbTexture2d, glium::texture::TextureCreationError>  {
-    SrgbTexture2d::empty_with_format(
-        facade,
-        glium::texture::SrgbFormat::U8U8U8U8,
-        NO_MIPMAP,
-        width,
-        height,
-    )
-}
-
-impl ScreenTexture {
-    pub fn generate(
-        facade: &impl Facade,
-        egui_glium: &mut EguiGlium,
-        size: (u32, u32),
-    ) -> Self {
-
-        let tex = Rc::new(new_texture_srgb_2d(facade, size).unwrap());
-
-        let id = egui_glium
-            .painter
-            .register_native_texture(tex.clone());
-
-
-        ScreenTextureBuilder {
-            id,
-            tex,
-            fb_builder: |tex: &Rc<SrgbTexture2d>| {
-                SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
-            },
-        }
-        .build()
-    }
-}
-
-pub struct UiTexture {
-    screen: ScreenTexture,
-}
+pub mod ui;
 
 const NO_MIPMAP: glium::texture::MipmapsOption = glium::texture::MipmapsOption::NoMipmap;
 
@@ -83,51 +29,15 @@ pub fn new_depth_texture_2d(facade: &impl Facade, (width, height): (u32, u32)) -
     )
 }
 
-impl UiTexture {
-    pub fn new(
-        facade: &impl Facade,
-        egui_glium: &mut EguiGlium,
-        size: (u32, u32)
-    ) -> Self {
-
-        Self {
-            screen: ScreenTexture::generate(facade, egui_glium, size),
-        }
-    }
-
-    pub fn update_size(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, size: (u32, u32)) {
-        //we need to completely replace the texture instead of just updating it
-        if self.screen.borrow_tex().dimensions() != size {
-            let new_screen = ScreenTexture::generate(facade, egui_glium, size);
-
-            println!("Updating texture size from {:?} to {:?}", self.screen.borrow_tex().dimensions(), size);
-        
-            egui_glium.painter.replace_native_texture(*self.screen.borrow_id(), new_screen.borrow_tex().clone());
-
-            self.screen = new_screen;
-        }
-    }
-
-    pub fn copy_from(&mut self, surface: &impl Surface){
-        let filter = glium::uniforms::MagnifySamplerFilter::Linear;
-
-        // SimpleFrameBuffer 
-
-        surface.fill(
-            self.screen.borrow_fb(),
-            filter,
-        );
-    }
-
-    pub fn size(&self) -> (u32, u32) {
-        self.screen.borrow_tex().dimensions()
-    }
-
-    pub fn clone_screen_tex_id(&self) -> TextureId {
-        self.screen.borrow_id().clone()
-    }
+pub fn new_texture_srgb_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Result<SrgbTexture2d, glium::texture::TextureCreationError>  {
+    SrgbTexture2d::empty_with_format(
+        facade,
+        glium::texture::SrgbFormat::U8U8U8U8,
+        NO_MIPMAP,
+        width,
+        height,
+    )
 }
-
 
 #[derive(Debug)]
 pub struct TextureManager {

@@ -1,10 +1,12 @@
 use std::{env};
 
+use egui::{Ui, Color32};
 use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow};
 
 
-use crate::graph::{def::{GraphEditorState}, GraphUi};
+use crate::graph::{def::{GraphEditorState}};
+use crate::editor::graph_ui::GraphUi;
 use crate::util::{write_to_json_file};
 
 // use super::{};
@@ -16,7 +18,8 @@ use crate::util::{write_to_json_file};
 
 // const default_save_location = PathB
 
-pub fn render_glium() {
+pub fn main() {
+    // println!("CARGO PATH{}", env!("CARGO_PKG_NAME"));
     let default_save_path = env::current_exe().unwrap().parent().unwrap().join("render-graph-auto-save.json");
 
     let event_loop = glutin::event_loop::EventLoop::new();
@@ -27,6 +30,13 @@ pub fn render_glium() {
     println!("GL Version: {}", display.get_opengl_version_string());
 
     let mut egui_glium = EguiGlium::new(&display, &event_loop);
+
+    // Ui::visual
+    // egui_glium.egui_ctx.set_visuals(visuals)
+    let mut visuals = egui_glium.egui_ctx.style().visuals.clone();
+    visuals.widgets.noninteractive.bg_fill = Color32::TRANSPARENT;
+    egui_glium.egui_ctx.set_visuals(visuals);
+
     let mut graph_ui = GraphUi::load_from_file_or_default(&default_save_path, &display, &mut egui_glium);
 
     use signal_hook::consts::*;

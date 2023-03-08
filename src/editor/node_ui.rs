@@ -3,11 +3,9 @@ use std::{rc::{Weak}, cell::RefCell};
 
 use egui::{color::Hsva, RichText, Color32, Stroke, Label, Sense, Response, Ui};
 use egui_node_graph::{Graph, NodeDataTrait, NodeId, DataTypeTrait};
+use crate::{common::{def::{UiValue}, connections::ConnectionType}, textures::ui::UiTexture};
 
-
-use crate::{common::{def::{UiValue}, connections::ConnectionType}, textures::UiTexture};
-
-use super::def::*;
+use crate::graph::def::*;
 
 fn draw_error(ui: &mut egui::Ui, name: &str, error: &Option<NodeError>){
     if let Some(error) = &error {

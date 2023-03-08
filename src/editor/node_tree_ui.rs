@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}, common::connections::ConnectionType};
 
-use super::{node_types::NodeType, };
+use crate::graph::{node_types::NodeType, };
 
 
 #[derive(Debug, Serialize)]

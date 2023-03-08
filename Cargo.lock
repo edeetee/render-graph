@@ -831,28 +831,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "eframe"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0d49426c3e72a6728b0c790d22db8bf7bbcff10d83b8b6f3a01295be982302e"
-dependencies = [
- "bytemuck",
- "egui",
- "egui-winit",
- "egui_glow",
- "getrandom",
- "glow",
- "glutin 0.29.1",
- "js-sys",
- "percent-encoding",
- "tracing",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
- "winit",
-]
-
-[[package]]
 name = "egui"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -892,21 +870,6 @@ dependencies = [
  "egui",
  "egui-winit",
  "glium",
-]
-
-[[package]]
-name = "egui_glow"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad77d4a00402bae9658ee64be148f4b2a0b38e4fc7874970575ca01ed1c5b75d"
-dependencies = [
- "bytemuck",
- "egui",
- "glow",
- "memoffset",
- "tracing",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]
@@ -1006,6 +969,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a407cfaa3385c4ae6b23e84623d48c2798d06e3e6a1878f7f59f17b3f86499"
 dependencies = [
  "instant",
+]
+
+[[package]]
+name = "ffgl"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
 ]
 
 [[package]]
@@ -1137,10 +1107,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4eb1a864a501629691edf6c15a593b7a51eebaa1e8468e9ddc623de7c9b58ec6"
 dependencies = [
  "cfg-if",
- "js-sys",
  "libc",
  "wasi",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -1167,6 +1135,16 @@ dependencies = [
  "khronos_api",
  "log",
  "xml-rs",
+]
+
+[[package]]
+name = "gl_loader"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e32d96dd5f881490e537041d5532320812ba096097f07fccb4626578da0b99d3"
+dependencies = [
+ "cc",
+ "libc",
 ]
 
 [[package]]
@@ -1199,18 +1177,6 @@ name = "glob"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
-
-[[package]]
-name = "glow"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8bd5877156a19b8ac83a29b2306fe20537429d318f3ff0a1a2119f8d9c61919"
-dependencies = [
- "js-sys",
- "slotmap",
- "wasm-bindgen",
- "web-sys",
-]
 
 [[package]]
 name = "glsl"
@@ -2327,13 +2293,14 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "delegate",
- "eframe",
  "egui",
  "egui_glium",
  "egui_node_graph",
  "enum_dispatch",
+ "ffgl",
  "genmesh",
  "gl",
+ "gl_loader",
  "glam",
  "glium",
  "glsl",
@@ -2968,18 +2935,6 @@ dependencies = [
  "quote",
  "syn",
  "wasm-bindgen-shared",
-]
-
-[[package]]
-name = "wasm-bindgen-futures"
-version = "0.4.31"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de9a9cec1733468a8c657e57fa2413d2ae2c0129b95e87c5b72b8ace4d13f31f"
-dependencies = [
- "cfg-if",
- "js-sys",
- "wasm-bindgen",
- "web-sys",
 ]
 
 [[package]]

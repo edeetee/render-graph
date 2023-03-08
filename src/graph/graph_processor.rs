@@ -3,25 +3,25 @@ use std::{
 };
 
 use egui_glium::EguiGlium;
-use egui_node_graph::{NodeId, NodeResponse};
+use egui_node_graph::{NodeId, InputId, OutputId};
 use glium::{
     backend::Facade,
-    framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface,
+    framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface, Texture2d,
 };
 
 use ouroboros::self_referencing;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use crate::{textures::{UiTexture, TextureManager}, common::animation::UpdateInfo};
+use crate::{textures::{TextureManager}, common::animation::UpdateInfo};
 
 use crate::common::{connections::ConnectionType};
 
 use super::{
-    def::{self, *},
+    def::{self, *,},
     graph::{GraphUtils},
     node_shader::ShaderInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
 
-extern crate gl;
+// extern crate gl;
 
 #[self_referencing]
 pub struct OutputTarget {
@@ -47,7 +47,6 @@ pub struct ShaderGraphProcessor {
     texture_manager: TextureManager,
 
     output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
-    node_textures: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
 
     shaders: SecondaryMap<NodeId, NodeShader>,
     updaters: SecondaryMap<NodeId, NodeUpdate>,
@@ -55,7 +54,44 @@ pub struct ShaderGraphProcessor {
     update_info: UpdateTracker
 }
 
+pub enum GraphChangeEvent {
+    CreatedNode(NodeId),
+    DestroyedNode(NodeId),
+
+    Connected{
+        output_id: OutputId, 
+        input_id: InputId
+    },
+    Disconnected{
+        output_id: OutputId, 
+        input_id: InputId
+    },
+}
+
+impl GraphChangeEvent {
+    #[must_use="Use the vec of node responses to load callbacks"]
+    pub fn vec_from_graph(graph: &Graph) -> Vec<Self> {
+        let new_nodes = graph.nodes.iter()
+            .map(|(node_id, ..)| GraphChangeEvent::CreatedNode(node_id));
+
+        let new_connections = graph.connections.iter()
+            .map(|(input, output)| GraphChangeEvent::Connected { output_id: *output, input_id: input });
+
+        new_nodes.chain(new_connections).collect()
+    }
+}
+
 impl ShaderGraphProcessor {
+    pub fn new_from_graph(graph: &mut Graph, facade: &impl Facade) -> Self {
+        let mut this = Self::default();
+
+        for event in GraphChangeEvent::vec_from_graph(graph) {
+            this.graph_event(graph, facade, event);
+        }
+
+        this
+    }
+
     fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
         // let is_output_target = node.outputs(&graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
@@ -79,17 +115,10 @@ impl ShaderGraphProcessor {
         &mut self,
         graph: &mut Graph,
         facade: &impl Facade,
-        egui_glium: &mut EguiGlium,
-        event: NodeResponse<def::GraphResponse, UiNodeData>,
+        event: GraphChangeEvent,
     ) {
         match event {
-            egui_node_graph::NodeResponse::CreatedNode(node_id) => {
-                // self.node_textures.insert(node_id, textures);
-                let ui_texture = UiTexture::new(facade, egui_glium, (256, 256));
-                let textures = Rc::new(RefCell::new(ui_texture));
-                graph[node_id].user_data.texture = Rc::downgrade(&textures);
-                self.node_textures.insert(node_id, textures);
-
+            GraphChangeEvent::CreatedNode(node_id) => {
                 let template = &graph[node_id].user_data.template;
 
                 //only add if needed ()s
@@ -131,64 +160,48 @@ impl ShaderGraphProcessor {
             }
 
             //may create new output target
-            NodeResponse::DisconnectEvent { output: output_id, .. } => {
+            GraphChangeEvent::Disconnected { output_id, .. } => {
                 if let Some(output) = graph.try_get_output(output_id){
                     self.add_dangling_output(facade, output.node);
                 }
             }
 
-            NodeResponse::ConnectEventEnded { output, .. } => {
+            GraphChangeEvent::Connected { output_id, .. } => {
                 self.output_targets
-                    .remove(graph[output].node);
+                    .remove(graph[output_id].node);
             }
 
-            NodeResponse::DeleteNodeFull { node_id, .. } => {
+            GraphChangeEvent::DestroyedNode (node_id) => {
                 self.output_targets.remove(node_id);
                 self.shaders.remove(node_id);
                 self.updaters.remove(node_id);
-                self.node_textures.remove(node_id);
             }
-
-            _ => {}
         }
     }
 
     ///Processes each shader in the output_targets list from start to end
     /// Generates ui textures
     /// processes inputs
-    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, egui_glium: &mut EguiGlium) {
+    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, mut node_post_render: impl FnMut(NodeId, &Texture2d))
+     {
         // let shaders = &mut self.shaders;
         // let graph = &graph;
 
         let mut errors: SparseSecondaryMap<NodeId, NodeError> = Default::default();
 
         for (output_id, output_target) in &mut self.output_targets {
-
             output_target.with_fb_mut(|fb| {
                 fb.clear_color(0., 0., 0., 0.);
 
                 graph.map_with_inputs(output_id, &mut |node_id, inputs| {
 
-                    // let target = self.texture_manager.get_color(facade);
-
                     //Render a shader
                     if let Some(shader) = self.shaders.get_mut(node_id) {
-                        // let mut surface = target.as_surface();
-
-                        let mut ui_texture = (*self.node_textures[node_id]).borrow_mut();
 
                         match shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs)) {
                             Ok(target) => {
-                                let surface = target.as_surface();
-                                // surface.clear_color(0., 0., 0., 0.);
-
-                                // let (w, h) = ;
-                                // let size = (w, h);
-        
-                                // node.user_data.
-                                // self.node_textures[node_id].borrow_mut()
-                                ui_texture.update_size(facade, egui_glium, surface.get_dimensions());
-                                ui_texture.copy_from(&surface);
+                                node_post_render(node_id, &target);
+                                // facade.
 
                                 Some(target)
                             }
@@ -256,3 +269,4 @@ impl ShaderGraphProcessor {
 
     
 }
+

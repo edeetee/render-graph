@@ -2,7 +2,6 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/ffgl/FFGLSDK" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/spout" vcs="Git" />
   </component>
 </project>

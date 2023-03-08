@@ -3,8 +3,15 @@ name = "render-graph"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+crate-type=["cdylib"]
+panic="abort"
+
 [features]
+default = ["editor"]
 vst_plugin = ["dep:vst", "dep:vst_window", "dep:raw-window-handle"]
+ffgl_plugin = ["dep:ffgl", "dep:gl_loader"]
+editor = ["dep:egui", "dep:egui_glium"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -18,9 +25,10 @@ syphon = { path = "./syphon" }
 glium = "0.32.1"
 rand = "0.8.5"
 egui_node_graph = {version="0.4.0", features=["persistence"]}
-egui = "0.19.0"
-eframe = "0.19.0"
-egui_glium = "0.19.0"
+
+egui = { version="0.19.0", optional=true }
+egui_glium = { version="0.19.0", optional=true }
+
 ouroboros = "0.15.0"
 itertools = "0.10.2"
 isf = "0.1.0"
@@ -53,6 +61,10 @@ raw-window-handle = {version="0.5.0", optional=true}
 obj = { version = "0.10.2", features = ["genmesh"] }
 genmesh = "0.6.2"
 
+
+ffgl = { path="../ffgl-rs", optional=true }
+gl_loader = { version = "0.1.2", optional = true }
+# ffgl = { git="https://github.com/edeetee/ffgl-rs", path="../ffgl-rs", optional=true }
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"

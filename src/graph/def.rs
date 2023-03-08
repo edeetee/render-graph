@@ -1,11 +1,11 @@
 
-use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}};
+use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}, fmt::Debug};
 use egui_node_graph::{UserResponseTrait, NodeId};
 use serde::{Serialize, Deserialize};
-use crate::{textures::UiTexture, common::{def::{UiValue}, animation::DataUpdater, connections::ConnectionType}};
+use crate::{common::{def::{UiValue}, animation::DataUpdater, connections::ConnectionType}};
 use super::{node_types::NodeType};
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct NodeError {
     pub text: String,
     pub when: Instant
@@ -17,12 +17,16 @@ impl From<anyhow::Error> for NodeError {
     }
 }
 
+// mod cr
+
 #[derive(Serialize, Deserialize)]
 pub struct UiNodeData {
     pub template: NodeType,
-    
+
     #[serde(skip)]
-    pub texture: Weak<RefCell<UiTexture>>, // pub texture_cache: Option<ShaderData>
+    #[cfg(feature="editor")]
+    pub texture: Weak<RefCell<crate::textures::ui::UiTexture>>, // pub texture_cache: Option<ShaderData>
+
     #[serde(skip)]
     pub create_error: Option<NodeError>,
     #[serde(skip)]
@@ -35,11 +39,24 @@ impl UiNodeData {
     pub fn new(template: NodeType) -> Self {
         Self {
             template,
+            #[cfg(feature="editor")]
             texture: Default::default(),
             create_error: Default::default(),
             update_error: Default::default(),
             render_error: Default::default(),
         }
+    }
+}
+
+impl Debug for UiNodeData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("UiNodeData")
+        .field("template", &self.template)
+        .field("texture", &self.texture)
+        .field("create_error", &self.create_error)
+        .field("update_error", &self.update_error)
+        .field("render_error", &self.render_error)
+        .finish()
     }
 }
 
@@ -54,6 +71,7 @@ pub struct GraphState {
     pub visible_nodes: HashSet<NodeId>
 }
 
+pub type Node = egui_node_graph::Node<UiNodeData>;
 pub type NodeResponse = egui_node_graph::NodeResponse<GraphResponse, UiNodeData>;
 pub type GraphEditorState = egui_node_graph::GraphEditorState<UiNodeData, ConnectionType, UiValue, NodeType, GraphState>;
 pub type Graph = egui_node_graph::graph::Graph<UiNodeData, ConnectionType, UiValue>;

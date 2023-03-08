@@ -8,27 +8,7 @@ use egui_node_graph::{NodeId, InputParam};
 use slotmap::{SecondaryMap};
 use crate::{common::{def::{UiValue}, connections::ConnectionType}, util::read_from_json_file, graph::{def::NodeResponse}};
 
-use super::{def::{Graph, GraphEditorState}};
-
-// #[derive(Default)]
-
-
-
-
-// impl Index<NodeId> for ShaderGraph {
-//     type Output = Node<UiNodeData>;
-
-//     fn index(&self, index: NodeId) -> &Self::Output {
-//         &self.editor.graph[index]
-//     }
-// }
-
-// impl IndexMut<NodeId> for ShaderGraph {
-//     fn index_mut(&mut self, index: NodeId) -> &mut Self::Output {
-//         &mut self.editor.graph[index]
-//     }
-// }
-
+use super::{def::{Graph, GraphEditorState}, GraphChangeEvent};
 
 pub type InputParams<'a> = Vec<(&'a str, &'a InputParam<ConnectionType, UiValue>)>;
 pub type ProcessedInputs<'a, OUT> = Vec<(&'a str, &'a InputParam<ConnectionType, UiValue>, Option<OUT>)>;
@@ -76,25 +56,17 @@ impl GraphUtils for Graph {
 }
 
 
+
 #[must_use="Use the vec of node responses to load callbacks"]
-pub fn load_from_file_or_default(file: &PathBuf) -> (GraphEditorState, Vec<NodeResponse>) {
+pub fn load_from_file_or_default(file: &PathBuf) -> GraphEditorState {
     match read_from_json_file::<GraphEditorState>(file) {
         Ok(graph_state) => {
             println!("Loaded save file from {file:?}");
-
-            let new_nodes = graph_state.graph.nodes.iter()
-                .map(|(node_id, ..)| egui_node_graph::NodeResponse::CreatedNode(node_id));
-
-            let new_connections = graph_state.graph.connections.iter()
-                .map(|(input, output)| egui_node_graph::NodeResponse::ConnectEventEnded{input, output: *output} );
-
-            let events: Vec<NodeResponse> = new_nodes.chain(new_connections).collect();
-
-            (graph_state, events)
+            graph_state
         }
         Err(err) => {
             eprintln!("Failed to read default save {file:?} ({err:?}). Using new graph");
-            (GraphEditorState::default(), vec![])
+            GraphEditorState::default()
         },
     }
 }

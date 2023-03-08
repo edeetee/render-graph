@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use glium::{backend::Facade, Surface, Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue}, framebuffer::SimpleFrameBuffer};
+use glium::{backend::Facade, Surface, texture::Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue}, framebuffer::SimpleFrameBuffer};
 
 use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph::{ProcessedInputs}};
 use crate::{isf::shader::{IsfShader}, obj_shader::renderer::ObjRenderer, textures::{TextureManager}, gl_expression::GlExpressionRenderer};
@@ -37,7 +37,7 @@ impl NodeShader {
         textures: &mut TextureManager,
         inputs: ShaderInputs<'_>,
     ) -> anyhow::Result<Rc<Texture2d>> {
-        let color = textures.get_color(facade);
+        let color: Rc<Texture2d> = textures.get_color(facade);
 
         match self {
             NodeShader::Expression(renderer) => {

@@ -9,5 +9,11 @@
         "Srgb"
     ],
     "autoHide.autoHideSideBar": false,
-    "rust-analyzer.cargo.features": ["vst_plugin"]
+    "rust-analyzer.cargo.features": [
+        "ffgl_plugin"
+    ]
+    // "rust-analyzer.cargo.features": [
+    //     "editor"
+    // ],
+    // "rust-analyzer.lib"
 }

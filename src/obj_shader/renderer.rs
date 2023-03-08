@@ -49,7 +49,7 @@ impl ObjRenderer {
     pub fn new_with_params(facade: &impl Facade, params: DrawParameters<'static>) -> Result<Self, ProgramCreationError> {
         // let mesh = MeshBuilder::new().cube().build().unwrap();
 
-        let cube = genmesh::generators::Cube::new();
+        let cube = genmesh::generators::Torus::new(1.0, 0.3, 30, 13);
 
         let vertices: Vec<_> = cube.shared_vertex_iter().map(PosNormVertex::from).collect();
         let indices: Vec<_> = cube.indexed_polygon_iter().triangulate().vertices().map(|vertex| vertex as u32).collect();
