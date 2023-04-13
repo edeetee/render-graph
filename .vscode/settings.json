@@ -9,11 +9,12 @@
         "Srgb"
     ],
     "autoHide.autoHideSideBar": false,
-    "rust-analyzer.cargo.features": [
-        "ffgl_plugin"
-    ]
     // "rust-analyzer.cargo.features": [
-    //     "editor"
-    // ],
+    //     // "ffgl_plugin",
+    //     // "webui"
+    // ]
+    "rust-analyzer.cargo.features": [
+        "editor"
+    ],
     // "rust-analyzer.lib"
 }

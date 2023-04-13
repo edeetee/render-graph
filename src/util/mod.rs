@@ -1,4 +1,6 @@
-use std::fs::File;
+use std::any::Any;
+use std::fmt::Display;
+use std::{fs::File, io::Write};
 use std::path::Path;
 use glium::{uniforms::{Uniforms, UniformValue, AsUniformValue}, ProgramCreationError};
 use serde::de::DeserializeOwned;
@@ -11,6 +13,15 @@ pub fn write_to_json_file(path: &Path, data: &impl Serialize) -> anyhow::Result<
 
     Ok(())
 }
+
+// pub fn write_to_toml_file(path: &Path, data: &impl Serialize) -> anyhow::Result<()> {
+//     let mut file = File::create(path)?;
+//     let mut output = String::new();
+//     data.serialize(toml::Serializer::pretty(&mut output))?;
+//     file.write_all(output.as_bytes())?;
+
+//     Ok(())
+// }
 
 pub fn read_from_json_file<T: DeserializeOwned>(path: &Path) -> anyhow::Result<T> {
     let file = File::open(path)?;

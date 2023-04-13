@@ -66,6 +66,7 @@ impl UserResponseTrait for GraphResponse {}
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct GraphState {
+    #[serde(with = "vectorize")] 
     pub animations: HashMap<(NodeId, String), DataUpdater>,
     pub param_with_popup: Option<(NodeId, String)>,
     pub visible_nodes: HashSet<NodeId>

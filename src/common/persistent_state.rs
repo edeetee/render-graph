@@ -1,0 +1,44 @@
+use std::{path::PathBuf, env};
+use serde::{Serialize, Deserialize};
+use crate::{graph::{def::{GraphEditorState, GraphState}}, util::{read_from_json_file, write_to_json_file}};
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct PersistentState {
+    pub editor: GraphEditorState,
+    pub state: GraphState,
+    pub editor_extras: Option<EditorExtras>,
+}
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct EditorExtras {
+    pub res: (u32, u32),
+}
+
+impl PersistentState {
+    pub fn default_path() -> PathBuf {
+        env::current_exe().unwrap().parent().unwrap().join("render-graph-auto-save.json")
+    }
+
+    pub fn load_from_default_path() -> Self {
+        Self::load_from_file_or_default(&Self::default_path())
+    }
+
+    fn load_from_file_or_default(
+        file: &PathBuf,
+    ) -> Self {
+        match read_from_json_file::<Self>(file) {
+            Ok(state) => {
+                println!("Loaded save file from {file:?}");
+                state
+            }
+            Err(err) => {
+                eprintln!("Failed to read default save {file:?}\nERR({err:?}). Using new graph");
+                Self::default()
+            },
+        }
+    }
+
+    pub fn write_to_default_path(self) -> anyhow::Result<()> {
+        write_to_json_file(&Self::default_path(), &self)
+    }
+}

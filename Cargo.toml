@@ -12,6 +12,7 @@ default = ["editor"]
 vst_plugin = ["dep:vst", "dep:vst_window", "dep:raw-window-handle"]
 ffgl_plugin = ["dep:ffgl", "dep:gl_loader"]
 editor = ["dep:egui", "dep:egui_glium"]
+webui = ["dep:leptos", "dep:actix-web"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -65,6 +66,12 @@ genmesh = "0.6.2"
 ffgl = { path="../ffgl-rs", optional=true }
 gl_loader = { version = "0.1.2", optional = true }
 # ffgl = { git="https://github.com/edeetee/ffgl-rs", path="../ffgl-rs", optional=true }
+
+# webui
+leptos = { version = "0.1.0", optional = true }
+actix-web = { version = "4", optional = true, features = ["macros"] }
+toml = "0.7.3"
+vectorize = "0.2.0"
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"

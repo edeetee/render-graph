@@ -273,16 +273,16 @@ impl WidgetValueTrait for UiValue {
         let is_animating = user_state.animations.contains_key(&param_key);
 
         let param_frame_color = if is_animating {
-            Color32::WHITE
+            Color32::LIGHT_GRAY
         } else {
             Color32::TRANSPARENT
         };
 
         let param_response: ParamUiResponse = Frame::none()
-            .rounding(2.0)
+            // .rounding(2.0)
             .inner_margin(4.0)
             .stroke(Stroke{
-                width: 2.0,
+                width: 1.0,
                 color: param_frame_color,
             })
             .show(ui, |ui| {

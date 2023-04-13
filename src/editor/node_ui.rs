@@ -88,6 +88,7 @@ impl NodeDataTrait for UiNodeData {
     where
         Self::Response: egui_node_graph::UserResponseTrait,
     {
+        ui.set_width(256.0);
         let node = &graph[node_id];
 
         let show_tex = state.visible_nodes.contains(&node_id);

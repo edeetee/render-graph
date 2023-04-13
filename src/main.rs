@@ -13,6 +13,9 @@ mod common;
 mod editor;
 // mod egui_render_loop;
 
+#[cfg(feature="webui")]
+mod web_ui;
+
 #[cfg(feature="vst_plugin")]
 mod vst_plugin;
 

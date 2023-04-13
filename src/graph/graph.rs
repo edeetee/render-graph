@@ -54,19 +54,3 @@ impl GraphUtils for Graph {
         result
     }
 }
-
-
-
-#[must_use="Use the vec of node responses to load callbacks"]
-pub fn load_from_file_or_default(file: &PathBuf) -> GraphEditorState {
-    match read_from_json_file::<GraphEditorState>(file) {
-        Ok(graph_state) => {
-            println!("Loaded save file from {file:?}");
-            graph_state
-        }
-        Err(err) => {
-            eprintln!("Failed to read default save {file:?} ({err:?}). Using new graph");
-            GraphEditorState::default()
-        },
-    }
-}

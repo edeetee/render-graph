@@ -11,11 +11,11 @@ use crate::textures::ui::UiTexture;
 
 
 #[derive(Default)]
-pub struct NodeTextures {
+pub struct NodeUiTextures {
     inner: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
 }
 
-impl NodeTextures {
+impl NodeUiTextures {
     pub fn new_from_graph(graph: &mut crate::graph::def::Graph, facade: &impl Facade, egui_glium: &mut EguiGlium) -> Self {
         let mut me = Self::default();
 

@@ -8,14 +8,14 @@ use glium::{backend::Facade, Display, Surface};
 
 // use crate::textures::UiTexture;
 
+use crate::common::persistent_state::{PersistentState, EditorExtras};
 use crate::graph::{
     def::{GraphEditorState, GraphResponse, GraphState, UiNodeData},
-    graph::load_from_file_or_default,
     node_types::{AllNodeTypes, NodeType},
     GraphChangeEvent, ShaderGraphProcessor,
 };
 
-use super::node_textures::{NodeTextures};
+use super::node_textures::{NodeUiTextures};
 use super::node_tree_ui::TreeState;
 
 pub struct GraphUi {
@@ -23,7 +23,7 @@ pub struct GraphUi {
     editor: GraphEditorState,
     state: GraphState,
     tree: TreeState,
-    node_textures: NodeTextures,
+    node_textures: NodeUiTextures,
 }
 
 impl Default for GraphUi {
@@ -33,7 +33,7 @@ impl Default for GraphUi {
             state: GraphState::default(),
             tree: TreeState::default(),
             processor: ShaderGraphProcessor::default(),
-            node_textures: NodeTextures::default(),
+            node_textures: NodeUiTextures::default(),
         }
     }
 }
@@ -60,19 +60,25 @@ impl GraphChangeEvent
 }
 
 impl GraphUi {
-    pub fn load_from_file_or_default(
-        file: &PathBuf,
+    pub fn new_from_persistent(
+        mut state: PersistentState,
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
     ) -> Self {
-        let mut editor = load_from_file_or_default(file);
-
         Self {
-            processor: ShaderGraphProcessor::new_from_graph(&mut editor.graph, facade),
-            node_textures: NodeTextures::new_from_graph(&mut editor.graph, facade, egui_glium),
-            editor: editor,
-            state: GraphState::default(),
+            processor: ShaderGraphProcessor::new_from_graph(&mut state.editor.graph, facade),
+            node_textures: NodeUiTextures::new_from_graph(&mut state.editor.graph, facade, egui_glium),
+            editor: state.editor,
+            state: state.state,
             tree: TreeState::default(),
+        }
+    }
+
+    pub fn to_persistent(self, extras: Option<EditorExtras>) -> PersistentState {
+        PersistentState {
+            editor: self.editor,
+            state: self.state,
+            editor_extras: extras
         }
     }
 
@@ -191,6 +197,10 @@ impl GraphUi {
             .show(ctx, |ui| {
                 ui.set_clip_rect(ctx.available_rect());
                 egui::widgets::global_dark_light_mode_switch(ui);
+
+                if ctx.input().key_pressed(egui::Key::H) {
+                    self.editor.pan_zoom.pan = egui::Vec2::ZERO;
+                }
 
                 let mut responses = vec![];
 
