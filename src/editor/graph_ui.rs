@@ -1,14 +1,16 @@
 use std::{path::PathBuf};
 
-use egui::{RichText, Widget};
+use egui::{RichText, Widget, Modifiers, Color32};
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeDataTrait, NodeId, NodeResponse, NodeTemplateTrait, UserResponseTrait};
-use glium::Texture2d;
+use glium::{Texture2d, Rect};
 use glium::{backend::Facade, Display, Surface};
+use crate::util::MappableTuple;
+use serde::{Serialize, Deserialize};
 
 // use crate::textures::UiTexture;
 
-use crate::common::persistent_state::{PersistentState, EditorExtras};
+use crate::common::persistent_state::{PersistentState, WindowState};
 use crate::graph::{
     def::{GraphEditorState, GraphResponse, GraphState, UiNodeData},
     node_types::{AllNodeTypes, NodeType},
@@ -21,19 +23,47 @@ use super::node_tree_ui::TreeState;
 pub struct GraphUi {
     processor: ShaderGraphProcessor,
     editor: GraphEditorState,
-    state: GraphState,
+    graph_state: GraphState,
     tree: TreeState,
     node_textures: NodeUiTextures,
+    extra_graphui_state: GraphUiState
+}
+
+#[derive(Default, Serialize, Deserialize)]
+pub struct GraphUiState {
+    view_state: ViewState,
+}
+
+#[derive(Serialize, Deserialize, PartialEq)]
+pub enum ViewState{
+    Graph,
+    Output
+}
+
+impl ViewState {
+    pub fn toggle(&mut self) {
+        *self = match self {
+            Self::Graph => Self::Output,
+            Self::Output => Self::Graph,
+        }
+    }
+}
+
+impl Default for ViewState {
+    fn default() -> Self {
+        Self::Graph
+    }
 }
 
 impl Default for GraphUi {
     fn default() -> Self {
         Self {
             editor: GraphEditorState::new(1.0),
-            state: GraphState::default(),
+            graph_state: GraphState::default(),
             tree: TreeState::default(),
             processor: ShaderGraphProcessor::default(),
             node_textures: NodeUiTextures::default(),
+            extra_graphui_state: GraphUiState::default()
         }
     }
 }
@@ -69,16 +99,18 @@ impl GraphUi {
             processor: ShaderGraphProcessor::new_from_graph(&mut state.editor.graph, facade),
             node_textures: NodeUiTextures::new_from_graph(&mut state.editor.graph, facade, egui_glium),
             editor: state.editor,
-            state: state.state,
-            tree: TreeState::default(),
+            graph_state: state.state,
+            extra_graphui_state: state.graph_ui_state.unwrap_or_default(),
+            ..Default::default()
         }
     }
 
-    pub fn to_persistent(self, extras: Option<EditorExtras>) -> PersistentState {
+    pub fn to_persistent(self, extras: Option<WindowState>) -> PersistentState {
         PersistentState {
             editor: self.editor,
-            state: self.state,
-            editor_extras: extras
+            state: self.graph_state,
+            window: extras,
+            graph_ui_state: Some(self.extra_graphui_state)
         }
     }
 
@@ -88,54 +120,103 @@ impl GraphUi {
 
     delegate::delegate! {
          to self.processor {
-             pub fn update(&mut self, [&mut self.editor.graph], [&self.state], facade: &impl Facade);
+             pub fn update(&mut self, [&mut self.editor.graph], [&self.graph_state], facade: &impl Facade);
          }
     }
+
+    // fn 
 
     pub fn process_frame(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
         let mut frame = display.draw();
 
+        // toggling the view state
+        if egui_glium.egui_ctx.input().key_pressed(egui::Key::F1) {
+            self.extra_graphui_state.view_state.toggle();
+        }
+
         const mono_color: f32 = 0.1;
         frame.clear_color_and_depth((mono_color, mono_color, mono_color, 1.), 0.);
 
-        let mut graph_response = None;
+        match self.extra_graphui_state.view_state {
+            ViewState::Graph => {
+                let mut graph_response = None;
 
-        //prepare egui draw
-        let _needs_repaint = egui_glium.run(display, |ctx| {
-            graph_response = Some(self.draw(ctx));
-        });
+                //prepare egui draw
+                let _needs_repaint = egui_glium.run(display, |ctx| {
+                    graph_response = Some(self.draw(ctx));
+                });
 
-        //Update data that stays aligned with the graph
-        if let Some(response) = graph_response {
-            for response in response.node_responses {
-                if let Some(event) = GraphChangeEvent::from_response(&response) {
-                    self.processor
-                        .graph_event(&mut self.editor.graph, display, event);
-                }
+                //Update data that stays aligned with the graph
+                if let Some(response) = graph_response {
+                    for response in response.node_responses {
+                        if let Some(event) = GraphChangeEvent::from_response(&response) {
+                            self.processor
+                                .graph_event(&mut self.editor.graph, display, event);
+                        }
 
-                match response {
-                    NodeResponse::CreatedNode(node_id) => {
-                        let node = self.editor.graph.nodes.get_mut(node_id).unwrap();
-                        self.node_textures.add(display, egui_glium, node);
-                    },
-                    NodeResponse::DeleteNodeFull { node_id, .. } => {
-                        self.node_textures.remove(node_id);
+                        match response {
+                            NodeResponse::CreatedNode(node_id) => {
+                                let node = self.editor.graph.nodes.get_mut(node_id).unwrap();
+                                self.node_textures.add(display, egui_glium, node);
+                            },
+                            NodeResponse::DeleteNodeFull { node_id, .. } => {
+                                self.node_textures.remove(node_id);
+                            }
+                
+                            _ => {}
+                        }
                     }
-                    
-                    _ => {}
                 }
+            }
+            ViewState::Output => {
+                //prepare egui draw
+                let _needs_repaint = egui_glium.run(display, |ctx| {
+                    egui::Window::new("Output").show(ctx, |ui| {
+                        ui.label(RichText::new("Press F1 to toggle between graph and output view").color(Color32::WHITE));
+                    });
+                });
             }
         }
 
-        self.processor.render_shaders(&mut self.editor.graph, display,
+        let outputs = self.processor.render_shaders(&mut self.editor.graph, display,
             |node_id, tex: &Texture2d| {
-                // frame.
-                let surface = tex.as_surface();
-                // surface.fill(&frame, glium::uniforms::MagnifySamplerFilter::Nearest);
-                self.node_textures.copy_surface(display, egui_glium, node_id, &surface);
-            });
+            // frame.
+            let surface = tex.as_surface();
+            // surface.fill(&frame, glium::uniforms::MagnifySamplerFilter::Nearest);
+            self.node_textures.copy_surface(display, egui_glium, node_id, &surface);
+        });
 
-        egui_glium.paint(display, &mut frame);
+        match self.extra_graphui_state.view_state {
+            ViewState::Graph => {
+                egui_glium.paint(display, &mut frame);
+            },
+            ViewState::Output => {
+                //for some reason required to make the frame correctly map onto the output
+                egui_glium.paint(display, &mut frame);
+                
+                if let Some(output) = outputs.first().cloned().flatten() {
+                    // println!("OUTPUT");
+                    let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
+                    let dimens = display.get_framebuffer_dimensions();
+                    // let ppp = display.gl_window().window().scale_factor();
+                    // println!("${dimens:?}");
+
+                    // let src_dimens = dimens.map(|x| ((*x as f64)/ppp));
+                    let dst_dimens = dimens.map(|x| ((*x as f64)));
+                    let src_dimens = output.dimensions();
+
+                    // logic
+                    frame.clear_all((0.0,0.0,0.0,1.0), 0.0, 0);
+                    // output.as_surface().blit_color(
+                    //     &Rect{left: 0, bottom: 0, width: src_dimens.0 as u32, height: src_dimens.1 as u32}, 
+                    //     &frame, 
+                    //     &glium::BlitTarget { left: 0, bottom: 0, width: dst_dimens.0 as i32, height: dst_dimens.1 as i32}, 
+                    //     filter
+                    // );
+                    output.as_surface().fill(&mut frame, filter);
+                }
+            }
+        }
 
         frame.finish().unwrap();
     }
@@ -144,9 +225,9 @@ impl GraphUi {
         // println!("Adding node {node_kind:#?}");
 
         let new_node = self.editor.graph.add_node(
-            node_kind.node_graph_label(&mut self.state),
-            node_kind.user_data(&mut self.state),
-            |graph, node_id| node_kind.build_node(graph, &mut self.state, node_id),
+            node_kind.node_graph_label(&mut self.graph_state),
+            node_kind.user_data(&mut self.graph_state),
+            |graph, node_id| node_kind.build_node(graph, &mut self.graph_state, node_id),
         );
         self.editor.node_positions.insert(new_node, position);
         self.editor.node_order.push(new_node);
@@ -168,10 +249,10 @@ impl GraphUi {
             }
         });
 
-        if !self.state.animations.is_empty() {
+        if !self.graph_state.animations.is_empty() {
             egui::SidePanel::left("animators").show(ctx, |ui| {
                 let mut removal = None;
-                for (key, updater) in &mut self.state.animations {
+                for (key, updater) in &mut self.graph_state.animations {
                     let (node_id, param_name) = key;
 
                     let node = &self.editor.graph.nodes[*node_id];
@@ -188,7 +269,7 @@ impl GraphUi {
                 }
 
                 if let Some(removal) = removal {
-                    self.state.animations.remove(&removal);
+                    self.graph_state.animations.remove(&removal);
                 }
             });
         }
@@ -227,7 +308,7 @@ impl GraphUi {
 
                 let mut graph_resp =
                     self.editor
-                        .draw_graph_editor(ui, AllNodeTypes, &mut self.state);
+                        .draw_graph_editor(ui, AllNodeTypes, &mut self.graph_state);
 
                 self.editor.node_finder = None;
                 graph_resp.node_responses.append(&mut responses);

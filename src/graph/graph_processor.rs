@@ -1,5 +1,5 @@
 use std::{
-    rc::Rc, cell::RefCell, time::Instant,
+    rc::Rc, cell::RefCell, time::Instant, collections::HashSet,
 };
 
 use egui_glium::EguiGlium;
@@ -9,7 +9,7 @@ use glium::{
     framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface, Texture2d,
 };
 
-use ouroboros::self_referencing;
+use itertools::Itertools;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use crate::{textures::{TextureManager}, common::animation::UpdateInfo};
 
@@ -20,17 +20,6 @@ use super::{
     graph::{GraphUtils},
     node_shader::ShaderInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
-
-// extern crate gl;
-
-#[self_referencing]
-pub struct OutputTarget {
-    rb: RenderBuffer,
-
-    #[borrows(rb)]
-    #[covariant]
-    fb: SimpleFrameBuffer<'this>,
-}
 
 pub struct UpdateTracker {
     last_update: Instant
@@ -46,7 +35,8 @@ pub struct ShaderGraphProcessor {
     // pub graph: ShaderGraph,
     texture_manager: TextureManager,
 
-    output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
+    // output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
+    terminating_nodes: HashSet<NodeId>,
 
     shaders: SecondaryMap<NodeId, NodeShader>,
     updaters: SecondaryMap<NodeId, NodeUpdate>,
@@ -95,19 +85,7 @@ impl ShaderGraphProcessor {
     fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
         // let is_output_target = node.outputs(&graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
-        let output_target = OutputTargetBuilder {
-            rb: RenderBuffer::new(
-                facade,
-                glium::texture::UncompressedFloatFormat::F32F32F32F32,
-                512,
-                512,
-            )
-            .unwrap(),
-            fb_builder: |rb| SimpleFrameBuffer::new(facade, rb).unwrap(),
-        }
-        .build();
-
-        self.output_targets.insert(node_id, output_target);
+        self.terminating_nodes.insert(node_id);
     }
 
     ///Call with the response of the graph editor ui to update the slotmaps
@@ -151,7 +129,7 @@ impl ShaderGraphProcessor {
                         if let Some(output_id) = connected_output {
                             let connected_node_id = graph[output_id].node;
 
-                            self.output_targets.remove(connected_node_id);
+                            self.terminating_nodes.remove(&connected_node_id);
                         }
                     }
                 }
@@ -167,12 +145,12 @@ impl ShaderGraphProcessor {
             }
 
             GraphChangeEvent::Connected { output_id, .. } => {
-                self.output_targets
-                    .remove(graph[output_id].node);
+                self.terminating_nodes
+                    .remove(&graph[output_id].node);
             }
 
             GraphChangeEvent::DestroyedNode (node_id) => {
-                self.output_targets.remove(node_id);
+                self.terminating_nodes.remove(&node_id);
                 self.shaders.remove(node_id);
                 self.updaters.remove(node_id);
             }
@@ -182,45 +160,44 @@ impl ShaderGraphProcessor {
     ///Processes each shader in the output_targets list from start to end
     /// Generates ui textures
     /// processes inputs
-    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, mut node_post_render: impl FnMut(NodeId, &Texture2d))
-     {
+    /// Returns a list of output textures
+    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, mut node_post_render: impl FnMut(NodeId, &Texture2d)) -> Vec<Option<Rc<Texture2d>>>
+    {
         // let shaders = &mut self.shaders;
         // let graph = &graph;
 
         let mut errors: SparseSecondaryMap<NodeId, NodeError> = Default::default();
 
-        for (output_id, output_target) in &mut self.output_targets {
-            output_target.with_fb_mut(|fb| {
-                fb.clear_color(0., 0., 0., 0.);
+        let outputs = self.terminating_nodes.iter().cloned().map(|output_id|{
+            graph.map_with_inputs(output_id, &mut |node_id, inputs| {
 
-                graph.map_with_inputs(output_id, &mut |node_id, inputs| {
+                //Render a shader
+                if let Some(shader) = self.shaders.get_mut(node_id) {
 
-                    //Render a shader
-                    if let Some(shader) = self.shaders.get_mut(node_id) {
+                    match shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs)) {
+                        Ok(target) => {
+                            node_post_render(node_id, &target);
+                            // facade.
 
-                        match shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs)) {
-                            Ok(target) => {
-                                node_post_render(node_id, &target);
-                                // facade.
-
-                                Some(target)
-                            }
-
-                            Err(err) => {
-                                errors.insert(node_id, err.into());
-                                None
-                            }
+                            Some(target)
                         }
-                    } else {
-                        None
+
+                        Err(err) => {
+                            errors.insert(node_id, err.into());
+                            None
+                        }
                     }
-                }, &mut SecondaryMap::new());
-            });
-        }
+                } else {
+                    None
+                }
+            }, &mut SecondaryMap::new())
+        }).collect_vec();
 
         for (node_id, data) in graph.nodes.iter_mut() {
             data.user_data.render_error = errors.remove(node_id);
         }
+
+        outputs
     }
 
     pub fn update(&mut self, graph: &mut Graph, state: &GraphState, facade: &impl Facade) {

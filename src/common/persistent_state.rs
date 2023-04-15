@@ -6,12 +6,15 @@ use crate::{graph::{def::{GraphEditorState, GraphState}}, util::{read_from_json_
 pub struct PersistentState {
     pub editor: GraphEditorState,
     pub state: GraphState,
-    pub editor_extras: Option<EditorExtras>,
+    pub window: Option<WindowState>,
+    #[cfg(feature="editor")]
+    pub graph_ui_state: Option<crate::editor::graph_ui::GraphUiState>,
 }
 
 #[derive(Default, Serialize, Deserialize)]
-pub struct EditorExtras {
+pub struct WindowState {
     pub res: (u32, u32),
+    pub fullscreen: bool,
 }
 
 impl PersistentState {

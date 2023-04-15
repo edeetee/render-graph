@@ -1,6 +1,6 @@
 use glium::{VertexBuffer, implement_vertex, index::{self}, backend::Facade, Program, DrawParameters, Smooth, Blend, DrawError, Surface, uniforms::{Uniforms}};
 
-use crate::util::{MultiUniforms, GlProgramCreationError};
+use crate::util::{MultiUniforms, GlProgramCreationError, ToGlCreationError};
 pub struct FullscreenFrag{
     pub verts: VertexBuffer<VertexAttr>,
     pub program: Program,
@@ -27,7 +27,7 @@ impl FullscreenFrag {
             FULLSCREEN_VERT_SHADER,
             frag,
             None
-        )?;
+        ).map_err(|e| e.to_gl_creation_error(frag.to_string()))?;
 
         // program.get_shader_storage_blocks()t
 

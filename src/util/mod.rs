@@ -28,6 +28,19 @@ pub fn read_from_json_file<T: DeserializeOwned>(path: &Path) -> anyhow::Result<T
     Ok(serde_json::from_reader(file)?)
 }
 
+pub trait MappableTuple<T> {
+    type Ret<R>;
+    fn map<F: Fn(&T) -> R, R>(&self, f: F) -> Self::Ret<R>;
+}
+
+impl <T> MappableTuple<T> for (T,T) {
+    type Ret<R> = (R,R);
+
+    fn map<F: Fn(&T) -> R, R>(&self, f: F) -> Self::Ret<R> {
+        (f(&self.0), f(&self.0))
+    }
+}
+
 pub struct MultiUniforms<'a, T: Uniforms> {
     // name: &'a str,
     // val: UniformValue<'a>,
@@ -54,9 +67,23 @@ impl<'b,T: Uniforms> Uniforms for MultiUniforms<'b,T>{
     }
 }
 
+pub trait ToGlCreationError {
+    fn to_gl_creation_error(self, shader_source: String) -> GlProgramCreationError;
+}
+
+impl ToGlCreationError for ProgramCreationError {
+    fn to_gl_creation_error(self, shader_source: String) -> GlProgramCreationError {
+        GlProgramCreationError {
+            shader_source,
+            inner: self
+        }
+    }
+}
+
 #[derive(Error, Debug)]
 pub struct GlProgramCreationError{
-    #[from] pub inner: ProgramCreationError
+    shader_source: String,
+    pub inner: ProgramCreationError
 }
 
 impl std::fmt::Display for GlProgramCreationError {

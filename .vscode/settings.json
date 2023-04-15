@@ -16,5 +16,9 @@
     "rust-analyzer.cargo.features": [
         "editor"
     ],
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml",
+        "./Cargo.toml"
+    ],
     // "rust-analyzer.lib"
 }

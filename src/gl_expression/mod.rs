@@ -8,6 +8,10 @@ pub struct GlExpressionRenderer {
     frag: Option<FullscreenFrag>
 }
 
+pub struct GlExpressionError {
+    pub message: String
+}
+
 impl GlExpressionRenderer {
     pub fn new(_facade: &impl Facade) -> Self {
         Self {
@@ -62,6 +66,7 @@ fn parse_gl_type(expr: &Expr) -> GlType {
                 "vec2" => GlType::Vec2,
                 "vec3" => GlType::Vec3,
                 "vec4" => GlType::Vec4,
+                "dot" => GlType::Float,
                 // "length" => GlType::Float,
                 _ => args.first().map(parse_gl_type).unwrap_or(GlType::Vec4)
             }
@@ -72,7 +77,7 @@ fn parse_gl_type(expr: &Expr) -> GlType {
 }
 
 fn build_shader_from_snippet(snippet: &str) -> String {
-    let mut parser = naga::front::glsl::Parser::default();
+    // let mut parser = naga::front::glsl::Parser::default();
 
     let expression = Expr::parse(snippet);
     // dbg!(&expression);
@@ -84,7 +89,7 @@ fn build_shader_from_snippet(snippet: &str) -> String {
             match parse_gl_type(expr) {
                 GlType::Float => format!("vec4(vec3({snippet}),1)"),
                 GlType::Vec2 => format!("vec4({snippet}, 0,1)"),
-                GlType::Vec3 => format!("vec4({snippet},1"),
+                GlType::Vec3 => format!("vec4({snippet},1)"),
                 GlType::Vec4 => snippet
             }
         },
@@ -106,10 +111,14 @@ fn build_shader_from_snippet(snippet: &str) -> String {
     }}
     ");
 
-    let _naga_result = parser.parse(
-        &ShaderStage::Fragment.into(),
-        &shader_str
-    );
+    // let _naga_result = parser.parse(
+    //     &ShaderStage::Fragment.into(),
+    //     &shader_str
+    // ).unwrap();
+
+
+    
+    // println!("{shader_str}");
 
     // dbg!(&naga_result);
 
