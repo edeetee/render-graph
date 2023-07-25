@@ -339,19 +339,26 @@ impl GraphUi {
             };
         }
 
-        //if connection is in progress, save it
-        if let Some(connection_in_progress) = self.editor.connection_in_progress {
-            self.state.last_connection_in_progress = Some(connection_in_progress);
-
-        //if no connection is in progress and we have a saved one, use it
-        } else if let Some(last_connection_in_progress) = self.state.last_connection_in_progress {
-            self.state.node_selection_actor = Some(NodeSelectionActor::DraggingOutput(mouse_pos, last_connection_in_progress.0, last_connection_in_progress.1));
-            self.state.last_connection_in_progress = None;
-        }
-
         let graph_response = egui::CentralPanel::default()
             .show(ctx, |ui| self.draw_graph(ui, ctx, &action))
             .inner;
+
+        if graph_response.node_responses.iter().any(|resp| matches!(resp, NodeResponse::ConnectEventEnded { .. } | NodeResponse::DisconnectEvent { .. })) {
+            self.state.last_connection_in_progress = None;
+        }
+
+        //if connection started, save it
+        if let Some(NodeResponse::ConnectEventStarted(node_id, param_id)) = graph_response.node_responses.iter().find(|resp| matches!(resp, NodeResponse::ConnectEventStarted(..))) {
+            self.state.last_connection_in_progress = Some((*node_id, *param_id));
+
+        //if no connection is in progress and we have a saved one, use it
+        } else if let Some(last_connection_in_progress) = self.state.last_connection_in_progress {
+            if self.editor.connection_in_progress.is_none() {
+                self.state.node_selection_actor = Some(NodeSelectionActor::DraggingOutput(mouse_pos, last_connection_in_progress.0, last_connection_in_progress.1));
+                self.state.last_connection_in_progress = None;
+            }
+        }
+
 
         let mut extra_responses = vec![];
 
