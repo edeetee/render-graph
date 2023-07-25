@@ -1,9 +1,9 @@
-use std::{path::PathBuf};
 
-use egui::{RichText, Widget, Modifiers, Color32};
+
+use egui::{RichText, Widget, Color32};
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeDataTrait, NodeId, NodeResponse, NodeTemplateTrait, UserResponseTrait};
-use glium::{Texture2d, Rect};
+use glium::{Texture2d};
 use glium::{backend::Facade, Display, Surface};
 use crate::util::MappableTuple;
 use serde::{Serialize, Deserialize};
@@ -77,7 +77,7 @@ impl GraphChangeEvent
                 input_id: *input,
             }),
             NodeResponse::CreatedNode(node_id) => Some(GraphChangeEvent::CreatedNode(*node_id)),
-            NodeResponse::DeleteNodeFull { node_id, node } => {
+            NodeResponse::DeleteNodeFull { node_id, node: _ } => {
                 Some(GraphChangeEvent::DestroyedNode(*node_id))
             }
             NodeResponse::DisconnectEvent { output, input } => Some(GraphChangeEvent::Disconnected {
@@ -202,8 +202,8 @@ impl GraphUi {
                     // println!("${dimens:?}");
 
                     // let src_dimens = dimens.map(|x| ((*x as f64)/ppp));
-                    let dst_dimens = dimens.map(|x| ((*x as f64)));
-                    let src_dimens = output.dimensions();
+                    let _dst_dimens = dimens.map(|x| ((*x as f64)));
+                    let _src_dimens = output.dimensions();
 
                     // logic
                     frame.clear_all((0.0,0.0,0.0,1.0), 0.0, 0);

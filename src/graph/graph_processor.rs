@@ -1,12 +1,11 @@
 use std::{
-    rc::Rc, cell::RefCell, time::Instant, collections::HashSet,
+    rc::Rc, time::Instant, collections::HashSet,
 };
 
-use egui_glium::EguiGlium;
+
 use egui_node_graph::{NodeId, InputId, OutputId};
 use glium::{
-    backend::Facade,
-    framebuffer::{RenderBuffer, SimpleFrameBuffer}, Surface, Texture2d,
+    backend::Facade, Texture2d,
 };
 
 use itertools::Itertools;
@@ -16,7 +15,7 @@ use crate::{textures::{TextureManager}, common::animation::UpdateInfo};
 use crate::common::{connections::ConnectionType};
 
 use super::{
-    def::{self, *,},
+    def::{*,},
     graph::{GraphUtils},
     node_shader::ShaderInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
@@ -82,7 +81,7 @@ impl ShaderGraphProcessor {
         this
     }
 
-    fn add_dangling_output(&mut self, facade: &impl Facade, node_id: NodeId) {
+    fn add_dangling_output(&mut self, _facade: &impl Facade, node_id: NodeId) {
         // let is_output_target = node.outputs(&graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
 
         self.terminating_nodes.insert(node_id);

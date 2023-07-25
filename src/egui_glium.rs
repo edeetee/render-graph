@@ -1,14 +1,14 @@
-use std::{env};
 
-use egui::{Ui, Color32};
+
+use egui::{Color32};
 use egui_glium::EguiGlium;
-use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow, platform::{run_return::EventLoopExtRunReturn, macos::WindowBuilderExtMacOS}, dpi::LogicalSize, window::Fullscreen, monitor::VideoMode};
-use crate::{common::persistent_state::{PersistentState, self, WindowState}};
+use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow, platform::{run_return::EventLoopExtRunReturn}, window::Fullscreen};
+use crate::{common::persistent_state::{PersistentState, WindowState}};
 
 
-use crate::graph::{def::{GraphEditorState}};
+
 use crate::editor::graph_ui::GraphUi;
-use crate::util::{write_to_json_file};
+
 
 // use super::{};
 
@@ -112,7 +112,7 @@ pub fn logical_framebuffer_size(glium: &glium::backend::Context, egui: &egui::Co
 
 fn create_display(event_loop: &glutin::event_loop::EventLoop<()>, window_state: &Option<WindowState>) -> glium::Display {
     
-    let size = if let Some(WindowState { res, .. }) = window_state {
+    let _size = if let Some(WindowState { res, .. }) = window_state {
         glutin::dpi::LogicalSize {
             width: res.0 as f64,
             height: res.1 as f64,

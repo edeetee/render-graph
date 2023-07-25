@@ -14,7 +14,7 @@
     //     // "webui"
     // ]
     "rust-analyzer.cargo.features": [
-        "editor"
+        // "editor"
     ],
     "rust-analyzer.linkedProjects": [
         "./Cargo.toml",

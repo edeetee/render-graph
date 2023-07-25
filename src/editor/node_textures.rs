@@ -1,10 +1,10 @@
 use std::{rc::Rc, cell::RefCell, borrow::BorrowMut};
 
-use egui::TextureId;
+
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId};
-use glium::{backend::Facade, Surface, texture::SrgbTexture2d, framebuffer::SimpleFrameBuffer};
-use ouroboros::self_referencing;
+use glium::{backend::Facade, Surface};
+
 use slotmap::SecondaryMap;
 
 use crate::textures::ui::UiTexture;

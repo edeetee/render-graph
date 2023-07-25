@@ -54,10 +54,10 @@ impl ObjLoader {
 fn vertices_and_indices(objs: ObjData) -> Data {
     let ObjData { 
         position, 
-        texture, 
+        texture: _, 
         normal, 
         objects, 
-        material_libs 
+        material_libs: _ 
     } = objs;
 
     let indices = objects.iter()
