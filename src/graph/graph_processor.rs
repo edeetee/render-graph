@@ -43,6 +43,7 @@ pub struct ShaderGraphProcessor {
     update_info: UpdateTracker
 }
 
+#[derive(Clone, Copy)]
 pub enum GraphChangeEvent {
     CreatedNode(NodeId),
     DestroyedNode(NodeId),
