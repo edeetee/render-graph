@@ -6,7 +6,6 @@ use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}, common::con
 
 use crate::graph::{node_types::NodeType, };
 
-
 #[derive(Debug, Serialize)]
 struct FilterState{
     image_inputs: bool,
@@ -67,13 +66,20 @@ impl Default for TreeState {
 }
 
 impl TreeState {
+    /**
+     * returns the selected item
+     */
     pub fn draw(&mut self, ui: &mut egui::Ui) -> Option<&LeafItem> {
         let mut new_item = None;
         let mut search_changed = false;
 
         ui.heading("Node Types");
 
-        search_changed |= ui.text_edit_singleline(&mut self.filter.text).changed();
+        // ui.memory().request_focus(id)
+        let text_edit = ui.text_edit_singleline(&mut self.filter.text);
+        ui.memory().request_focus(text_edit.id);
+
+        search_changed |= text_edit.changed();
         ui.horizontal(|ui| {
             ui.label("Image In");
             search_changed |= ui.toggle_value(&mut self.filter.image_inputs, "Some").clicked();

@@ -130,7 +130,6 @@ fn create_display(event_loop: &glutin::event_loop::EventLoop<()>, window_state: 
             width: 800.0,
             height: 600.0,
         })
-        // .with_fullscreen(window_state.map(|v|))
         .with_title("render-graph @optiphonic");
 
     let window_builder = if let Some(window_state) = window_state {

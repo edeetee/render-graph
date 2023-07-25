@@ -1,10 +1,9 @@
-
-
 use egui::{RichText, Widget, Color32};
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeDataTrait, NodeId, NodeResponse, NodeTemplateTrait, UserResponseTrait};
 use glium::{Texture2d};
 use glium::{backend::Facade, Display, Surface};
+use itertools::Itertools;
 use crate::util::MappableTuple;
 use serde::{Serialize, Deserialize};
 
@@ -26,12 +25,20 @@ pub struct GraphUi {
     graph_state: GraphState,
     tree: TreeState,
     node_textures: NodeUiTextures,
-    extra_graphui_state: GraphUiState
+    state: GraphUiState
+}
+
+#[derive(Serialize, Deserialize)]
+enum NodeSelectionActor {
+    Mouse(egui::Pos2),
+    DraggingOutput(NodeId),
+    // DraggingInput(NodeId),
 }
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct GraphUiState {
     view_state: ViewState,
+    node_selection_actor: Option<NodeSelectionActor>
 }
 
 #[derive(Serialize, Deserialize, PartialEq)]
@@ -49,6 +56,10 @@ impl ViewState {
     }
 }
 
+pub struct GraphUiResponse {
+    pub node_responses: Vec<NodeResponse<GraphResponse, UiNodeData>>,
+}
+
 impl Default for ViewState {
     fn default() -> Self {
         Self::Graph
@@ -63,7 +74,28 @@ impl Default for GraphUi {
             tree: TreeState::default(),
             processor: ShaderGraphProcessor::default(),
             node_textures: NodeUiTextures::default(),
-            extra_graphui_state: GraphUiState::default()
+            state: GraphUiState::default()
+        }
+    }
+}
+
+#[derive(PartialEq,Debug)]
+enum GraphUiAction {
+    Home,
+    ToggleAddNodeModal,
+    Escape
+}
+
+impl GraphUiAction {
+    fn from_keyboard_pressed(ctx: &egui::Context) -> Option<Self> {
+        if ctx.input().key_pressed(egui::Key::H) {
+            Some(Self::Home)
+        } else if ctx.input().key_pressed(egui::Key::Tab) {
+            Some(Self::ToggleAddNodeModal)
+        } else if ctx.input().key_pressed(egui::Key::Escape) {
+            Some(Self::Escape)
+        } else {
+            None
         }
     }
 }
@@ -100,7 +132,7 @@ impl GraphUi {
             node_textures: NodeUiTextures::new_from_graph(&mut state.editor.graph, facade, egui_glium),
             editor: state.editor,
             graph_state: state.state,
-            extra_graphui_state: state.graph_ui_state.unwrap_or_default(),
+            state: state.graph_ui_state.unwrap_or_default(),
             ..Default::default()
         }
     }
@@ -110,7 +142,7 @@ impl GraphUi {
             editor: self.editor,
             state: self.graph_state,
             window: extras,
-            graph_ui_state: Some(self.extra_graphui_state)
+            graph_ui_state: Some(self.state)
         }
     }
 
@@ -124,20 +156,18 @@ impl GraphUi {
          }
     }
 
-    // fn 
-
     pub fn process_frame(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
         let mut frame = display.draw();
 
         // toggling the view state
         if egui_glium.egui_ctx.input().key_pressed(egui::Key::F1) {
-            self.extra_graphui_state.view_state.toggle();
+            self.state.view_state.toggle();
         }
 
         const mono_color: f32 = 0.1;
         frame.clear_color_and_depth((mono_color, mono_color, mono_color, 1.), 0.);
 
-        match self.extra_graphui_state.view_state {
+        match self.state.view_state {
             ViewState::Graph => {
                 let mut graph_response = None;
 
@@ -186,7 +216,7 @@ impl GraphUi {
             self.node_textures.copy_surface(display, egui_glium, node_id, &surface);
         });
 
-        match self.extra_graphui_state.view_state {
+        match self.state.view_state {
             ViewState::Graph => {
                 egui_glium.paint(display, &mut frame);
             },
@@ -238,83 +268,134 @@ impl GraphUi {
     pub fn draw(
         &mut self,
         ctx: &egui::Context,
-    ) -> egui_node_graph::GraphResponse<GraphResponse, UiNodeData> {
-        let mut new_node_ty = None;
+    ) -> GraphUiResponse {
 
-        // ctx
+        let action = GraphUiAction::from_keyboard_pressed(ctx);
 
-        egui::SidePanel::left("tree_view").show(ctx, |ui| {
-            if let Some(selected_item) = self.tree.draw(ui) {
-                new_node_ty = Some(selected_item.ty.clone());
-            }
-        });
-
-        if !self.graph_state.animations.is_empty() {
-            egui::SidePanel::left("animators").show(ctx, |ui| {
-                let mut removal = None;
-                for (key, updater) in &mut self.graph_state.animations {
-                    let (node_id, param_name) = key;
-
-                    let node = &self.editor.graph.nodes[*node_id];
-
-                    ui.vertical(|ui| {
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new(format!("{}.{}", node.label, param_name)));
-                            if ui.button("REMOVE").clicked() {
-                                removal = Some(key.clone());
-                            }
-                        });
-                        updater.ui(ui);
-                    });
-                }
-
-                if let Some(removal) = removal {
-                    self.graph_state.animations.remove(&removal);
-                }
-            });
+        if let Some(action) = &action {
+            println!("GraphUiAction {action:#?}");
         }
 
-        egui::CentralPanel::default()
+        if !self.graph_state.animations.is_empty() {
+            self.draw_animators(ctx);
+        }
+
+        if action == Some(GraphUiAction::ToggleAddNodeModal) {
+            self.state.node_selection_actor = if self.state.node_selection_actor.is_none() {
+                let pos: egui::Pos2 = ctx.available_rect().left_top() - self.editor.pan_zoom.pan;
+                Some(NodeSelectionActor::Mouse(pos))
+            } else {
+                None
+            };
+        }
+
+        let graph_response = egui::CentralPanel::default()
             .show(ctx, |ui| {
-                ui.set_clip_rect(ctx.available_rect());
-                egui::widgets::global_dark_light_mode_switch(ui);
-
-                if ctx.input().key_pressed(egui::Key::H) {
-                    self.editor.pan_zoom.pan = egui::Vec2::ZERO;
-                }
-
-                let mut responses = vec![];
-
-                let editor_rect = ui.max_rect();
-
-                if let Some(node_ty) = new_node_ty {
-                    let pos = editor_rect.left_top() - self.editor.pan_zoom.pan;
-                    let new_node_id = self.add_node(&node_ty, pos);
-                    responses.push(egui_node_graph::NodeResponse::CreatedNode(new_node_id));
-                }
-
-                if ui.ui_contains_pointer() {
-                    self.editor.pan_zoom.pan += ctx.input().scroll_delta;
-
-                    if let Some(point) = ctx.input().pointer.hover_pos() {
-                        let zoom_delta = ctx.input().zoom_delta();
-                        self.editor
-                            .pan_zoom
-                            .adjust_zoom(zoom_delta, point.to_vec2(), 0.001, 100.0);
-                    }
-                    // self.0.pan_zoom.zoom *= ctx.input().zoom_delta();
-                    // dbg!(self.0.pan_zoom.zoom);
-                }
-
-                let mut graph_resp =
-                    self.editor
-                        .draw_graph_editor(ui, AllNodeTypes, &mut self.graph_state);
-
-                self.editor.node_finder = None;
-                graph_resp.node_responses.append(&mut responses);
-
-                graph_resp
+                self.draw_graph(ui, ctx, &action)
             })
-            .inner
+            .inner;
+
+        // if let Some(new_node_selection_actor) = node_selection_actor {
+        //     self.state.node_selection_actor = Some(new_node_selection_actor);
+        // }
+        
+        let mut extra_responses = vec![];
+            
+        if let Some(node_selection_actor) = &self.state.node_selection_actor {
+            let mut window_is_open = true;
+
+            let new_node_ty = egui::Window::new("New node")
+            .default_pos(ctx.pointer_latest_pos().unwrap_or(ctx.available_rect().center()))
+            .open(&mut window_is_open)
+            .collapsible(false)
+            .show(ctx, |ui| {
+                self.tree.draw(ui).map(|leaf| leaf.ty.clone())
+            })
+            .map(|resp| resp.inner).flatten().flatten();
+
+            if let Some(node_ty) = &new_node_ty {
+                let pos = match node_selection_actor {
+                    &NodeSelectionActor::Mouse(pos) => {
+                        pos
+                    }
+                    &NodeSelectionActor::DraggingOutput(node_id) => {
+                        self.editor.node_positions[node_id]
+                    }
+                };
+    
+                let new_node_id = self.add_node(node_ty, pos);
+                extra_responses.push(egui_node_graph::NodeResponse::CreatedNode(new_node_id));
+    
+                self.state.node_selection_actor = None;
+            }
+
+            if !window_is_open || action == Some(GraphUiAction::Escape) {
+                self.state.node_selection_actor = None;
+            }
+        }
+
+        GraphUiResponse { node_responses: graph_response.node_responses.into_iter().chain(extra_responses).collect_vec() }
+    }
+
+    fn draw_graph(&mut self, ui: &mut egui::Ui, ctx: &egui::Context, ui_action: &Option<GraphUiAction>) -> egui_node_graph::GraphResponse<GraphResponse, UiNodeData> {
+        ui.set_clip_rect(ctx.available_rect());
+        egui::widgets::global_dark_light_mode_switch(ui);
+
+        if ui_action == &Some(GraphUiAction::Home) {
+            self.editor.pan_zoom.pan = egui::Vec2::ZERO;
+        }
+
+        let mut responses = vec![];
+
+        let editor_rect = ui.max_rect();
+
+        
+
+        if ui.ui_contains_pointer() {
+            self.editor.pan_zoom.pan += ctx.input().scroll_delta;
+
+            if let Some(point) = ctx.input().pointer.hover_pos() {
+                let zoom_delta = ctx.input().zoom_delta();
+                self.editor
+                    .pan_zoom
+                    .adjust_zoom(zoom_delta, point.to_vec2(), 0.001, 100.0);
+            }
+            // self.0.pan_zoom.zoom *= ctx.input().zoom_delta();
+            // dbg!(self.0.pan_zoom.zoom);
+        }
+
+        let mut graph_resp =
+            self.editor
+                .draw_graph_editor(ui, AllNodeTypes, &mut self.graph_state);
+
+        self.editor.node_finder = None;
+        graph_resp.node_responses.append(&mut responses);
+
+        graph_resp
+    }
+
+    fn draw_animators(&mut self, ctx: &egui::Context) {
+        egui::SidePanel::left("animators").show(ctx, |ui| {
+            let mut removal = None;
+            for (key, updater) in &mut self.graph_state.animations {
+                let (node_id, param_name) = key;
+
+                let node = &self.editor.graph.nodes[*node_id];
+
+                ui.vertical(|ui| {
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new(format!("{}.{}", node.label, param_name)));
+                        if ui.button("REMOVE").clicked() {
+                            removal = Some(key.clone());
+                        }
+                    });
+                    updater.ui(ui);
+                });
+            }
+
+            if let Some(removal) = removal {
+                self.graph_state.animations.remove(&removal);
+            }
+        });
     }
 }
