@@ -1,6 +1,6 @@
 mod graph_processor;
 mod node_update;
-mod node_shader;
+pub mod node_shader;
 mod spout_out_shader;
 
 pub mod graph;

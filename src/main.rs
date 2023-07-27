@@ -8,6 +8,10 @@ mod obj_shader;
 pub mod util;
 mod gl_expression;
 mod common;
+use color_eyre::eyre::Result;
+
+#[macro_use]
+extern crate partial_application;
 
 #[cfg(feature="editor")]
 mod editor;
@@ -23,6 +27,11 @@ mod egui_glium;
 
 // use graph::render_glium;
 
-fn main() {
+fn main() -> Result<()> {
+
+    color_eyre::install()?;
+
     egui_glium::main();
+
+    Ok(())
 }

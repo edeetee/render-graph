@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use egui::Ui;
+use egui::{Ui, Widget};
 
 ///Linked struct for displaying a tree of node templates
 #[derive(Hash)]
@@ -8,58 +8,61 @@ pub enum Tree<Leaf, Branch> {
     Branch(Branch, Vec<Tree<Leaf, Branch>>),
 }
 
-// #[derive(PartialEq, Eq)]
-// enum TreeUiEvent {
-//     ExpandAll
-// }
+pub trait RefWidget {
+    fn ui(&self, ui: &mut Ui) -> egui::Response;
+}
 
-impl<Leaf: Display, Branch: Display> Tree<Leaf, Branch> {
-
+//implementation for copyable items
+impl<Leaf: Copy, Branch: Copy> Tree<Leaf, Branch> where {
     ///Mutably iterate over the tree
-    pub fn map_mut(&mut self, f: &mut impl FnMut(&mut Leaf)) {
+    pub fn map_leaf(&self, f: &mut impl FnMut(Leaf)) {
         match self {
-            Tree::Leaf(item) => f(item),
+            Tree::Leaf(item) => f(*item),
             Tree::Branch(_item, children) => {
                 // f(item);
                 for child in children {
-                    child.map_mut(f);
+                    child.map_leaf(f);
                 }
             }
         }
     }
 
-    ///draw all elements of the tree with a filter. Returns a clicked leaf
-    pub fn draw(&self, ui: &mut Ui, open_state: Option<bool>, filter: &impl Fn(&Leaf) -> bool) -> Option<&Leaf> {
-        // let all_kinds = NodeTypes::get_all();
+    // pub fn map<R, BR, DrawLeafFn: Fn(&mut Ui, &mut Leaf) -> R, DrawBranchFn: FnMut(&mut Ui, &DrawLeafFn) -> BR>
+    // (&mut self, ui: &mut Ui, open_state: Option<bool>, filter: &impl Fn(&Leaf) -> bool, drawLeaf: &DrawLeafFn, drawBranch: &DrawBranchFn) -> BR {
+    //     match self {
+    //         Tree::Leaf(leaf) => {
+    //             vec![drawLeaf(ui, leaf)]
+    //         },
 
+    //         Tree::Branch(name, branch) => {
+    //             drawBranch(ui, drawLeaf)
+    //         }
+    //     }
+    // }
+
+    ///draw all elements of the tree with a filter. Returns a clicked leaf
+    pub fn draw<'a, R>(
+        &'a mut self, 
+        ui: &mut Ui, 
+        open_state: Option<bool>, 
+        draw: &mut impl FnMut(&mut Ui, Leaf) -> R,
+        branch_header: &mut impl Fn(Branch) -> String,
+    ) -> Vec<R> {
         match self {
             Tree::Leaf(leaf) => {
-                if filter(leaf) {
-                    if ui.button(leaf.to_string()).clicked() {
-                        Some(&leaf)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
+                vec![draw(ui, *leaf)]
             },
-            Tree::Branch(name, branch) => {
-                egui::CollapsingHeader::new(name.to_string())
-                    // .default_open(true)
+            Tree::Branch(branch, children) => {
+                egui::CollapsingHeader::new(branch_header(*branch))
                     .open(open_state)
                     .show(ui, |ui| {
-                        let mut selected = None;
-
-                        for tree in branch {
-                            if let Some(selected_item) = tree.draw(ui, open_state, filter){
-                                selected = Some(selected_item);
-                            }
-                        }
-    
-                        selected
+                        dbg!(ui.max_rect().width());
+                        ui.ctx().set_debug_on_hover(true);
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::Min).with_main_wrap(true), |ui|{
+                            children.iter_mut().flat_map(|child| child.draw(ui, open_state, draw,branch_header)).collect()
+                        }).inner
                     })
-                    .body_returned.flatten()
+                    .body_returned.unwrap_or_default()
             }
         }
     }

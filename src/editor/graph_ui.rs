@@ -1,7 +1,10 @@
 use std::ops::Deref;
 
+use crate::graph::node_shader::ShaderInputs;
+use crate::textures::TextureManager;
 use crate::util::MappableTuple;
-use egui::{Color32, RichText, Widget};
+use egui::style::{Margin, DebugOptions};
+use egui::{Color32, RichText, Widget, Rect, Vec2};
 use egui_glium::EguiGlium;
 use egui_node_graph::{
     AnyParameterId, NodeDataTrait, NodeId, NodeResponse, NodeTemplateTrait, UserResponseTrait,
@@ -21,7 +24,7 @@ use crate::graph::{
 };
 
 use super::node_textures::NodeUiTextures;
-use super::node_tree_ui::TreeState;
+use super::node_tree_ui::{TreeState, LeafIndex};
 
 pub struct GraphUi {
     processor: ShaderGraphProcessor,
@@ -30,6 +33,7 @@ pub struct GraphUi {
     tree: TreeState,
     node_textures: NodeUiTextures,
     state: GraphUiState,
+    texture_manager: TextureManager,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -77,8 +81,23 @@ impl ViewState {
     }
 }
 
-pub struct GraphUiResponse {
+pub enum RenderRequest {
+    Leaf(LeafIndex),
+}
+
+#[derive(Default)]
+pub struct GraphUiResult {
     pub graph_changes: Vec<GraphChangeEvent>,
+    pub render_requests: Vec<RenderRequest>
+}
+
+impl GraphUiResult {
+    fn union(self, other: Self) -> Self{
+        Self {
+            graph_changes: self.graph_changes.into_iter().chain(other.graph_changes.into_iter()).collect_vec(),
+            render_requests: self.render_requests.into_iter().chain(other.render_requests.into_iter()).collect_vec(),
+        }
+    }
 }
 
 impl Default for ViewState {
@@ -91,6 +110,7 @@ impl Default for GraphUi {
     fn default() -> Self {
         Self {
             editor: GraphEditorState::new(1.0),
+            texture_manager: TextureManager::default(),
             graph_state: GraphState::default(),
             tree: TreeState::default(),
             processor: ShaderGraphProcessor::default(),
@@ -105,6 +125,7 @@ enum GraphUiAction {
     Home,
     ToggleAddNodeModal,
     Escape,
+    ToggleViewState
 }
 
 impl GraphUiAction {
@@ -115,6 +136,8 @@ impl GraphUiAction {
             Some(Self::ToggleAddNodeModal)
         } else if ctx.input().key_pressed(egui::Key::Escape) {
             Some(Self::Escape)
+        } else if ctx.input().key_pressed(egui::Key::F1) {
+            Some(Self::ToggleViewState)
         } else {
             None
         }
@@ -145,6 +168,11 @@ impl GraphChangeEvent {
             _ => None,
         }
     }
+}
+
+pub struct RenderContext<'a> {
+    display: &'a Display,
+    egui_glium: &'a mut EguiGlium,
 }
 
 impl GraphUi {
@@ -189,13 +217,13 @@ impl GraphUi {
     pub fn process_frame(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
         let mut frame = display.draw();
 
-        // toggling the view state
-        if egui_glium.egui_ctx.input().key_pressed(egui::Key::F1) {
+        let action = GraphUiAction::from_keyboard_pressed(&egui_glium.egui_ctx);
+        if action == Some(GraphUiAction::ToggleViewState) {
             self.state.view_state.toggle();
         }
 
-        const mono_color: f32 = 0.1;
-        frame.clear_color_and_depth((mono_color, mono_color, mono_color, 1.), 0.);
+        const MONO_COLOR: f32 = 0.1;
+        frame.clear_color_and_depth((MONO_COLOR, MONO_COLOR, MONO_COLOR, 1.), 0.);
 
         match self.state.view_state {
             ViewState::Graph => {
@@ -208,6 +236,20 @@ impl GraphUi {
 
                 //Update data that stays aligned with the graph
                 if let Some(response) = graph_response {
+
+                    let empty_vec = vec![];
+
+                    for render in response.render_requests {
+                        match render {
+                            RenderRequest::Leaf(leaf_id) => {
+                                let leaf = &mut self.tree.leaves[leaf_id];
+                                let fake_inputs = ShaderInputs {
+                                    node_inputs: &empty_vec,
+                                };
+                                leaf.render(display, egui_glium, &mut self.texture_manager, fake_inputs);
+                            },
+                        }
+                    }
 
                     for change in response.graph_changes {
                         self.processor
@@ -243,10 +285,9 @@ impl GraphUi {
         let outputs = self.processor.render_shaders(
             &mut self.editor.graph,
             display,
+            &mut self.texture_manager,
             |node_id, tex: &Texture2d| {
-                // frame.
                 let surface = tex.as_surface();
-                // surface.fill(&frame, glium::uniforms::MagnifySamplerFilter::Nearest);
                 self.node_textures
                     .copy_surface(display, egui_glium, node_id, &surface);
             },
@@ -261,24 +302,13 @@ impl GraphUi {
                 egui_glium.paint(display, &mut frame);
 
                 if let Some(output) = outputs.first().cloned().flatten() {
-                    // println!("OUTPUT");
                     let filter = glium::uniforms::MagnifySamplerFilter::Nearest;
                     let dimens = display.get_framebuffer_dimensions();
-                    // let ppp = display.gl_window().window().scale_factor();
-                    // println!("${dimens:?}");
 
-                    // let src_dimens = dimens.map(|x| ((*x as f64)/ppp));
                     let _dst_dimens = dimens.map(|x| (*x as f64));
                     let _src_dimens = output.dimensions();
 
-                    // logic
                     frame.clear_all((0.0, 0.0, 0.0, 1.0), 0.0, 0);
-                    // output.as_surface().blit_color(
-                    //     &Rect{left: 0, bottom: 0, width: src_dimens.0 as u32, height: src_dimens.1 as u32},
-                    //     &frame,
-                    //     &glium::BlitTarget { left: 0, bottom: 0, width: dst_dimens.0 as i32, height: dst_dimens.1 as i32},
-                    //     filter
-                    // );
                     output.as_surface().fill(&mut frame, filter);
                 }
             }
@@ -318,12 +348,14 @@ impl GraphUi {
         responses
     }
 
-    pub fn draw(&mut self, ctx: &egui::Context) -> GraphUiResponse {
+    pub fn draw(&mut self, ctx: &egui::Context) -> GraphUiResult {
         let action = GraphUiAction::from_keyboard_pressed(ctx);
 
         if let Some(action) = &action {
             dbg!(action);
         }
+
+        egui::TopBottomPanel::top("Titlebar").default_height(64.0).show(ctx, |ui| {});
 
         if !self.graph_state.animations.is_empty() {
             self.draw_animators(ctx);
@@ -343,44 +375,65 @@ impl GraphUi {
             .show(ctx, |ui| self.draw_graph(ui, ctx, &action))
             .inner;
 
-        if graph_response.node_responses.iter().any(|resp| matches!(resp, NodeResponse::ConnectEventEnded { .. } | NodeResponse::DisconnectEvent { .. })) {
+        let node_responses = graph_response.node_responses;
+
+        //if connection sucessfully ended
+        if node_responses.iter().any(|resp| matches!(resp, NodeResponse::ConnectEventEnded { .. } | NodeResponse::DisconnectEvent { .. })) {
             self.state.last_connection_in_progress = None;
         }
 
         //if connection started, save it
-        if let Some(NodeResponse::ConnectEventStarted(node_id, param_id)) = graph_response.node_responses.iter().find(|resp| matches!(resp, NodeResponse::ConnectEventStarted(..))) {
+        if let Some(NodeResponse::ConnectEventStarted(node_id, param_id)) = node_responses.iter().find(|resp| matches!(resp, NodeResponse::ConnectEventStarted(..))) {
             self.state.last_connection_in_progress = Some((*node_id, *param_id));
 
-        //if no connection is in progress and we have a saved one, use it
+        //if we were just connecting
         } else if let Some(last_connection_in_progress) = self.state.last_connection_in_progress {
+            //and it has ended
             if self.editor.connection_in_progress.is_none() {
                 self.state.node_selection_actor = Some(NodeSelectionActor::DraggingOutput(mouse_pos, last_connection_in_progress.0, last_connection_in_progress.1));
                 self.state.last_connection_in_progress = None;
             }
         }
 
+        let extra_responses = self.draw_node_selector_window(action, ctx);
 
+        GraphUiResult {
+            graph_changes: node_responses
+                .iter()
+                .filter_map(GraphChangeEvent::from_response)
+                .collect_vec(),
+            ..Default::default()
+        }.union(extra_responses)
+    }
+
+    fn draw_node_selector_window(&mut self, action: Option<GraphUiAction>, ctx: &egui::Context) -> GraphUiResult {
+        let node_selection_window = egui::Window::new("New node");
         let mut extra_responses = vec![];
+
+        let mut tree_result = None;
 
         if let Some(node_selection_actor) = &self.state.node_selection_actor {
             let mut window_is_open = true;
+            let new_node_pos = node_selection_actor.pos()+self.editor.pan_zoom.pan;
 
-            let new_node_ty = egui::Window::new("New node")
-                .default_pos(
-                    ctx.pointer_latest_pos()
-                        .unwrap_or(ctx.available_rect().center()),
-                )
+            let modal_rect = Rect::from_center_size(new_node_pos, Vec2::new(256.0, 256.0));
+
+            let selection_window_resp = node_selection_window
+                .default_rect(modal_rect)
+                .fixed_size(modal_rect.size())
                 .open(&mut window_is_open)
+                .scroll2([false, true])
                 .collapsible(false)
-                .show(ctx, |ui| self.tree.draw(ui).map(|leaf| leaf.ty.clone()))
-                
-                .map(|resp| resp.inner)
-                .flatten()
+                // .auto_sized()
+                .show(ctx, |ui| self.tree.draw(ui));
+            
+            tree_result = selection_window_resp.map(|resp| resp.inner)
                 .flatten();
+
+            let new_node_ty = tree_result.as_ref().map(|res| res.clicked).flatten().map(|clicked| self.tree.leaves[clicked].ty.clone());
 
             if let Some(node_ty) = &new_node_ty {
                 dbg!(node_selection_actor);
-                let new_node_pos = node_selection_actor.pos();
 
                 extra_responses.extend(self.add_node(node_ty, new_node_pos, node_selection_actor.connection()));
 
@@ -390,15 +443,16 @@ impl GraphUi {
             if !window_is_open || action == Some(GraphUiAction::Escape) {
                 self.state.node_selection_actor = None;
             }
+        } else {
+            // node_selection_window.open(&mut false).show(ctx,|_|{});
+            ctx.memory().reset_areas();
         }
 
-        GraphUiResponse {
-            graph_changes: graph_response
-                .node_responses
-                .iter()
-                .filter_map(GraphChangeEvent::from_response)
-                .chain(extra_responses)
-                .collect_vec(),
+        GraphUiResult {
+            graph_changes: extra_responses,
+            render_requests: tree_result.map(|result|
+                result.in_view.iter().map(|leaf_index| RenderRequest::Leaf(*leaf_index)).collect()
+            ).unwrap_or_default()
         }
     }
 
@@ -408,8 +462,9 @@ impl GraphUi {
         ctx: &egui::Context,
         ui_action: &Option<GraphUiAction>,
     ) -> egui_node_graph::GraphResponse<GraphResponse, UiNodeData> {
-        ui.set_clip_rect(ctx.available_rect());
-        egui::widgets::global_dark_light_mode_switch(ui);
+        // egui::widgets::global_dark_light_mode_switch(ui)
+
+        draw_hack_ui(ctx, ui);
 
         if ui_action == &Some(GraphUiAction::Home) {
             self.editor.pan_zoom.pan = egui::Vec2::ZERO;
@@ -458,5 +513,22 @@ impl GraphUi {
                 self.graph_state.animations.remove(&removal);
             }
         });
+    }
+}
+
+
+fn draw_hack_ui(ctx: &egui::Context, ui: &mut egui::Ui) {
+
+    ui.set_clip_rect(ctx.available_rect());
+    egui::widgets::global_dark_light_mode_switch(ui);
+
+    let style = ctx.style();
+    let mut debug = style.debug;
+    debug.ui(ui);
+
+    if debug != style.debug {
+        let mut style = style.deref().clone();
+        style.debug = debug;    
+        ui.ctx().set_style(style);
     }
 }

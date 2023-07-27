@@ -5,47 +5,13 @@ use glium::Surface;
 use glium::backend::Facade;
 use glium::texture::SrgbTexture2d;
 use glium::framebuffer::SimpleFrameBuffer;
+use glutin::surface::AsRawSurface;
 use ouroboros::self_referencing;
 use crate::textures::new_texture_srgb_2d;
 
-#[self_referencing]
-struct ScreenTexture {
+pub struct UiTexture {
     tex: Rc<SrgbTexture2d>,
     id: TextureId,
-
-    #[borrows(tex)]
-    #[covariant]
-    fb: SimpleFrameBuffer<'this>
-}
-
-
-impl ScreenTexture {
-    pub fn generate(
-        facade: &impl Facade,
-        egui_glium: &mut EguiGlium,
-        size: (u32, u32),
-    ) -> Self {
-
-        let tex = Rc::new(new_texture_srgb_2d(facade, size).unwrap());
-
-        let id = egui_glium
-            .painter
-            .register_native_texture(tex.clone());
-
-
-        ScreenTextureBuilder {
-            id,
-            tex,
-            fb_builder: |tex: &Rc<SrgbTexture2d>| {
-                SimpleFrameBuffer::new(facade, tex.as_ref()).unwrap()
-            },
-        }
-        .build()
-    }
-}
-
-pub struct UiTexture {
-    screen: ScreenTexture,
 }
 
 impl UiTexture {
@@ -54,41 +20,49 @@ impl UiTexture {
         egui_glium: &mut EguiGlium,
         size: (u32, u32)
     ) -> Self {
+        let tex = Rc::new(new_texture_srgb_2d(facade, size).unwrap());
+
+        let id = egui_glium
+            .painter
+            .register_native_texture(tex.clone());
 
         Self {
-            screen: ScreenTexture::generate(facade, egui_glium, size),
+            id,
+            tex
         }
     }
 
     pub fn update_size(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, size: (u32, u32)) {
         //we need to completely replace the texture instead of just updating it
-        if self.screen.borrow_tex().dimensions() != size {
-            let new_screen = ScreenTexture::generate(facade, egui_glium, size);
+        if self.tex.dimensions() != size {
+            // let new_self = Self::new(facade, egui_glium, size);
 
-            println!("Updating texture size from {:?} to {:?}", self.screen.borrow_tex().dimensions(), size);
-        
-            egui_glium.painter.replace_native_texture(*self.screen.borrow_id(), new_screen.borrow_tex().clone());
+            println!("Updating texture size from {:?} to {:?}", self.tex.dimensions(), size);
 
-            self.screen = new_screen;
+            let tex = Rc::new(new_texture_srgb_2d(facade, size).unwrap());
+            egui_glium.painter.replace_native_texture(self.id, tex.clone());
+            self.tex = tex;
         }
     }
 
-    pub fn copy_from(&mut self, surface: &impl Surface){
+    pub fn copy_from(&mut self, facade: &impl Facade, surface: &impl Surface){
         let filter = glium::uniforms::MagnifySamplerFilter::Linear;
 
-        // SimpleFrameBuffer 
-
         surface.fill(
-            self.screen.borrow_fb(),
+            &SimpleFrameBuffer::new(facade, self.tex.as_ref()).unwrap(),
             filter,
         );
     }
 
-    pub fn size(&self) -> (u32, u32) {
-        self.screen.borrow_tex().dimensions()
+    pub fn framebuffer(&self, facade: &impl Facade) -> Result<SimpleFrameBuffer<'_>, glium::framebuffer::ValidationError> {
+        SimpleFrameBuffer::new(facade, self.tex.as_ref())
     }
 
-    pub fn clone_screen_tex_id(&self) -> TextureId {
-        self.screen.borrow_id().clone()
+    pub fn size(&self) -> (u32, u32) {
+        self.tex.dimensions()
+    }
+
+    pub fn id(&self) -> TextureId {
+        self.id
     }
 }

@@ -48,7 +48,6 @@ fn show_image(ui: &mut Ui, texture: Weak<RefCell<UiTexture>>, scale: ImageScale)
             if let Some(tex) = texture.upgrade() {
                 let tex = tex.borrow();
 
-                // let width = 200.0;
                 let (tex_w, tex_h) = tex.size();
                 let tex_size = glam::Vec2::new(tex_w as f32, tex_h as f32);
 
@@ -62,10 +61,7 @@ fn show_image(ui: &mut Ui, texture: Weak<RefCell<UiTexture>>, scale: ImageScale)
                     },
                 };
                 
-                // Vec2::ONE.m
-                // let height = tex_h as f32 * width / tex_w as f32;
-    
-                ui.image(tex.clone_screen_tex_id(), img_size.to_array())
+                ui.image(tex.id(), img_size.to_array())
             } else {
                 ui.label("NO IMAGE AVAILABLE")
             }
@@ -91,9 +87,9 @@ impl NodeDataTrait for UiNodeData {
         ui.set_width(256.0);
         let node = &graph[node_id];
 
-        let show_tex = state.visible_nodes.contains(&node_id);
+        let tex_expanded = state.visible_nodes.contains(&node_id);
 
-        if show_tex {
+        if tex_expanded {
             if show_image(ui, node.user_data.texture.clone(), ImageScale::MaxWidth(ui.available_width())).interact(egui::Sense::click()).clicked() {
                 state.visible_nodes.remove(&node_id);
             }

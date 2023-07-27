@@ -10,7 +10,6 @@ use crate::isf::meta::{IsfInfo};
 
 use crate::common::def::{TextStyle, UiValue};
 use crate::common::connections::{InputDef, OutputDef, ConnectionType};
-// use crate::common::node_
 
 ///Enum of node types used to create an actual node
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]

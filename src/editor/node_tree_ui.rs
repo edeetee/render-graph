@@ -1,13 +1,28 @@
-use std::{path::{Path, PathBuf}, fmt::Display, fs::read_dir};
+use std::{
+    fmt::Display,
+    fs::read_dir,
+    path::{Path, PathBuf},
+};
 
+use egui::{Widget, Rect, Stroke, Color32, Button};
+use egui_glium::EguiGlium;
+use glium::{backend::Facade, Surface};
+use itertools::Itertools;
 use serde::Serialize;
+use slotmap::SlotMap;
 
-use crate::{tree_view::Tree, isf::meta::{default_isf_path, IsfInfo}, common::connections::ConnectionType};
+use crate::{
+    common::connections::ConnectionType,
+    graph::node_shader::{NodeShader, ShaderInputs},
+    isf::meta::{default_isf_path, IsfInfo},
+    textures::{ui::UiTexture, TextureManager},
+    tree_view::{RefWidget, Tree},
+};
 
-use crate::graph::{node_types::NodeType, };
+use crate::graph::node_types::NodeType;
 
 #[derive(Debug, Serialize)]
-struct FilterState{
+struct FilterState {
     image_inputs: bool,
     no_image_inputs: bool,
     text: String,
@@ -25,11 +40,19 @@ impl Default for FilterState {
 
 impl FilterState {
     fn filter_item(&self, item: &LeafItem) -> bool {
-        let text_pass = self.text.is_empty() || 
-            item.ty.get_name().to_lowercase().contains(&self.text.to_lowercase());
+        let text_pass = self.text.is_empty()
+            || item
+                .ty
+                .get_name()
+                .to_lowercase()
+                .contains(&self.text.to_lowercase());
 
         let image_input_pass = {
-            let has_inputs = item.ty.get_input_types().iter().any(|x| x.ty == ConnectionType::Texture2D);
+            let has_inputs = item
+                .ty
+                .get_input_types()
+                .iter()
+                .any(|x| x.ty == ConnectionType::Texture2D);
 
             (!self.image_inputs || has_inputs) && (!self.no_image_inputs || !has_inputs)
         };
@@ -39,54 +62,73 @@ impl FilterState {
 }
 
 ///Holds the data for the tree vi
-pub struct TreeState{
+pub struct TreeState {
     filter: FilterState,
-    trees: Vec<Tree<LeafItem, BranchItem>>
+    pub trees: Vec<Tree<LeafIndex, BranchIndex>>,
+    pub branches: SlotMap<BranchIndex, BranchItem>,
+    pub leaves: SlotMap<LeafIndex, LeafItem>,
 }
+
+
 
 impl Default for TreeState {
     fn default() -> Self {
+        let mut branches = SlotMap::default();
+        let mut leaves = SlotMap::default();
+
         let default_nodes = NodeType::get_builtin()
             .into_iter()
             .map(LeafItem::new)
-            .map(Tree::Leaf);
+            .map(|leaf| leaves.insert(leaf))
+            .map(Tree::Leaf)
+            .collect_vec();
 
         let cargo_shaders = Path::new(env!("CARGO_MANIFEST_DIR")).join("shaders");
         let default_shaders = default_isf_path();
 
         let isf_nodes = vec![cargo_shaders.as_ref(), default_shaders.as_ref()]
             .into_iter()
-            .filter_map(load_isf_tree);
+            .filter_map(partial!(load_isf_tree => _, &mut leaves, &mut branches));
 
         Self {
-            trees: default_nodes.chain(isf_nodes).collect(),
-            filter: FilterState::default()
+            trees: default_nodes.into_iter().chain(isf_nodes).collect(),
+            filter: FilterState::default(),
+            branches,
+            leaves
         }
     }
+}
+
+pub struct TreeDrawResult {
+    pub clicked: Option<LeafIndex>,
+    pub in_view: Vec<LeafIndex>,
 }
 
 impl TreeState {
     /**
      * returns the selected item
      */
-    pub fn draw(&mut self, ui: &mut egui::Ui) -> Option<&LeafItem> {
-        let mut new_item = None;
+    pub fn draw(&mut self, ui: &mut egui::Ui) -> TreeDrawResult {
+        let mut clicked_leaf = None;
         let mut search_changed = false;
 
         ui.heading("Node Types");
 
-        // ui.memory().request_focus(id)
         let text_edit = ui.text_edit_singleline(&mut self.filter.text);
-        ui.memory().request_focus(text_edit.id);
+        text_edit.request_focus();
 
         search_changed |= text_edit.changed();
         ui.horizontal(|ui| {
             ui.label("Image In");
-            search_changed |= ui.toggle_value(&mut self.filter.image_inputs, "Some").clicked();
-            search_changed |= ui.toggle_value(&mut self.filter.no_image_inputs, "None").clicked();
+            search_changed |= ui
+                .toggle_value(&mut self.filter.image_inputs, "Some")
+                .clicked();
+            search_changed |= ui
+                .toggle_value(&mut self.filter.no_image_inputs, "None")
+                .clicked();
         });
 
-        let open_state = if !search_changed{
+        let open_state = if !search_changed {
             None
         } else if self.filter.text.is_empty() {
             None
@@ -94,37 +136,72 @@ impl TreeState {
             Some(true)
         };
 
-        egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.set_min_width(128.0);
+        let mut leaves_in_view = vec![];
 
-            for tree in &mut self.trees {
-                if search_changed {
-                    // dbg!(&self.filter);
-                    tree.map_mut(&mut |item| {
-                        item.visible = self.filter.filter_item(item);
-                    });
-                }
+        // assert!(self.)
 
-                if let Some(selected_item) = tree.draw(ui, open_state, &|item| item.visible) {
-                    new_item = Some(selected_item);
-                }
+        for tree in &mut self.trees {
+            if search_changed {
+                tree.map_leaf(&mut |item| {
+                    let item = &mut self.leaves[item];
+                    item.visible = self.filter.filter_item(item);
+                });
             }
-        });
 
-        new_item
+            tree.draw(ui, open_state, &mut |ui, leaf_index| {
+                let leaf = &mut self.leaves[leaf_index];
+
+                if leaf.visible {
+                    let resp = leaf.ui(ui);
+                    if resp.clicked() {
+                        clicked_leaf = Some(leaf_index);
+                    }
+                    // ui.visi
+                    if ui.is_rect_visible(resp.rect) {
+                        leaves_in_view.push(leaf_index);
+                    }
+                }
+            }, &mut |branch_index| self.branches[branch_index].name.clone());
+        }
+
+        // clicked_leaf
+
+        TreeDrawResult { clicked: clicked_leaf, in_view: leaves_in_view }
     }
 }
 
+
 pub struct LeafItem {
     visible: bool,
-    pub ty: NodeType
+    pub ty: NodeType,
+    pub instance: Option<anyhow::Result<(NodeShader, UiTexture)>>,
 }
 
 impl LeafItem {
     fn new(ty: NodeType) -> Self {
         Self {
             visible: true,
-            ty
+            ty,
+            instance: None,
+        }
+    }
+
+    pub fn render(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, texture_manager: &mut TextureManager, shader_inputs: ShaderInputs) {
+        if self.instance.is_none() {
+            if let Some(shader) = NodeShader::new(&self.ty, facade) {
+                self.instance = Some(shader.map(|shader| {
+                    let img = UiTexture::new(facade, egui_glium, (256,256));
+                    (shader, img)
+                }));
+            }
+        }
+
+        if let Some(Ok((shader, img))) = &mut self.instance {
+            if let Ok(output) = shader.render(facade, texture_manager, shader_inputs) {
+                img.copy_from(facade, &output.as_surface());
+            } else {
+                img.framebuffer(facade).unwrap().clear_color(1.0, 0.0, 0.0, 1.0);
+            }
         }
     }
 
@@ -132,6 +209,27 @@ impl LeafItem {
         let info = IsfInfo::new_from_path(&isf_path).ok()?;
 
         Some(Self::new(NodeType::Isf { info }))
+    }
+}
+
+impl Widget for &LeafItem {
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        let button = Button::new(self.to_string());
+
+        if let Some(Ok((_,tex))) = &self.instance {
+            let image_resp = egui::Frame::none()
+                .stroke(Stroke::new(1.0, Color32::WHITE))
+                .show(ui, |ui|{
+                    let (width, height) = tex.size();
+                    ui.image(tex.id(), [width as f32, height as f32].map(|f|f*0.3));
+                });
+            
+            let button_resp = ui.put(image_resp.response.rect, button.fill(Color32::TRANSPARENT));
+            
+            button_resp.union(image_resp.response)
+        } else {
+            ui.add(button)
+        }
     }
 }
 
@@ -151,23 +249,31 @@ impl Display for BranchItem {
     }
 }
 
-fn load_isf_tree(path: &Path) -> Option<Tree<LeafItem, BranchItem>> {
+slotmap::new_key_type! {
+    pub struct LeafIndex;
+}
+
+slotmap::new_key_type! {
+    pub struct BranchIndex;
+}
+
+
+
+fn load_isf_tree(path: &Path, leaves: &mut SlotMap<LeafIndex, LeafItem>, branches: &mut SlotMap<BranchIndex,BranchItem>) -> Option<Tree<LeafIndex, BranchIndex>> {
     if path.is_dir() {
         let branch_inner = read_dir(path)
             .unwrap()
             .into_iter()
-            .filter_map(|dir| {
-                load_isf_tree(&dir.unwrap().path())
-            })
+            .filter_map(|dir| load_isf_tree(&dir.unwrap().path(), leaves, branches))
             .collect();
 
         let info = BranchItem {
             name: path.file_name().unwrap().to_str().unwrap().to_string(),
         };
 
-        Some(Tree::Branch(info, branch_inner))
+        Some(Tree::Branch(branches.insert(info), branch_inner))
     } else {
         let info = LeafItem::new_from_isf(path.clone().to_path_buf())?;
-        Some(Tree::Leaf(info))
+        Some(Tree::Leaf(leaves.insert(info)))
     }
 }

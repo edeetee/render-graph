@@ -70,7 +70,7 @@ impl NodeShader {
 }
 
 pub struct ShaderInputs<'a> {
-    node_inputs: &'a ProcessedInputs<'a, Rc<Texture2d>>,
+    pub node_inputs: &'a ProcessedInputs<'a, Rc<Texture2d>>,
 }
 
 impl ShaderInputs<'_> {

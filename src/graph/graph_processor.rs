@@ -31,15 +31,9 @@ impl Default for UpdateTracker {
 
 #[derive(Default)]
 pub struct ShaderGraphProcessor {
-    // pub graph: ShaderGraph,
-    texture_manager: TextureManager,
-
-    // output_targets: SparseSecondaryMap<NodeId, OutputTarget>,
     terminating_nodes: HashSet<NodeId>,
-
     shaders: SecondaryMap<NodeId, NodeShader>,
     updaters: SecondaryMap<NodeId, NodeUpdate>,
-
     update_info: UpdateTracker
 }
 
@@ -161,11 +155,8 @@ impl ShaderGraphProcessor {
     /// Generates ui textures
     /// processes inputs
     /// Returns a list of output textures
-    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, mut node_post_render: impl FnMut(NodeId, &Texture2d)) -> Vec<Option<Rc<Texture2d>>>
+    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, texture_manager: &mut TextureManager, mut node_post_render: impl FnMut(NodeId, &Texture2d)) -> Vec<Option<Rc<Texture2d>>>
     {
-        // let shaders = &mut self.shaders;
-        // let graph = &graph;
-
         let mut errors: SparseSecondaryMap<NodeId, NodeError> = Default::default();
 
         let outputs = self.terminating_nodes.iter().cloned().map(|output_id|{
@@ -174,11 +165,9 @@ impl ShaderGraphProcessor {
                 //Render a shader
                 if let Some(shader) = self.shaders.get_mut(node_id) {
 
-                    match shader.render(facade, &mut self.texture_manager, ShaderInputs::from(&inputs)) {
+                    match shader.render(facade, texture_manager, ShaderInputs::from(&inputs)) {
                         Ok(target) => {
                             node_post_render(node_id, &target);
-                            // facade.
-
                             Some(target)
                         }
 

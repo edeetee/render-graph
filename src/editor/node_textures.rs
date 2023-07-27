@@ -9,7 +9,6 @@ use slotmap::SecondaryMap;
 
 use crate::textures::ui::UiTexture;
 
-
 #[derive(Default)]
 pub struct NodeUiTextures {
     inner: SecondaryMap<NodeId, Rc<RefCell<UiTexture>>>,
@@ -43,6 +42,6 @@ impl NodeUiTextures {
         // let ui_texture = *self.inner
         
         ui_texture.update_size(facade, egui_glium, surface.get_dimensions());
-        ui_texture.copy_from(surface);
+        ui_texture.copy_from(facade, surface);
     }
 }

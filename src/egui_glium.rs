@@ -2,7 +2,7 @@
 
 use egui::{Color32};
 use egui_glium::EguiGlium;
-use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow, platform::{run_return::EventLoopExtRunReturn}, window::Fullscreen};
+use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow, platform::{run_return::EventLoopExtRunReturn, macos::{WindowExtMacOS, WindowBuilderExtMacOS}}, window::{Fullscreen, WindowBuilder}};
 use crate::{common::persistent_state::{PersistentState, WindowState}};
 
 
@@ -124,7 +124,7 @@ fn create_display(event_loop: &glutin::event_loop::EventLoop<()>, window_state: 
         }
     };
     
-    let window_builder = glutin::window::WindowBuilder::new()
+    let mut window_builder = glutin::window::WindowBuilder::new()
         .with_resizable(true)
         .with_inner_size(glutin::dpi::LogicalSize {
             width: 800.0,
@@ -132,7 +132,11 @@ fn create_display(event_loop: &glutin::event_loop::EventLoop<()>, window_state: 
         })
         .with_title("render-graph @optiphonic");
 
-    let window_builder = if let Some(window_state) = window_state {
+    #[cfg(target_os = "macos")] {
+        window_builder = macos_window_state(window_builder);
+    }
+
+    window_builder = if let Some(window_state) = window_state {
         window_builder.with_inner_size(glutin::dpi::LogicalSize {
             width: window_state.res.0 as f64,
             height: window_state.res.1 as f64,
@@ -150,4 +154,10 @@ fn create_display(event_loop: &glutin::event_loop::EventLoop<()>, window_state: 
         .with_vsync(true);
 
     glium::Display::new(window_builder, context_builder, event_loop).unwrap()
+}
+
+fn macos_window_state<T: WindowBuilderExtMacOS>(window: T) -> WindowBuilder {
+    window
+        .with_titlebar_transparent(true)
+        .with_fullsize_content_view(true)
 }
