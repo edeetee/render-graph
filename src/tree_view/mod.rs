@@ -27,19 +27,6 @@ impl<Leaf: Copy, Branch: Copy> Tree<Leaf, Branch> where {
         }
     }
 
-    // pub fn map<R, BR, DrawLeafFn: Fn(&mut Ui, &mut Leaf) -> R, DrawBranchFn: FnMut(&mut Ui, &DrawLeafFn) -> BR>
-    // (&mut self, ui: &mut Ui, open_state: Option<bool>, filter: &impl Fn(&Leaf) -> bool, drawLeaf: &DrawLeafFn, drawBranch: &DrawBranchFn) -> BR {
-    //     match self {
-    //         Tree::Leaf(leaf) => {
-    //             vec![drawLeaf(ui, leaf)]
-    //         },
-
-    //         Tree::Branch(name, branch) => {
-    //             drawBranch(ui, drawLeaf)
-    //         }
-    //     }
-    // }
-
     ///draw all elements of the tree with a filter. Returns a clicked leaf
     pub fn draw<'a, R>(
         &'a mut self, 

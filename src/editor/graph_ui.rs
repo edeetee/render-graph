@@ -360,6 +360,12 @@ impl GraphUi {
     }
 
     pub fn draw(&mut self, ctx: &egui::Context) -> GraphUiResult {
+        // let graph_response = egui::CentralPanel::default()
+        //     .show(ctx, |ui| self.draw_graph(ui, ctx, &None))
+        //     .inner;
+
+        // return GraphUiResult::default();
+
         let action = GraphUiAction::from_keyboard_pressed(ctx);
 
         if let Some(action) = &action {
@@ -459,7 +465,7 @@ impl GraphUi {
                 self.state.node_selection_actor = None;
             }
         } else {
-            ctx.memory().reset_areas();
+            // ctx.memory().reset_areas();
         }
 
         GraphUiResult {
@@ -485,9 +491,6 @@ impl GraphUi {
         if ui.ui_contains_pointer() {
             self.editor.pan_zoom.pan += ctx.input().scroll_delta;
 
-            // if ui.input().pointer.button_double_clicked(egui::PointerButton::Primary) {
-            //     self.state.node_selection_actor = Some(NodeSelectionActor::Mouse(self.interaction_pos_on_graph(ctx)));
-            // }
 
             if let Some(point) = ctx.input().pointer.hover_pos() {
                 let zoom_delta = ctx.input().zoom_delta();

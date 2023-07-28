@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf}, rc::Rc,
 };
 
-use egui::{Widget, Rect, Stroke, Color32, Button};
+use egui::{Widget, Rect, Stroke, Color32, Button, WidgetText, RichText};
 use egui_glium::EguiGlium;
 use glium::{backend::Facade, Surface, uniforms::{Uniforms, AsUniformValue}};
 use itertools::Itertools;
@@ -114,7 +114,7 @@ impl TreeState {
         ui.heading("Node Types");
 
         let text_edit = ui.text_edit_singleline(&mut self.filter.text);
-        text_edit.request_focus();
+        // text_edit.request_focus();
 
         search_changed |= text_edit.changed();
         ui.horizontal(|ui| {
@@ -255,7 +255,6 @@ impl Widget for &LeafItem {
         let inner_resp = egui::Frame::none()
             .stroke(Stroke::new(1.0, if resp.hovered() {Color32::WHITE} else {Color32::GRAY}))
             .show(ui, |ui|{
-                // let inner_rect = ui.rect
 
                 if let Some(Ok((_,tex))) = &self.instance {
                     let (width, height) = tex.size();
@@ -264,7 +263,7 @@ impl Widget for &LeafItem {
                     
                     ui.put(all_rect, egui::Image::new(tex.id(), img_size));
                 }
-                ui.put(all_rect, egui::Label::new(self.to_string()));
+                ui.put(all_rect, egui::Label::new(RichText::new(self.to_string()).color(Color32::WHITE)));
                 
             });
 

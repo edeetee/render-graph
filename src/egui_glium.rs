@@ -36,7 +36,7 @@ pub fn main() {
     // Ui::visual
     // egui_glium.egui_ctx.set_visuals(visuals)
     let mut visuals = egui_glium.egui_ctx.style().visuals.clone();
-    visuals.widgets.noninteractive.bg_fill = Color32::TRANSPARENT;
+    visuals.widgets.noninteractive.bg_fill = Color32::from_black_alpha(100);
     egui_glium.egui_ctx.set_visuals(visuals);
 
     let mut graph_ui = GraphUi::new_from_persistent(state, &display, &mut egui_glium);
