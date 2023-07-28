@@ -56,10 +56,8 @@ impl<Leaf: Copy, Branch: Copy> Tree<Leaf, Branch> where {
                 egui::CollapsingHeader::new(branch_header(*branch))
                     .open(open_state)
                     .show(ui, |ui| {
-                        dbg!(ui.max_rect().width());
-                        ui.ctx().set_debug_on_hover(true);
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::Min).with_main_wrap(true), |ui|{
-                            children.iter_mut().flat_map(|child| child.draw(ui, open_state, draw,branch_header)).collect()
+                            children.iter_mut().flat_map(|child| child.draw(ui, open_state, draw, branch_header)).collect()
                         }).inner
                     })
                     .body_returned.unwrap_or_default()

@@ -17,7 +17,7 @@ use crate::common::{connections::ConnectionType};
 use super::{
     def::{*,},
     graph::{GraphUtils},
-    node_shader::ShaderInputs, node_shader::NodeShader, node_update::{NodeUpdate},
+    node_shader::ProcessedShaderNodeInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
 
 pub struct UpdateTracker {
@@ -165,7 +165,7 @@ impl ShaderGraphProcessor {
                 //Render a shader
                 if let Some(shader) = self.shaders.get_mut(node_id) {
 
-                    match shader.render(facade, texture_manager, ShaderInputs::from(&inputs)) {
+                    match shader.render(facade, texture_manager, ProcessedShaderNodeInputs::from(&inputs)) {
                         Ok(target) => {
                             node_post_render(node_id, &target);
                             Some(target)

@@ -1,19 +1,20 @@
 use std::{
     fmt::Display,
     fs::read_dir,
-    path::{Path, PathBuf},
+    path::{Path, PathBuf}, rc::Rc,
 };
 
 use egui::{Widget, Rect, Stroke, Color32, Button};
 use egui_glium::EguiGlium;
-use glium::{backend::Facade, Surface};
+use glium::{backend::Facade, Surface, uniforms::{Uniforms, AsUniformValue}};
 use itertools::Itertools;
 use serde::Serialize;
 use slotmap::SlotMap;
+use try_utils::inner;
 
 use crate::{
-    common::connections::ConnectionType,
-    graph::node_shader::{NodeShader, ShaderInputs},
+    common::connections::{ConnectionType, InputDef},
+    graph::node_shader::{NodeShader},
     isf::meta::{default_isf_path, IsfInfo},
     textures::{ui::UiTexture, TextureManager},
     tree_view::{RefWidget, Tree},
@@ -68,8 +69,6 @@ pub struct TreeState {
     pub branches: SlotMap<BranchIndex, BranchItem>,
     pub leaves: SlotMap<LeafIndex, LeafItem>,
 }
-
-
 
 impl Default for TreeState {
     fn default() -> Self {
@@ -138,8 +137,6 @@ impl TreeState {
 
         let mut leaves_in_view = vec![];
 
-        // assert!(self.)
-
         for tree in &mut self.trees {
             if search_changed {
                 tree.map_leaf(&mut |item| {
@@ -153,10 +150,13 @@ impl TreeState {
 
                 if leaf.visible {
                     let resp = leaf.ui(ui);
+
+                    // let available_rect = ui.available_rect_before_wrap();
+
                     if resp.clicked() {
                         clicked_leaf = Some(leaf_index);
                     }
-                    // ui.visi
+
                     if ui.is_rect_visible(resp.rect) {
                         leaves_in_view.push(leaf_index);
                     }
@@ -164,17 +164,42 @@ impl TreeState {
             }, &mut |branch_index| self.branches[branch_index].name.clone());
         }
 
+        
+
         // clicked_leaf
 
         TreeDrawResult { clicked: clicked_leaf, in_view: leaves_in_view }
     }
 }
 
-
 pub struct LeafItem {
     visible: bool,
     pub ty: NodeType,
+    //some(ok) if loaded
+    //some(err) if failed to load
+    //none if not loaded yet
     pub instance: Option<anyhow::Result<(NodeShader, UiTexture)>>,
+}
+
+struct LeafTempUniforms<'a> {
+    pub input_tex: Option<&'a glium::Texture2d>,
+    pub inputs: &'a [InputDef],
+}
+
+impl <'b> Uniforms for LeafTempUniforms<'b> {
+    fn visit_values<'a, F: FnMut(&str, glium::uniforms::UniformValue<'a>)>(&'a self, mut output: F) {
+        for input in self.inputs {
+            let shader_input = if input.ty == ConnectionType::Texture2D {
+                self.input_tex.as_ref().map(|tex|tex.as_uniform_value())
+            } else {
+                input.value.as_shader_input()
+            };
+
+            if let Some(uniform_value) = shader_input {
+                output(&input.name, uniform_value);
+            }
+        }
+    }
 }
 
 impl LeafItem {
@@ -186,18 +211,25 @@ impl LeafItem {
         }
     }
 
-    pub fn render(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, texture_manager: &mut TextureManager, shader_inputs: ShaderInputs) {
+    pub fn render(&mut self, facade: &impl Facade, egui_glium: &mut EguiGlium, texture_manager: &mut TextureManager, input_tex: Option<&glium::Texture2d>) {
         if self.instance.is_none() {
             if let Some(shader) = NodeShader::new(&self.ty, facade) {
                 self.instance = Some(shader.map(|shader| {
-                    let img = UiTexture::new(facade, egui_glium, (256,256));
+                    let img = UiTexture::new(facade, egui_glium, (LEAF_RENDER_WIDTH, LEAF_RENDER_WIDTH));
                     (shader, img)
                 }));
             }
         }
 
         if let Some(Ok((shader, img))) = &mut self.instance {
-            if let Ok(output) = shader.render(facade, texture_manager, shader_inputs) {
+            let inputs = self.ty.get_input_types();
+
+            let uniforms = LeafTempUniforms{
+                input_tex,
+                inputs: &inputs
+            };
+
+            if let Ok(output) = shader.render(facade, texture_manager, uniforms) {
                 img.copy_from(facade, &output.as_surface());
             } else {
                 img.framebuffer(facade).unwrap().clear_color(1.0, 0.0, 0.0, 1.0);
@@ -212,24 +244,31 @@ impl LeafItem {
     }
 }
 
+const LEAF_RENDER_WIDTH: u32 = 64;
+
 impl Widget for &LeafItem {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let button = Button::new(self.to_string());
+        let all_width = LEAF_RENDER_WIDTH as f32;
+        let all_size = [all_width; 2];
+        let (all_rect, resp) = ui.allocate_exact_size(all_size.into(), egui::Sense::click());
 
-        if let Some(Ok((_,tex))) = &self.instance {
-            let image_resp = egui::Frame::none()
-                .stroke(Stroke::new(1.0, Color32::WHITE))
-                .show(ui, |ui|{
+        let inner_resp = egui::Frame::none()
+            .stroke(Stroke::new(1.0, if resp.hovered() {Color32::WHITE} else {Color32::GRAY}))
+            .show(ui, |ui|{
+                // let inner_rect = ui.rect
+
+                if let Some(Ok((_,tex))) = &self.instance {
                     let (width, height) = tex.size();
-                    ui.image(tex.id(), [width as f32, height as f32].map(|f|f*0.3));
-                });
-            
-            let button_resp = ui.put(image_resp.response.rect, button.fill(Color32::TRANSPARENT));
-            
-            button_resp.union(image_resp.response)
-        } else {
-            ui.add(button)
-        }
+                    let max = width.max(height);
+                    let img_size = [width as f32, height as f32].map(|x|(x as f32) / (max as f32) * all_width);
+                    
+                    ui.put(all_rect, egui::Image::new(tex.id(), img_size));
+                }
+                ui.put(all_rect, egui::Label::new(self.to_string()));
+                
+            });
+
+        inner_resp.response.union(resp)
     }
 }
 

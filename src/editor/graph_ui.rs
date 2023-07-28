@@ -1,6 +1,5 @@
 use std::ops::Deref;
 
-use crate::graph::node_shader::ShaderInputs;
 use crate::textures::TextureManager;
 use crate::util::MappableTuple;
 use egui::style::{Margin, DebugOptions};
@@ -13,6 +12,7 @@ use glium::Texture2d;
 use glium::{backend::Facade, Display, Surface};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
+use try_utils::some;
 
 // use crate::textures::UiTexture;
 
@@ -40,7 +40,6 @@ pub struct GraphUi {
 enum NodeSelectionActor {
     Mouse(egui::Pos2),
     DraggingOutput(egui::Pos2, NodeId, AnyParameterId),
-    // DraggingInput(NodeId),
 }
 
 impl NodeSelectionActor {
@@ -204,10 +203,6 @@ impl GraphUi {
         }
     }
 
-    pub fn editor(&self) -> &GraphEditorState {
-        &self.editor
-    }
-
     delegate::delegate! {
          to self.processor {
              pub fn update(&mut self, [&mut self.editor.graph], [&self.graph_state], facade: &impl Facade);
@@ -225,6 +220,9 @@ impl GraphUi {
         const MONO_COLOR: f32 = 0.1;
         frame.clear_color_and_depth((MONO_COLOR, MONO_COLOR, MONO_COLOR, 1.), 0.);
 
+        
+        let mut render_requests = vec![];
+
         match self.state.view_state {
             ViewState::Graph => {
                 let mut graph_response = None;
@@ -237,19 +235,7 @@ impl GraphUi {
                 //Update data that stays aligned with the graph
                 if let Some(response) = graph_response {
 
-                    let empty_vec = vec![];
-
-                    for render in response.render_requests {
-                        match render {
-                            RenderRequest::Leaf(leaf_id) => {
-                                let leaf = &mut self.tree.leaves[leaf_id];
-                                let fake_inputs = ShaderInputs {
-                                    node_inputs: &empty_vec,
-                                };
-                                leaf.render(display, egui_glium, &mut self.texture_manager, fake_inputs);
-                            },
-                        }
-                    }
+                    render_requests = response.render_requests;
 
                     for change in response.graph_changes {
                         self.processor
@@ -282,16 +268,41 @@ impl GraphUi {
             }
         }
 
+        let render_previews_connection = self.state.node_selection_actor.as_ref().map(|actor| match actor {
+            NodeSelectionActor::Mouse(_) => None,
+            NodeSelectionActor::DraggingOutput(_, node_id, param_id) => Some((*node_id,*param_id)),
+        })
+            .flatten();
+
+        let preview_tex_input = self.texture_manager.get_color(display);
+        preview_tex_input.as_surface().clear_color(1.0, 1.0, 1.0, 1.0);
+
         let outputs = self.processor.render_shaders(
             &mut self.editor.graph,
             display,
             &mut self.texture_manager,
             |node_id, tex: &Texture2d| {
                 let surface = tex.as_surface();
+
+                if let Some((preview_target_node_id, param_id)) = render_previews_connection {
+                    if node_id == preview_target_node_id {
+                        surface.fill(&preview_tex_input.as_surface(), glium::uniforms::MagnifySamplerFilter::Linear);
+                    }
+                }
+
                 self.node_textures
                     .copy_surface(display, egui_glium, node_id, &surface);
             },
         );
+
+        let preview_requests = render_requests.iter().filter_map(|leaf |some!(leaf, if RenderRequest::Leaf)).cloned().collect_vec();
+
+        for leaf_id in preview_requests {
+            let leaf = &mut self.tree.leaves[leaf_id];
+
+            leaf.render(display, egui_glium, &mut self.texture_manager, Some(preview_tex_input.as_ref()));
+        }
+        
 
         match self.state.view_state {
             ViewState::Graph => {
@@ -355,17 +366,15 @@ impl GraphUi {
             dbg!(action);
         }
 
-        egui::TopBottomPanel::top("Titlebar").default_height(64.0).show(ctx, |ui| {});
+        egui::TopBottomPanel::top("Titlebar").show(ctx, |ui| {});
 
         if !self.graph_state.animations.is_empty() {
             self.draw_animators(ctx);
         }
 
-        let mouse_pos: egui::Pos2 = ctx.pointer_latest_pos().unwrap_or(ctx.available_rect().left_top()) - self.editor.pan_zoom.pan;
-
         if action == Some(GraphUiAction::ToggleAddNodeModal) {
             self.state.node_selection_actor = if self.state.node_selection_actor.is_none() {
-                Some(NodeSelectionActor::Mouse(mouse_pos))
+                Some(NodeSelectionActor::Mouse(self.interaction_pos_on_graph(ctx)))
             } else {
                 None
             };
@@ -390,7 +399,11 @@ impl GraphUi {
         } else if let Some(last_connection_in_progress) = self.state.last_connection_in_progress {
             //and it has ended
             if self.editor.connection_in_progress.is_none() {
-                self.state.node_selection_actor = Some(NodeSelectionActor::DraggingOutput(mouse_pos, last_connection_in_progress.0, last_connection_in_progress.1));
+                self.state.node_selection_actor = Some(NodeSelectionActor::DraggingOutput(self.interaction_pos_on_graph(ctx), last_connection_in_progress.0, last_connection_in_progress.1));
+
+                let previewed_node = &self.editor.graph.nodes[last_connection_in_progress.0];
+                // dbg!(previewed_node);
+
                 self.state.last_connection_in_progress = None;
             }
         }
@@ -406,6 +419,10 @@ impl GraphUi {
         }.union(extra_responses)
     }
 
+    fn interaction_pos_on_graph(&self, ctx: &egui::Context) -> egui::Pos2 {
+        ctx.pointer_latest_pos().unwrap_or(ctx.available_rect().left_top()) - self.editor.pan_zoom.pan
+    }
+
     fn draw_node_selector_window(&mut self, action: Option<GraphUiAction>, ctx: &egui::Context) -> GraphUiResult {
         let node_selection_window = egui::Window::new("New node");
         let mut extra_responses = vec![];
@@ -414,17 +431,15 @@ impl GraphUi {
 
         if let Some(node_selection_actor) = &self.state.node_selection_actor {
             let mut window_is_open = true;
-            let new_node_pos = node_selection_actor.pos()+self.editor.pan_zoom.pan;
+            let new_node_pos = node_selection_actor.pos();
 
-            let modal_rect = Rect::from_center_size(new_node_pos, Vec2::new(256.0, 256.0));
+            let modal_rect = Rect::from_center_size(new_node_pos+self.editor.pan_zoom.pan, Vec2::new(256.0, 256.0));
 
             let selection_window_resp = node_selection_window
                 .default_rect(modal_rect)
-                .fixed_size(modal_rect.size())
                 .open(&mut window_is_open)
                 .scroll2([false, true])
                 .collapsible(false)
-                // .auto_sized()
                 .show(ctx, |ui| self.tree.draw(ui));
             
             tree_result = selection_window_resp.map(|resp| resp.inner)
@@ -444,14 +459,13 @@ impl GraphUi {
                 self.state.node_selection_actor = None;
             }
         } else {
-            // node_selection_window.open(&mut false).show(ctx,|_|{});
             ctx.memory().reset_areas();
         }
 
         GraphUiResult {
             graph_changes: extra_responses,
             render_requests: tree_result.map(|result|
-                result.in_view.iter().map(|leaf_index| RenderRequest::Leaf(*leaf_index)).collect()
+                result.in_view.into_iter().map(RenderRequest::Leaf).collect()
             ).unwrap_or_default()
         }
     }
@@ -462,9 +476,7 @@ impl GraphUi {
         ctx: &egui::Context,
         ui_action: &Option<GraphUiAction>,
     ) -> egui_node_graph::GraphResponse<GraphResponse, UiNodeData> {
-        // egui::widgets::global_dark_light_mode_switch(ui)
-
-        draw_hack_ui(ctx, ui);
+        options(ctx, ui);
 
         if ui_action == &Some(GraphUiAction::Home) {
             self.editor.pan_zoom.pan = egui::Vec2::ZERO;
@@ -472,6 +484,10 @@ impl GraphUi {
 
         if ui.ui_contains_pointer() {
             self.editor.pan_zoom.pan += ctx.input().scroll_delta;
+
+            // if ui.input().pointer.button_double_clicked(egui::PointerButton::Primary) {
+            //     self.state.node_selection_actor = Some(NodeSelectionActor::Mouse(self.interaction_pos_on_graph(ctx)));
+            // }
 
             if let Some(point) = ctx.input().pointer.hover_pos() {
                 let zoom_delta = ctx.input().zoom_delta();
@@ -491,7 +507,7 @@ impl GraphUi {
     }
 
     fn draw_animators(&mut self, ctx: &egui::Context) {
-        egui::SidePanel::left("animators").show(ctx, |ui| {
+        egui::Window::new("Animators").show(ctx, |ui| {
             let mut removal = None;
             for (key, updater) in &mut self.graph_state.animations {
                 let (node_id, param_name) = key;
@@ -517,7 +533,7 @@ impl GraphUi {
 }
 
 
-fn draw_hack_ui(ctx: &egui::Context, ui: &mut egui::Ui) {
+fn options(ctx: &egui::Context, ui: &mut egui::Ui) {
 
     ui.set_clip_rect(ctx.available_rect());
     egui::widgets::global_dark_light_mode_switch(ui);

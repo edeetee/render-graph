@@ -298,7 +298,7 @@ impl WidgetValueTrait for UiValue {
         
         if user_state.param_with_popup.as_ref() == Some(&param_key) {
             let popup_response = popup(&ui, 
-                animator_popup_id, 
+                animator_popup_id,
                 &param_response.response,
                 |ui|{
                     ui.vertical(|ui| {

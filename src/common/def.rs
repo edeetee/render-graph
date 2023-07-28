@@ -57,6 +57,7 @@ impl Reset for UiValue {
     }
 }
 
+
 impl UiValue {
     pub fn as_shader_input(&self) -> Option<UniformValue<'_>> {
         match self {

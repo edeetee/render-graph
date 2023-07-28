@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use glium::{backend::Facade, Surface, texture::Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue}, framebuffer::SimpleFrameBuffer};
+use glium::{backend::Facade, Surface, texture::Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue, UniformType}, framebuffer::SimpleFrameBuffer};
 
 use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph::{ProcessedInputs}};
 use crate::{isf::shader::{IsfShader}, obj_shader::renderer::ObjRenderer, textures::{TextureManager}, gl_expression::GlExpressionRenderer};
@@ -35,7 +35,7 @@ impl NodeShader {
         &mut self,
         facade: &impl Facade,
         textures: &mut TextureManager,
-        inputs: ShaderInputs<'_>,
+        inputs: impl UniformsExt,
     ) -> anyhow::Result<Rc<Texture2d>> {
         let color: Rc<Texture2d> = textures.get_color(facade);
 
@@ -69,11 +69,11 @@ impl NodeShader {
     }
 }
 
-pub struct ShaderInputs<'a> {
+pub struct ProcessedShaderNodeInputs<'a> {
     pub node_inputs: &'a ProcessedInputs<'a, Rc<Texture2d>>,
 }
 
-impl ShaderInputs<'_> {
+impl ProcessedShaderNodeInputs<'_> {
     pub fn first_texture(&self) -> Option<&Texture2d> {
         self.node_inputs.iter().filter_map(|(_,_,tex)| {
             tex.as_ref().map(Rc::as_ref)
@@ -81,7 +81,7 @@ impl ShaderInputs<'_> {
     }
 }
 
-impl<'a> Uniforms for ShaderInputs<'a>{
+impl<'a> Uniforms for ProcessedShaderNodeInputs<'a>{
     fn visit_values<'b, F: FnMut(&str, UniformValue<'b>)>(&'b self, mut output: F) {
         for (name, input, tex) in self.node_inputs {
             let option_val = tex.as_ref()
@@ -96,8 +96,27 @@ impl<'a> Uniforms for ShaderInputs<'a>{
     }
 }
 
-impl <'a> From<&'a ProcessedInputs<'a, Rc<Texture2d>>> for ShaderInputs<'a> {
+pub trait UniformsExt: Uniforms {
+    fn first_texture(&self) -> Option<&Texture2d> {
+        let mut texture = None;
+
+        self.visit_values(|_, value| {
+            match value {
+                UniformValue::Texture2d(img, _) => {
+                    texture = Some(img);
+                },
+                _ => {}
+            }
+        });
+
+        texture
+    }
+}
+
+impl<T: Uniforms> UniformsExt for T{}
+
+impl <'a> From<&'a ProcessedInputs<'a, Rc<Texture2d>>> for ProcessedShaderNodeInputs<'a> {
     fn from(inputs: &'a ProcessedInputs<'a, Rc<Texture2d>>) -> Self {
-        ShaderInputs { node_inputs: inputs }
+        ProcessedShaderNodeInputs { node_inputs: inputs }
     }
 }
