@@ -1,35 +1,12 @@
 use std::time::Duration;
-
-use egui::{Ui, Widget};
 use glam::{Vec3, Quat};
 use serde::{Serialize, Deserialize};
-
-use super::{def::UiValue, ui_util::horizontal_drags};
-
+use super::{def::UiValue};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RotationAnimation {
-    axis: [f32; 3],
-    speed: f32
-}
-
-impl Widget for &mut RotationAnimation {
-    fn ui(self, ui: &mut Ui) -> egui::Response {
-        ui.vertical(|ui| {
-            ui.label("axis");
-            let axis_resp = horizontal_drags(ui, &["x", "y", "z"], super::ui_util::UiLimit::None, &mut self.axis);
-
-            if axis_resp.inner {
-                Vec3::from_slice(&self.axis)
-                    .try_normalize()
-                    .unwrap_or(Vec3::Y)
-                    .write_to_slice(&mut self.axis);
-            }
-
-            ui.label("speed");
-            ui.add(egui::Slider::new(&mut self.speed, -1.0..=1.0));
-        }).response
-    }
+    pub axis: [f32; 3],
+    pub speed: f32
 }
 
 pub struct UpdateInfo {
@@ -72,19 +49,6 @@ impl DataUpdater {
                 data.value += speed*info.seconds_since_update;
             },
             _ => {}
-        }
-    }
-}
-
-impl Widget for &mut DataUpdater {
-    fn ui(self, ui: &mut Ui) -> egui::Response {
-        match self {
-            DataUpdater::FloatSpeed(f32_speed) => {
-                ui.add(egui::Slider::new(f32_speed, -1.0..=1.0))
-            },
-            DataUpdater::Rotation(rotation_animation) => {
-                rotation_animation.ui(ui)
-            }
         }
     }
 }

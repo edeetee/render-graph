@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
+name = "render_graph_lib"
 crate-type=["cdylib"]
 panic="abort"
 

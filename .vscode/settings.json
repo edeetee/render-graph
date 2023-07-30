@@ -13,12 +13,14 @@
     //     // "ffgl_plugin",
     //     // "webui"
     // ]
-    "rust-analyzer.cargo.features": [
-        // "editor"
-    ],
+    // "rust-analyzer.cargo.features": [
+    //     // "editor"
+    // ],
     "rust-analyzer.linkedProjects": [
         "./Cargo.toml",
-        "./Cargo.toml"
     ],
+//     "rust-analyzer.server.extraEnv": {
+//         "CHALK_OVERFLOW_DEPTH": 250
+//   }
     // "rust-analyzer.lib"
 }

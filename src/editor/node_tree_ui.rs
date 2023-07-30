@@ -263,7 +263,7 @@ impl Widget for &LeafItem {
                     
                     ui.put(all_rect, egui::Image::new(tex.id(), img_size));
                 }
-                ui.put(all_rect, egui::Label::new(RichText::new(self.to_string()).color(Color32::WHITE)));
+                ui.put(all_rect, egui::Label::new(RichText::new(self.to_string()).color(ui.visuals().text_color())));
                 
             });
 

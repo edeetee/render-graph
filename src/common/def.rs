@@ -2,10 +2,8 @@ use std::{path::PathBuf, fmt::Debug};
 
 use egui::{Rgba};
 use glium::{uniforms::{AsUniformValue, UniformValue}};
-
 use serde::{Serialize, Deserialize};
-
-use super::mat4_ui::Mat4UiData;
+use super::mat4_animator::Mat4Animator;
 
 pub trait Reset {
     fn reset(&mut self);
@@ -23,7 +21,7 @@ pub enum UiValue {
     Color(RangedData<Rgba>),
     Text(RangedData<String>, TextStyle),
     Path(Option<PathBuf>),
-    Mat4(Mat4UiData),
+    Mat4(Mat4Animator),
     
     #[default]
     None,
@@ -73,13 +71,6 @@ impl UiValue {
             UiValue::Text(..) | UiValue::Path(_) | UiValue::None => None,
         }
     }
-
-
-    // delegate! {
-    //     to match self {
-
-    //     }
-    // }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

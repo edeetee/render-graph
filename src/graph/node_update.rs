@@ -1,15 +1,8 @@
 use std::{time::SystemTime};
-
-
 use glium::backend::Facade;
-
-
-
 use crate::{isf::{updater::IsfUpdater}, obj_shader::loader::ObjLoader, gl_expression::GlExpressionUpdater};
-
-use super::{node_types::NodeType, node_shader::NodeShader, graph::InputParams};
+use super::{node_types::NodeType, node_shader::NodeShader, graph_utils::InputParams};
 use crate::common::def::UiValue;
-
 
 pub enum NodeUpdate {
     Isf(IsfUpdater),

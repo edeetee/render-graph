@@ -1,10 +1,8 @@
 
 
-use egui::{Color32};
 use egui_glium::EguiGlium;
 use glium::glutin::{self, event::{Event, WindowEvent}, event_loop::ControlFlow, platform::{run_return::EventLoopExtRunReturn, macos::{WindowExtMacOS, WindowBuilderExtMacOS}}, window::{Fullscreen, WindowBuilder}};
-use crate::{common::persistent_state::{PersistentState, WindowState}};
-
+use crate::{common::persistent_state::{PersistentState, WindowState}, widgets::style::custom_visuals};
 
 
 use crate::editor::graph_ui::GraphUi;
@@ -34,10 +32,7 @@ pub fn main() {
     let mut egui_glium = EguiGlium::new(&display, &event_loop);
 
     // Ui::visual
-    // egui_glium.egui_ctx.set_visuals(visuals)
-    let mut visuals = egui_glium.egui_ctx.style().visuals.clone();
-    visuals.widgets.noninteractive.bg_fill = Color32::from_black_alpha(100);
-    egui_glium.egui_ctx.set_visuals(visuals);
+    egui_glium.egui_ctx.set_visuals(custom_visuals());
 
     let mut graph_ui = GraphUi::new_from_persistent(state, &display, &mut egui_glium);
 
@@ -150,7 +145,6 @@ fn create_display(event_loop: &glutin::event_loop::EventLoop<()>, window_state: 
         .with_srgb(true)
         .with_hardware_acceleration(Some(true))
         .with_stencil_buffer(0)
-        // .window
         .with_vsync(true);
 
     glium::Display::new(window_builder, context_builder, event_loop).unwrap()

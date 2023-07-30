@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 
 use super::def::{UiNodeData, GraphState};
 
-use crate::common::mat4_ui::Mat4UiData;
+use crate::common::mat4_animator::Mat4Animator;
 use crate::isf::meta::{IsfInfo};
 
 use crate::common::def::{TextStyle, UiValue};
@@ -70,7 +70,7 @@ impl NodeType {
             NodeType::ObjRender => vec![
                 ("obj", UiValue::Path(None)).into(),
                 ("model", UiValue::Mat4(Mat4::IDENTITY.into())).into(),
-                ("view", UiValue::Mat4(Mat4UiData::new_view())).into(),
+                ("view", UiValue::Mat4(Mat4Animator::new_view())).into(),
             ],
             NodeType::Expression { .. } => vec![
                 ("text", UiValue::Text("vec4(1.0,1.0,1.0,1.0)".to_string().into(), TextStyle::Multiline)).into(),
@@ -97,6 +97,7 @@ impl NodeTemplateIter for AllNodeTypes {
         NodeType::get_builtin()
     }
 }
+
 
 impl NodeTemplateTrait for NodeType {
     type NodeData = UiNodeData;

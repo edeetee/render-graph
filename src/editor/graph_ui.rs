@@ -2,6 +2,7 @@ use std::ops::Deref;
 
 use crate::textures::TextureManager;
 use crate::util::MappableTuple;
+use crate::widgets::debug::debug_options;
 use egui::style::{Margin, DebugOptions};
 use egui::{Color32, RichText, Widget, Rect, Vec2};
 use egui_glium::EguiGlium;
@@ -22,6 +23,7 @@ use crate::graph::{
     node_types::{AllNodeTypes, NodeType},
     GraphChangeEvent, ShaderGraphProcessor,
 };
+
 
 use super::node_textures::NodeUiTextures;
 use super::node_tree_ui::{TreeState, LeafIndex};
@@ -331,6 +333,9 @@ impl GraphUi {
     pub fn add_node(&mut self, node_kind: &NodeType, position: egui::Pos2, connection: Option<(NodeId, AnyParameterId)>) -> Vec<GraphChangeEvent> {
         let mut responses = vec![];
 
+
+        let num_copies = self.editor.graph.nodes.iter().filter(|(n_id,n)| n.user_data.template == *node_kind).count();
+
         let new_node = self.editor.graph.add_node(
             node_kind.node_graph_label(&mut self.graph_state),
             node_kind.user_data(&mut self.graph_state),
@@ -482,7 +487,7 @@ impl GraphUi {
         ctx: &egui::Context,
         ui_action: &Option<GraphUiAction>,
     ) -> egui_node_graph::GraphResponse<GraphResponse, UiNodeData> {
-        options(ctx, ui);
+        debug_options(ctx, ui);
 
         if ui_action == &Some(GraphUiAction::Home) {
             self.editor.pan_zoom.pan = egui::Vec2::ZERO;
@@ -532,22 +537,5 @@ impl GraphUi {
                 self.graph_state.animations.remove(&removal);
             }
         });
-    }
-}
-
-
-fn options(ctx: &egui::Context, ui: &mut egui::Ui) {
-
-    ui.set_clip_rect(ctx.available_rect());
-    egui::widgets::global_dark_light_mode_switch(ui);
-
-    let style = ctx.style();
-    let mut debug = style.debug;
-    debug.ui(ui);
-
-    if debug != style.debug {
-        let mut style = style.deref().clone();
-        style.debug = debug;    
-        ui.ctx().set_style(style);
     }
 }

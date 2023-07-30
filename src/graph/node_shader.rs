@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use glium::{backend::Facade, Surface, texture::Texture2d, uniforms::{UniformValue, Uniforms, AsUniformValue, UniformType}, framebuffer::SimpleFrameBuffer};
 
-use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph::{ProcessedInputs}};
+use super::{node_types::NodeType, spout_out_shader::SpoutOutShader, graph_utils::{ProcessedInputs}};
 use crate::{isf::shader::{IsfShader}, obj_shader::renderer::ObjRenderer, textures::{TextureManager}, gl_expression::GlExpressionRenderer};
 
 /// Holds shaders for the fast rendering loop

@@ -5,7 +5,7 @@ use super::def::Reset;
 
 ///Transformation data with helper data for human editing
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub struct Mat4UiData {
+pub struct Mat4Animator {
     pub mat: Mat4,
     initial: Mat4,
 
@@ -15,7 +15,7 @@ pub struct Mat4UiData {
     pub translation: [f32; 3]
 }
 
-impl Reset for Mat4UiData {
+impl Reset for Mat4Animator {
     fn reset(&mut self) {
         *self = self.initial.into();
     }
@@ -23,7 +23,7 @@ impl Reset for Mat4UiData {
 
 const EULER_ORDER: EulerRot = EulerRot::ZXY;
 
-impl From<Mat4> for Mat4UiData {
+impl From<Mat4> for Mat4Animator {
     fn from(value: Mat4) -> Self {
         let decomposed = value.to_scale_rotation_translation();
         let rot_tuple = decomposed.1.to_euler(EULER_ORDER);
@@ -37,7 +37,7 @@ impl From<Mat4> for Mat4UiData {
     }
 }
 
-impl Mat4UiData {
+impl Mat4Animator {
     pub fn new_view() -> Self {
         let mut new = Self {
             translation: [0.0, 0.0, -5.0],

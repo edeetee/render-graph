@@ -99,3 +99,15 @@ impl std::fmt::Display for GlProgramCreationError {
         }
     }
 }
+
+pub trait SelfCall: Sized {
+    fn apply(self, f: fn(Self) -> Self) -> Self {
+        f(self)
+    }
+    fn mutate(&mut self, f: impl Fn(&mut Self) -> Self) -> &mut Self {
+        *self = f(self);
+        self
+    }
+}
+
+impl<T> SelfCall for T {}

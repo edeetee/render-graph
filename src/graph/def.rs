@@ -17,11 +17,11 @@ impl From<anyhow::Error> for NodeError {
     }
 }
 
-// mod cr
-
 #[derive(Serialize, Deserialize)]
 pub struct UiNodeData {
     pub template: NodeType,
+
+    // pub name: String,
 
     #[serde(skip)]
     #[cfg(feature="editor")]
@@ -68,6 +68,10 @@ impl UserResponseTrait for GraphResponse {}
 pub struct GraphState {
     #[serde(with = "vectorize")] 
     pub animations: HashMap<(NodeId, String), DataUpdater>,
+    
+    // #[serde(with = "vectorize")]
+    // pub node_names: HashMap<NodeId, String>,
+
     pub param_with_popup: Option<(NodeId, String)>,
     pub visible_nodes: HashSet<NodeId>
 }

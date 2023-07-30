@@ -2,11 +2,13 @@ use std::{path::PathBuf, env};
 use serde::{Serialize, Deserialize};
 use crate::{graph::{def::{GraphEditorState, GraphState}}, util::{read_from_json_file, write_to_json_file}};
 
+
 #[derive(Default, Serialize, Deserialize)]
 pub struct PersistentState {
     pub editor: GraphEditorState,
     pub state: GraphState,
     pub window: Option<WindowState>,
+    
     #[cfg(feature="editor")]
     pub graph_ui_state: Option<crate::editor::graph_ui::GraphUiState>,
 }

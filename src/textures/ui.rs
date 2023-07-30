@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use egui::TextureId;
+use egui::{TextureId};
 use egui_glium::EguiGlium;
 use glium::Surface;
 use glium::backend::Facade;

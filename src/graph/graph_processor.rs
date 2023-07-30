@@ -16,7 +16,7 @@ use crate::common::{connections::ConnectionType};
 
 use super::{
     def::{*,},
-    graph::{GraphUtils},
+    graph_utils::{GraphUtils},
     node_shader::ProcessedShaderNodeInputs, node_shader::NodeShader, node_update::{NodeUpdate},
 };
 

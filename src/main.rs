@@ -9,13 +9,13 @@ pub mod util;
 mod gl_expression;
 mod common;
 use color_eyre::eyre::Result;
+mod widgets;
 
 #[macro_use]
 extern crate partial_application;
 
 #[cfg(feature="editor")]
 mod editor;
-// mod egui_render_loop;
 
 #[cfg(feature="webui")]
 mod web_ui;

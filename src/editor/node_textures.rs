@@ -1,12 +1,8 @@
 use std::{rc::Rc, cell::RefCell, borrow::BorrowMut};
-
-
 use egui_glium::EguiGlium;
 use egui_node_graph::{NodeId};
 use glium::{backend::Facade, Surface};
-
 use slotmap::SecondaryMap;
-
 use crate::textures::ui::UiTexture;
 
 #[derive(Default)]

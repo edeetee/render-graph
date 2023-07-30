@@ -5,8 +5,8 @@ use egui::{InnerResponse, Response, Id, Ui, Area, Order, Frame, Layout, color_pi
 use egui_node_graph::{WidgetValueTrait, NodeId};
 use serde::{Serialize, Deserialize};
 
-use crate::common::{def::{UiValue, RangedData, TextStyle, Reset}, ui_util::{horizontal_drags, UiLimit}, animation::DataUpdater};
-
+use crate::common::{def::{UiValue, RangedData, TextStyle, Reset}, animation::DataUpdater};
+use crate::widgets::limited_ui::{horizontal_drags, UiLimit};
 use crate::graph::def::{GraphResponse, GraphState, UiNodeData};
 
 fn default_range_f32(min: &Option<f32>, max: &Option<f32>) -> RangeInclusive<f32>{
