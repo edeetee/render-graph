@@ -1,5 +1,6 @@
 use std::ops::Deref;
 
+use crate::graph::def::UniqueNodeName;
 use crate::textures::TextureManager;
 use crate::util::MappableTuple;
 use crate::widgets::debug::debug_options;
@@ -23,7 +24,6 @@ use crate::graph::{
     node_types::{AllNodeTypes, NodeType},
     GraphChangeEvent, ShaderGraphProcessor,
 };
-
 
 use super::node_textures::NodeUiTextures;
 use super::node_tree_ui::{TreeState, LeafIndex};
@@ -169,11 +169,6 @@ impl GraphChangeEvent {
             _ => None,
         }
     }
-}
-
-pub struct RenderContext<'a> {
-    display: &'a Display,
-    egui_glium: &'a mut EguiGlium,
 }
 
 impl GraphUi {
@@ -333,14 +328,16 @@ impl GraphUi {
     pub fn add_node(&mut self, node_kind: &NodeType, position: egui::Pos2, connection: Option<(NodeId, AnyParameterId)>) -> Vec<GraphChangeEvent> {
         let mut responses = vec![];
 
-
         let num_copies = self.editor.graph.nodes.iter().filter(|(n_id,n)| n.user_data.template == *node_kind).count();
 
+        let unique_name = UniqueNodeName::new(node_kind.node_graph_label(&mut self.graph_state),num_copies);
+
         let new_node = self.editor.graph.add_node(
-            node_kind.node_graph_label(&mut self.graph_state),
+            unique_name.to_string(),
             node_kind.user_data(&mut self.graph_state),
             |graph, node_id| node_kind.build_node(graph, &mut self.graph_state, node_id),
         );
+        self.graph_state.node_names.insert(new_node, unique_name.clone());
         self.editor.node_positions.insert(new_node, position);
         self.editor.node_order.push(new_node);
 

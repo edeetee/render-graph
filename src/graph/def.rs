@@ -1,8 +1,8 @@
 
-use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}, fmt::Debug};
+use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}, fmt::{Debug, Display}};
 use egui_node_graph::{UserResponseTrait, NodeId};
 use serde::{Serialize, Deserialize};
-use crate::{common::{def::{UiValue}, animation::DataUpdater, connections::ConnectionType}};
+use crate::{common::{def::{UiValue}, animation::DataUpdater, connections::ConnectionType}, util::SelfCall};
 use super::{node_types::NodeType};
 
 #[derive(Clone,Debug)]
@@ -20,8 +20,6 @@ impl From<anyhow::Error> for NodeError {
 #[derive(Serialize, Deserialize)]
 pub struct UiNodeData {
     pub template: NodeType,
-
-    // pub name: String,
 
     #[serde(skip)]
     #[cfg(feature="editor")]
@@ -64,13 +62,44 @@ impl Debug for UiNodeData {
 pub struct GraphResponse;
 impl UserResponseTrait for GraphResponse {}
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UniqueNodeName {
+    pub name: String,
+    pub num: usize,
+    pub code_name: String
+}
+
+impl UniqueNodeName {
+    pub fn new(name: String, num: usize) -> Self {
+
+        let mut code_name = name.to_lowercase().replace(" ", "_");
+
+        if 0 < num {
+            code_name.push_str(&num.to_string());
+        }
+
+        Self {
+            name,
+            num,
+            code_name
+        }
+    }
+}
+
+impl Display for UniqueNodeName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{name} ({code_name})", name=self.name, code_name=self.code_name)
+    }
+}
+
 #[derive(Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GraphState {
     #[serde(with = "vectorize")] 
     pub animations: HashMap<(NodeId, String), DataUpdater>,
     
-    // #[serde(with = "vectorize")]
-    // pub node_names: HashMap<NodeId, String>,
+    #[serde(with = "vectorize")]
+    pub node_names: HashMap<NodeId, UniqueNodeName>,
 
     pub param_with_popup: Option<(NodeId, String)>,
     pub visible_nodes: HashSet<NodeId>

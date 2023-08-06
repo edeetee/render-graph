@@ -77,8 +77,6 @@ impl ShaderGraphProcessor {
     }
 
     fn add_dangling_output(&mut self, _facade: &impl Facade, node_id: NodeId) {
-        // let is_output_target = node.outputs(&graph.graph_ref()).any(|o| o.typ == NodeConnectionTypes::Texture2D);
-
         self.terminating_nodes.insert(node_id);
     }
 

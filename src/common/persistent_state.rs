@@ -2,8 +2,8 @@ use std::{path::PathBuf, env};
 use serde::{Serialize, Deserialize};
 use crate::{graph::{def::{GraphEditorState, GraphState}}, util::{read_from_json_file, write_to_json_file}};
 
-
 #[derive(Default, Serialize, Deserialize)]
+#[serde(default)]
 pub struct PersistentState {
     pub editor: GraphEditorState,
     pub state: GraphState,
