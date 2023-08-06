@@ -23,7 +23,7 @@ mod web_ui;
 #[cfg(feature="vst_plugin")]
 mod vst_plugin;
 
-mod egui_glium;
+mod bevy_main;
 
 // use graph::render_glium;
 
@@ -31,7 +31,8 @@ fn main() -> Result<()> {
 
     color_eyre::install()?;
 
-    egui_glium::main();
+    bevy_main::main();
+    // egui_glium::main();
 
     Ok(())
 }

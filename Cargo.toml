@@ -12,7 +12,7 @@ panic="abort"
 default = ["editor"]
 vst_plugin = ["dep:vst", "dep:vst_window", "dep:raw-window-handle"]
 ffgl_plugin = ["dep:ffgl", "dep:gl_loader"]
-editor = ["dep:egui", "dep:egui_glium"]
+editor = ["dep:egui"]
 webui = ["dep:leptos", "dep:actix-web"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -24,19 +24,14 @@ spout_texture_share = { path = "./spout" }
 syphon = { path = "./syphon" }
 
 [dependencies]
-glium = "0.32.1"
 rand = "0.8.5"
 egui_node_graph = {version="0.4.0", features=["persistence"]}
 
 egui = { version="0.19.0", optional=true }
-egui_glium = { version="0.19.0", optional=true }
 
-ouroboros = "0.15.0"
 itertools = "0.10.2"
 isf = "0.1.0"
-gl = "0.14.0"
 
-glam = {version="0.21.3", features=["serde"]}
 
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }
@@ -78,6 +73,8 @@ color-eyre = "0.5"
 partial_application = "0.2.1"
 try_utils = "0.1.2"
 graph = "0.3.0"
+bevy = "0.11.0"
+bevy_egui = "0.21.0"
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"
