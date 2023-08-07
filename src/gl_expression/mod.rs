@@ -1,4 +1,3 @@
-use glium::{backend::Facade, Surface, uniforms::Uniforms, program::UniformBlock, DrawError};
 use glsl::{syntax::{Expr, Identifier}, parser::Parse};
 
 

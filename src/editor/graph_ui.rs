@@ -1,17 +1,13 @@
 use std::ops::Deref;
 
 use crate::graph::def::UniqueNodeName;
-use crate::textures::TextureManager;
 use crate::util::MappableTuple;
 use crate::widgets::debug::debug_options;
 use egui::style::{Margin, DebugOptions};
 use egui::{Color32, RichText, Widget, Rect, Vec2};
-use egui_glium::EguiGlium;
 use egui_node_graph::{
     AnyParameterId, NodeDataTrait, NodeId, NodeResponse, NodeTemplateTrait, UserResponseTrait,
 };
-use glium::Texture2d;
-use glium::{backend::Facade, Display, Surface};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use try_utils::some;
@@ -25,7 +21,6 @@ use crate::graph::{
     GraphChangeEvent, ShaderGraphProcessor,
 };
 
-use super::node_textures::NodeUiTextures;
 use super::node_tree_ui::{TreeState, LeafIndex};
 
 pub struct GraphUi {
@@ -33,9 +28,7 @@ pub struct GraphUi {
     editor: GraphEditorState,
     graph_state: GraphState,
     tree: TreeState,
-    node_textures: NodeUiTextures,
     state: GraphUiState,
-    texture_manager: TextureManager,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -111,11 +104,9 @@ impl Default for GraphUi {
     fn default() -> Self {
         Self {
             editor: GraphEditorState::new(1.0),
-            texture_manager: TextureManager::default(),
             graph_state: GraphState::default(),
             tree: TreeState::default(),
             processor: ShaderGraphProcessor::default(),
-            node_textures: NodeUiTextures::default(),
             state: GraphUiState::default(),
         }
     }
@@ -179,11 +170,6 @@ impl GraphUi {
     ) -> Self {
         Self {
             processor: ShaderGraphProcessor::new_from_graph(&mut state.editor.graph, facade),
-            node_textures: NodeUiTextures::new_from_graph(
-                &mut state.editor.graph,
-                facade,
-                egui_glium,
-            ),
             editor: state.editor,
             graph_state: state.state,
             state: state.graph_ui_state.unwrap_or_default(),

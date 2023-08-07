@@ -5056,6 +5056,7 @@ dependencies = [
  "ffgl",
  "genmesh",
  "gl_loader",
+ "glam",
  "glsl",
  "glutin",
  "graph",

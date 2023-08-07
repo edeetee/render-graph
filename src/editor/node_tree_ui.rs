@@ -4,9 +4,8 @@ use std::{
     path::{Path, PathBuf}, rc::Rc,
 };
 
+use bevy_egui::EguiManagedTexture;
 use egui::{Widget, Rect, Stroke, Color32, Button, WidgetText, RichText};
-use egui_glium::EguiGlium;
-use glium::{backend::Facade, Surface, uniforms::{Uniforms, AsUniformValue}};
 use itertools::Itertools;
 use serde::Serialize;
 use slotmap::SlotMap;
@@ -16,7 +15,6 @@ use crate::{
     common::connections::{ConnectionType, InputDef},
     graph::node_shader::{NodeShader},
     isf::meta::{default_isf_path, IsfInfo},
-    textures::{ui::UiTexture, TextureManager},
     tree_view::{RefWidget, Tree},
 };
 
@@ -178,11 +176,11 @@ pub struct LeafItem {
     //some(ok) if loaded
     //some(err) if failed to load
     //none if not loaded yet
-    pub instance: Option<anyhow::Result<(NodeShader, UiTexture)>>,
+    pub instance: Option<anyhow::Result<(NodeShader, EguiManagedTexture)>>,
 }
 
 struct LeafTempUniforms<'a> {
-    pub input_tex: Option<&'a glium::Texture2d>,
+    pub input_tex: Option<&'a EguiManagedTexture>,
     pub inputs: &'a [InputDef],
 }
 
