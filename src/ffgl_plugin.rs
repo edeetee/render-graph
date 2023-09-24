@@ -4,6 +4,7 @@ use ffgl::logln;
 // use egui_node_graph::graph;
 // mod ffgl;
 use ::ffgl::{ffgl_handler, FFGLHandler};
+use gl::types;
 use glium::{
     backend::{Context, Facade},
     framebuffer::{ColorAttachment, EmptyFrameBuffer, SimpleFrameBuffer},
@@ -17,8 +18,6 @@ use crate::{
     graph::{def::GraphEditorState, ShaderGraphProcessor},
     textures,
 };
-
-const GRAPH_FILE: &[u8] = include_bytes!("../target/debug/render-graph-auto-save.json");
 
 struct RawGlBackend {
     size: (u32, u32),
@@ -76,10 +75,13 @@ impl FFGLHandler for RenderGraphHandler {
     unsafe fn new(inst_data: &ffgl::FFGLData) -> Self {
         let backend = RawGlBackend::new(inst_data.get_dimensions());
 
-        // let editor: GraphEditorState = serde_json::from_slice(graph_file).unwrap();
+        logln!("path: {:?}", PersistentState::default_path());
+
         let state = PersistentState::load_from_default_path();
 
         let mut graph = state.editor.graph;
+
+        logln!("graph {:#?}", graph);
 
         let ctx = glium::backend::Context::new(
             backend,
@@ -93,35 +95,23 @@ impl FFGLHandler for RenderGraphHandler {
         )
         .unwrap();
 
-        logln!("OPENGL_VERSION{:?}", ctx.get_opengl_version());
+        let texture_manager = textures::TextureManager {
+            res: inst_data.get_dimensions(),
+            ..Default::default()
+        };
 
-        // glium::HeadlessRenderer
-        // gl::st
+        logln!("OPENGL_VERSION {}", ctx.get_opengl_version_string());
 
         Self {
             processor: ShaderGraphProcessor::new_from_graph(&mut graph, &ctx),
             graph,
-            texture_manager: textures::TextureManager::default(),
+            texture_manager,
             ctx,
         }
     }
 
     unsafe fn draw(&mut self, inst_data: &ffgl::FFGLData, frame_data: &ffgl::ProcessOpenGLStruct) {
-        // let mut fb = SimpleFrameBuffer::new()
-        // gl::BindFramebuffer(gl::FRAMEBUFFER, framebuffer)
-
         let (width, height) = inst_data.get_dimensions();
-        // let fbo = Texture2d::from_id(
-        //     &self.ctx,
-        //     glium::texture::UncompressedFloatFormat::U8U8U8U8,
-        //     frame_data.HostFBO,
-        //     false,
-        //     glium::texture::MipmapsOption::EmptyMipmaps,
-        //     glium::texture::Dimensions::Texture2d { width, height }
-        // );
-
-        // fbo.as_surface().cl
-        // gl::ClearCo
         let mod_sec = inst_data
             .host_time
             .duration_since(SystemTime::UNIX_EPOCH)
@@ -129,60 +119,27 @@ impl FFGLHandler for RenderGraphHandler {
             .as_secs_f32()
             % 1.0;
 
-        // let mut fb = SimpleFrameBuffer::new()
-        // glium::framebuffer::
+        let mut frame = Frame::new(self.ctx.clone(), inst_data.get_dimensions());
+        frame.clear_color(0.0, 1.0 - mod_sec, 0.0, 1.0);
 
-        /*
-         * Writing to BindFrameBuffer makes it fail.
-         * clear_color will call this internally
-         */
-        // gl::ReadBin
-        // gl::BindFramebuffer(gl::FRAMEBUFFER, frame_data.HostFBO);
-        // gl::ClearColor(1.0, 0.0, 0.0, 1.0);
-        // gl::Clear(gl::COLOR_BUFFER_BIT);
-
-        let fb_tex = Texture2d::from_id(
+        self.processor.render_shaders(
+            &mut self.graph,
             &self.ctx,
-            glium::texture::UncompressedFloatFormat::U8U8U8U8,
-            frame_data.HostFBO,
-            false,
-            glium::texture::MipmapsOption::EmptyMipmaps,
-            glium::texture::Dimensions::Texture2d { width, height },
+            &mut self.texture_manager,
+            |node_id, tex| {
+                // frame.blit_buffers_from_simple_framebuffer(tex.as_su, source_rect, target_rect, filter)
+                tex.as_surface()
+                    .fill(&frame, glium::uniforms::MagnifySamplerFilter::Nearest);
+                // gl::Copy
+                // gl::GetBind
+                // self.ctx.swap_buffers().unwrap();
+                // gl::BindFramebuffer(gl::FRAMEBUFFER, frame_data.HostFBO);
+                copy(tex, frame_data.HostFBO, width / 2, height);
+            },
         );
 
-        let mut fb = fb_tex.as_surface();
-
-        // let mut frame = Frame::new(self.ctx.clone(), inst_data.get_dimensions());
-        fb.clear_color(0.0, mod_sec, 0.0, 1.0);
-
-        // self.processor.render_shaders(
-        //     &mut self.graph,
-        //     &self.ctx,
-        //     &mut self.texture_manager,
-        //     |_, tex| {
-        //         // frame.blit_buffers_from_simple_framebuffer(tex.as_su, source_rect, target_rect, filter)
-        //         tex.as_surface()
-        //             .fill(&fb, glium::uniforms::MagnifySamplerFilter::Nearest);
-        //         // gl::Copy
-        //         // gl::GetBind
-        //         // self.ctx.swap_buffers().unwrap();
-        //         // gl::BindFramebuffer(gl::FRAMEBUFFER, frame_data.HostFBO);
-        //         // copy(tex, frame_data.HostFBO, width, height);
-        //     },
-        // );
-
-        // fbo.as_surface().clear_color(0.0, 1.0, 0.0, 1.0);
-
-        // for node in self.graph.nodes.values() {
-        //     logln!("{:#?}", node);
-        // }
-        // self.ctx.swap_buffers().unwrap();
-        self.ctx.finish();
-
-        //return the framebuffer
-        // gl::BindFramebuffer(gl::FRAMEBUFFER, 0);
-
-        // self.ctx.finish()
+        frame.finish().unwrap();
+        gl::BindFramebuffer(gl::FRAMEBUFFER, frame_data.HostFBO);
     }
 }
 
@@ -216,7 +173,7 @@ unsafe fn copy(tex: &Texture2d, frame_data: gl::types::GLuint, width: u32, heigh
         (target_rect.left as i32 + target_rect.width as i32) as gl::types::GLint,
         (target_rect.bottom as i32 + target_rect.height as i32) as gl::types::GLint,
         gl::COLOR_BUFFER_BIT,
-        gl::NEAREST,
+        gl::LINEAR,
     );
 }
 

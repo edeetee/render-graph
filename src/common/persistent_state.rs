@@ -24,11 +24,7 @@ pub struct WindowState {
 
 impl PersistentState {
     pub fn default_path() -> PathBuf {
-        env::current_exe()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("render-graph-auto-save.json")
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("render-graph-auto-save.json")
     }
 
     pub fn load_from_default_path() -> Self {

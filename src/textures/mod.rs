@@ -1,15 +1,19 @@
-use std::{rc::Rc};
+use std::rc::Rc;
 
 use glium::{
     backend::Facade,
-    texture::{SrgbTexture2d, DepthTexture2d}, Texture2d,
+    texture::{DepthTexture2d, SrgbTexture2d},
+    Texture2d,
 };
 
 pub mod ui;
 
 const NO_MIPMAP: glium::texture::MipmapsOption = glium::texture::MipmapsOption::NoMipmap;
 
-pub fn new_texture_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Result<Texture2d, glium::texture::TextureCreationError>  {
+pub fn new_texture_2d(
+    facade: &impl Facade,
+    (width, height): (u32, u32),
+) -> Result<Texture2d, glium::texture::TextureCreationError> {
     Texture2d::empty_with_format(
         facade,
         glium::texture::UncompressedFloatFormat::F32F32F32F32,
@@ -19,7 +23,10 @@ pub fn new_texture_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Resu
     )
 }
 
-pub fn new_depth_texture_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Result<DepthTexture2d, glium::texture::TextureCreationError>  {
+pub fn new_depth_texture_2d(
+    facade: &impl Facade,
+    (width, height): (u32, u32),
+) -> Result<DepthTexture2d, glium::texture::TextureCreationError> {
     DepthTexture2d::empty_with_format(
         facade,
         glium::texture::DepthFormat::F32,
@@ -29,7 +36,10 @@ pub fn new_depth_texture_2d(facade: &impl Facade, (width, height): (u32, u32)) -
     )
 }
 
-pub fn new_texture_srgb_2d(facade: &impl Facade, (width, height): (u32, u32)) -> Result<SrgbTexture2d, glium::texture::TextureCreationError>  {
+pub fn new_texture_srgb_2d(
+    facade: &impl Facade,
+    (width, height): (u32, u32),
+) -> Result<SrgbTexture2d, glium::texture::TextureCreationError> {
     SrgbTexture2d::empty_with_format(
         facade,
         glium::texture::SrgbFormat::U8U8U8U8,
@@ -41,25 +51,25 @@ pub fn new_texture_srgb_2d(facade: &impl Facade, (width, height): (u32, u32)) ->
 
 #[derive(Debug)]
 pub struct TextureManager {
-    color_textures: Vec<Rc<Texture2d>>,
-    depth_textures: Vec<Rc<DepthTexture2d>>,
-    res: (u32, u32)
+    pub color_textures: Vec<Rc<Texture2d>>,
+    pub depth_textures: Vec<Rc<DepthTexture2d>>,
+    pub res: (u32, u32),
 }
 
-pub const DEFAULT_RES: (u32, u32) = (512, 512);
+pub const DEFAULT_RES: (u32, u32) = (1920, 1080);
 
 impl Default for TextureManager {
     fn default() -> Self {
         Self {
             color_textures: Vec::new(),
             depth_textures: Vec::new(),
-            res: DEFAULT_RES
+            res: DEFAULT_RES,
         }
     }
 }
 
 fn get_unused_or_push<T>(vec: &mut Vec<Rc<T>>, f: impl Fn() -> T) -> Rc<T> {
-    if let Some(unused_tex) = vec.iter().filter(|tex| Rc::strong_count(tex) == 1).next(){
+    if let Some(unused_tex) = vec.iter().filter(|tex| Rc::strong_count(tex) == 1).next() {
         unused_tex.clone()
     } else {
         let new = Rc::new(f());
@@ -71,11 +81,15 @@ fn get_unused_or_push<T>(vec: &mut Vec<Rc<T>>, f: impl Fn() -> T) -> Rc<T> {
 //Handles shared references of textures and will allocate new textures as needed
 impl TextureManager {
     pub fn get_color(&mut self, facade: &impl Facade) -> Rc<Texture2d> {
-        get_unused_or_push(&mut self.color_textures, || new_texture_2d(facade, self.res).unwrap() )
+        get_unused_or_push(&mut self.color_textures, || {
+            new_texture_2d(facade, self.res).unwrap()
+        })
     }
 
     pub fn get_depth(&mut self, facade: &impl Facade) -> Rc<DepthTexture2d> {
-        get_unused_or_push(&mut self.depth_textures, || new_depth_texture_2d(facade, self.res).unwrap() )
+        get_unused_or_push(&mut self.depth_textures, || {
+            new_depth_texture_2d(facade, self.res).unwrap()
+        })
     }
 
     // fn set_res(&mut self, facade: &impl Facade, res: (u32, u32)){
