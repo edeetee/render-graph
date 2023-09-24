@@ -127,14 +127,13 @@ impl FFGLHandler for RenderGraphHandler {
             &self.ctx,
             &mut self.texture_manager,
             |node_id, tex| {
-                // frame.blit_buffers_from_simple_framebuffer(tex.as_su, source_rect, target_rect, filter)
+                //both required for the texture to be available...
+                //TODO: WHY?
+
                 tex.as_surface()
                     .fill(&frame, glium::uniforms::MagnifySamplerFilter::Nearest);
-                // gl::Copy
-                // gl::GetBind
-                // self.ctx.swap_buffers().unwrap();
-                // gl::BindFramebuffer(gl::FRAMEBUFFER, frame_data.HostFBO);
-                copy(tex, frame_data.HostFBO, width / 2, height);
+                // copy_hostfbo(&tex.as_surface(), &frame);
+                copy(tex, frame_data.HostFBO, width, height);
             },
         );
 
@@ -142,6 +141,29 @@ impl FFGLHandler for RenderGraphHandler {
         gl::BindFramebuffer(gl::FRAMEBUFFER, frame_data.HostFBO);
     }
 }
+
+// fn copy_hostfbo(src: &impl Surface, target: &impl Surface) {
+//     let src_dim = src.get_dimensions();
+//     let src_rect = Rect {
+//         left: 0,
+//         bottom: 0,
+//         width: src_dim.0 / 2 as u32,
+//         height: src_dim.1 as u32,
+//     };
+//     let target_dim = target.get_dimensions();
+//     let target_rect = glium::BlitTarget {
+//         left: 0,
+//         bottom: 0,
+//         width: (target_dim.0 / 2) as i32,
+//         height: target_dim.1 as i32,
+//     };
+//     src.blit_color(
+//         &src_rect,
+//         target,
+//         &target_rect,
+//         glium::uniforms::MagnifySamplerFilter::Nearest,
+//     )
+// }
 
 unsafe fn copy(tex: &Texture2d, frame_data: gl::types::GLuint, width: u32, height: u32) {
     gl::BindFramebuffer(gl::READ_FRAMEBUFFER, tex.get_id());
@@ -152,14 +174,14 @@ unsafe fn copy(tex: &Texture2d, frame_data: gl::types::GLuint, width: u32, heigh
     let src_rect = Rect {
         left: 0,
         bottom: 0,
-        width: tex_w,
+        width: tex_w / 2,
         height: tex_h,
     };
 
     let target_rect = Rect {
         left: 0,
         bottom: 0,
-        width,
+        width: width / 2,
         height,
     };
 
