@@ -1,31 +1,27 @@
-use std::{
-    rc::Rc, time::Instant, collections::HashSet,
-};
+use std::{collections::HashSet, rc::Rc, time::Instant};
 
+use egui_node_graph::{InputId, NodeId, OutputId};
+use glium::{backend::Facade, Texture2d};
 
-use egui_node_graph::{NodeId, InputId, OutputId};
-use glium::{
-    backend::Facade, Texture2d,
-};
-
+use crate::{common::animation::UpdateInfo, textures::TextureManager};
 use itertools::Itertools;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use crate::{textures::{TextureManager}, common::animation::UpdateInfo};
 
-use crate::common::{connections::ConnectionType};
+use crate::common::connections::ConnectionType;
 
 use super::{
-    def::{*,},
-    graph_utils::{GraphUtils},
-    node_shader::ProcessedShaderNodeInputs, node_shader::NodeShader, node_update::{NodeUpdate},
+    def::*, graph_utils::GraphUtils, node_shader::NodeShader,
+    node_shader::ProcessedShaderNodeInputs, node_update::NodeUpdate,
 };
 
 pub struct UpdateTracker {
-    last_update: Instant
+    last_update: Instant,
 }
 impl Default for UpdateTracker {
     fn default() -> Self {
-        Self { last_update: Instant::now() }
+        Self {
+            last_update: Instant::now(),
+        }
     }
 }
 
@@ -34,7 +30,17 @@ pub struct ShaderGraphProcessor {
     terminating_nodes: HashSet<NodeId>,
     shaders: SecondaryMap<NodeId, NodeShader>,
     updaters: SecondaryMap<NodeId, NodeUpdate>,
-    update_info: UpdateTracker
+    update_info: UpdateTracker,
+}
+
+impl std::fmt::Debug for ShaderGraphProcessor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ShaderGraphProcessor")
+            .field("terminating_nodes", &self.terminating_nodes)
+            .field("shaders", &self.shaders.len())
+            .field("updaters", &self.updaters.len())
+            .finish()
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -42,24 +48,32 @@ pub enum GraphChangeEvent {
     CreatedNode(NodeId),
     DestroyedNode(NodeId),
 
-    Connected{
-        output_id: OutputId, 
-        input_id: InputId
+    Connected {
+        output_id: OutputId,
+        input_id: InputId,
     },
-    Disconnected{
-        output_id: OutputId, 
-        input_id: InputId
+    Disconnected {
+        output_id: OutputId,
+        input_id: InputId,
     },
 }
 
 impl GraphChangeEvent {
-    #[must_use="Use the vec of node responses to load callbacks"]
+    #[must_use = "Use the vec of node responses to load callbacks"]
     pub fn vec_from_graph(graph: &Graph) -> Vec<Self> {
-        let new_nodes = graph.nodes.iter()
+        let new_nodes = graph
+            .nodes
+            .iter()
             .map(|(node_id, ..)| GraphChangeEvent::CreatedNode(node_id));
 
-        let new_connections = graph.connections.iter()
-            .map(|(input, output)| GraphChangeEvent::Connected { output_id: *output, input_id: input });
+        let new_connections =
+            graph
+                .connections
+                .iter()
+                .map(|(input, output)| GraphChangeEvent::Connected {
+                    output_id: *output,
+                    input_id: input,
+                });
 
         new_nodes.chain(new_connections).collect()
     }
@@ -131,17 +145,16 @@ impl ShaderGraphProcessor {
 
             //may create new output target
             GraphChangeEvent::Disconnected { output_id, .. } => {
-                if let Some(output) = graph.try_get_output(output_id){
+                if let Some(output) = graph.try_get_output(output_id) {
                     self.add_dangling_output(facade, output.node);
                 }
             }
 
             GraphChangeEvent::Connected { output_id, .. } => {
-                self.terminating_nodes
-                    .remove(&graph[output_id].node);
+                self.terminating_nodes.remove(&graph[output_id].node);
             }
 
-            GraphChangeEvent::DestroyedNode (node_id) => {
+            GraphChangeEvent::DestroyedNode(node_id) => {
                 self.terminating_nodes.remove(&node_id);
                 self.shaders.remove(node_id);
                 self.updaters.remove(node_id);
@@ -153,32 +166,48 @@ impl ShaderGraphProcessor {
     /// Generates ui textures
     /// processes inputs
     /// Returns a list of output textures
-    pub fn render_shaders(&mut self, graph: &mut Graph, facade: &impl Facade, texture_manager: &mut TextureManager, mut node_post_render: impl FnMut(NodeId, &Texture2d)) -> Vec<Option<Rc<Texture2d>>>
-    {
+    pub fn render_shaders(
+        &mut self,
+        graph: &mut Graph,
+        facade: &impl Facade,
+        texture_manager: &mut TextureManager,
+        mut node_post_render: impl FnMut(NodeId, &Texture2d),
+    ) -> Vec<Option<Rc<Texture2d>>> {
         let mut errors: SparseSecondaryMap<NodeId, NodeError> = Default::default();
 
-        let outputs = self.terminating_nodes.iter().cloned().map(|output_id|{
-            graph.map_with_inputs(output_id, &mut |node_id, inputs| {
+        let outputs = self
+            .terminating_nodes
+            .iter()
+            .cloned()
+            .map(|output_id| {
+                graph.map_with_inputs(
+                    output_id,
+                    &mut |node_id, inputs| {
+                        //Render a shader
+                        if let Some(shader) = self.shaders.get_mut(node_id) {
+                            match shader.render(
+                                facade,
+                                texture_manager,
+                                ProcessedShaderNodeInputs::from(&inputs),
+                            ) {
+                                Ok(target) => {
+                                    node_post_render(node_id, &target);
+                                    Some(target)
+                                }
 
-                //Render a shader
-                if let Some(shader) = self.shaders.get_mut(node_id) {
-
-                    match shader.render(facade, texture_manager, ProcessedShaderNodeInputs::from(&inputs)) {
-                        Ok(target) => {
-                            node_post_render(node_id, &target);
-                            Some(target)
-                        }
-
-                        Err(err) => {
-                            errors.insert(node_id, err.into());
+                                Err(err) => {
+                                    errors.insert(node_id, err.into());
+                                    None
+                                }
+                            }
+                        } else {
                             None
                         }
-                    }
-                } else {
-                    None
-                }
-            }, &mut SecondaryMap::new())
-        }).collect_vec();
+                    },
+                    &mut SecondaryMap::new(),
+                )
+            })
+            .collect_vec();
 
         for (node_id, data) in graph.nodes.iter_mut() {
             data.user_data.render_error = errors.remove(node_id);
@@ -192,33 +221,27 @@ impl ShaderGraphProcessor {
             let _template = &mut graph[node_id].user_data.template;
 
             let node = &mut graph.nodes[node_id];
-            let inputs: Vec<_> = node.inputs.iter()
+            let inputs: Vec<_> = node
+                .inputs
+                .iter()
                 .map(|(name, in_id)| (name.as_str(), &graph.inputs[*in_id]))
                 .collect();
 
             if let Some(shader) = &mut self.shaders.get_mut(node_id) {
-                match updater.update(
-                    facade, 
-                    &mut node.user_data.template, 
-                    &inputs, 
-                    shader
-                ) {
-                    Ok(()) => {
-                        node.user_data.update_error = None
-                    },
-                    Err(err) => {
-                        node.user_data.update_error = Some(err.into())
-                    }
+                match updater.update(facade, &mut node.user_data.template, &inputs, shader) {
+                    Ok(()) => node.user_data.update_error = None,
+                    Err(err) => node.user_data.update_error = Some(err.into()),
                 }
             }
         }
 
         let elapsed_since_update = self.update_info.last_update.elapsed();
         let update_info = UpdateInfo::new(elapsed_since_update);
-        
+
         for ((node_id, param_name), animation) in &state.animations {
-            let maybe_input = graph
-                .nodes[*node_id].inputs.iter()
+            let maybe_input = graph.nodes[*node_id]
+                .inputs
+                .iter()
                 .find(|(input_name, _)| input_name == param_name);
 
             if let Some((_, input_id)) = maybe_input {
@@ -230,7 +253,4 @@ impl ShaderGraphProcessor {
 
         self.update_info.last_update = Instant::now();
     }
-
-    
 }
-

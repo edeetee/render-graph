@@ -9,16 +9,16 @@
         "Srgb"
     ],
     "autoHide.autoHideSideBar": false,
-    // "rust-analyzer.cargo.features": [
-    //     // "ffgl_plugin",
-    //     // "webui"
-    // ]
+    "rust-analyzer.cargo.features": [
+        "ffgl_plugin",
+        // "webui"
+    ]
     // "rust-analyzer.cargo.features": [
     //     // "editor"
     // ],
-    "rust-analyzer.linkedProjects": [
-        "./Cargo.toml",
-    ],
+    // "rust-analyzer.linkedProjects": [
+    //     "./Cargo.toml",
+    // ],
 //     "rust-analyzer.server.extraEnv": {
 //         "CHALK_OVERFLOW_DEPTH": 250
 //   }

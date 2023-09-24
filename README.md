@@ -7,22 +7,23 @@ I am developing this for the use case of live generative visual performances, wh
 ![screenshot](media/screenshot.png)
 
 ## Features
+
 - Spout (Windows texture sharing)
 - ISF shader support
-    - Hot reloading
-    - Default ISF location (install the [Isf Editor](https://isf.vidvox.net/desktop-editor/) for a free library of examples)
+  - Hot reloading
+  - Default ISF location (install the [Isf Editor](https://isf.vidvox.net/desktop-editor/) for a free library of examples)
 - Texture sharing
 - Obj file render
-    - Will cull objects if they have many vertices (WIP)
+  - Will cull objects if they have many vertices (WIP)
 - GL Expression OP
 - Auto save/load with serde
 - Show errors in UI
 
 ## Inspirations
+
 https://github.com/dfranx/SHADERed
 
 https://derivative.ca/
-
 
 ## Contributing
 
@@ -30,7 +31,12 @@ API is very much unstable at the moment. If you are interested in contributing, 
 
 ---
 
+## Testing Resolume
+
+`cargo watch -s ./run_resolume.sh`
+
 ## TODO
+
 - Make systems to define easy way to have common types across nodes so that it works nicely with rust Into<T> system and makes it easy to use graph features/types modularly and simply.
 - Transparent windows https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/
 - Only use Srgb textures for visible nodes
@@ -47,9 +53,9 @@ API is very much unstable at the moment. If you are interested in contributing, 
 - Support different texture sizes (options per node)
 - Sub shader input for obj render
 - Parameter template system for nodes
-    - ISF transitions/effects
-    - consistent midi controls
-    - easy way to map simple control systems to complex operators / groups of operators
-    - Better than CHOPs
+  - ISF transitions/effects
+  - consistent midi controls
+  - easy way to map simple control systems to complex operators / groups of operators
+  - Better than CHOPs
 - Temporal reprojection for low fps
 - Ability to use different runtimes (bevy, VSTs)

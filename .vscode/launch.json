@@ -22,7 +22,20 @@
                 ]
             },
             "args": []
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Cargo launch (Release)",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--release",
+                    "--bin",
+                    "render-graph"
+                ]
+            },
+            "args": []
         }
-        
     ]
 }
