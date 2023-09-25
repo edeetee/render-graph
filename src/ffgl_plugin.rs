@@ -24,6 +24,7 @@ use crate::{
 
 const GL_INIT_ONCE: Once = std::sync::Once::new();
 
+#[derive(Debug)]
 struct RawGlBackend {
     size: (u32, u32),
 }
@@ -84,6 +85,8 @@ impl FFGLHandler for RenderGraphHandler {
     unsafe fn new(inst_data: &ffgl::FFGLData) -> Self {
         let backend = Rc::new(RawGlBackend::new(inst_data.get_dimensions()));
 
+        logln!("BACKEND: {backend:?}");
+
         let state = PersistentState::load_from_default_path();
 
         let mut graph = state.editor.graph;
@@ -127,20 +130,35 @@ impl FFGLHandler for RenderGraphHandler {
         self.ctx.rebuild(self.backend.clone()).unwrap();
 
         let res = inst_data.get_dimensions();
+        // let rb = RenderBuffer::new(
+        //     &self.ctx,
+        //     glium::texture::UncompressedFloatFormat::F32F32F32F32,
+        //     res.0,
+        //     res.1,
+        // )
+        // .unwrap();
 
         //Higher resolution than this seems to cut off the image
-        let mut frame = Frame::new(self.ctx.clone(), (128, 128));
-        let frame_dimen = frame.get_dimensions();
+        let mut frame = Frame::new(self.ctx.clone(), (res.0 / 2, res.1 / 2));
+        // let frame_dimen = frame.get_dimensions();
 
         validate::validate_context_state();
-        self.render_frame(inst_data, &mut frame);
 
-        frame.finish().unwrap();
-        self.ctx.finish();
+        // let tex = self.texture_manager.get_color(&self.ctx);
+        let fb = &mut frame;
+        fb.clear_color(0.0, 0.0, 1.0, 1.0);
+
+        self.render_frame(inst_data, fb);
+
+        // gl::BindFramebuffer(FRAMEBUFFER, 0);
+        // gl::ClearColor(0.0, 0.0, 1.0, 1.0);
 
         gl::BindFramebuffer(gl::READ_FRAMEBUFFER, 0);
         gl::BindFramebuffer(gl::DRAW_FRAMEBUFFER, frame_data.HostFBO);
-        blit_fb(frame_dimen, res);
+        blit_fb(frame.get_dimensions(), res);
+
+        frame.finish().unwrap();
+        self.ctx.finish();
 
         //reset to what host expects
         gl_reset(frame_data);
@@ -155,9 +173,9 @@ impl RenderGraphHandler {
      - Frame -> Output
 
      ### Not working:
-     - shader render texture seems to be empty
+     - Shader render seems to be wrong size??
     */
-    fn render_frame(&mut self, inst_data: &ffgl::FFGLData, frame: &mut Frame) {
+    fn render_frame(&mut self, inst_data: &ffgl::FFGLData, target: &mut impl Surface) {
         let ramp = 1.0
             - inst_data
                 .host_time
@@ -166,7 +184,7 @@ impl RenderGraphHandler {
                 .as_secs_f32()
                 % 1.0;
 
-        frame.clear_color(ramp, 0.0, 0.0, 1.0);
+        target.clear_color(ramp, 0.0, 0.0, 1.0);
 
         self.processor
             .update(&mut self.graph, &self.graph_state, &self.ctx);
@@ -176,52 +194,19 @@ impl RenderGraphHandler {
             &self.ctx,
             &mut self.texture_manager,
             |node_id, tex| {
-                // gl::UseProgram(0);
-                // gl::ActiveTexture(gl::TEXTURE0);
-                // validate::validate_context_state();
-                //both required for the texture to be available...
-                //TODO: WHY?
-
-                // tex.as_surface()
-                //     .fill(&frame, glium::uniforms::MagnifySamplerFilter::Nearest);
+                // frame.clear_color(ramp, 0.0, ramp, 1.0);
                 // tex.as_surface().clear_color(0.0, ramp, 0.0, 1.0);
 
-                // frame.clear_color(ramp, 0.0, ramp, 1.0);
-
-                tex.as_surface()
-                    .fill(frame, glium::uniforms::MagnifySamplerFilter::Nearest);
-
-                // let src = tex.as_surface();
-                // let target = &frame;
-
-                // let src_dim = src.get_dimensions();
-                // let src_rect = Rect {
-                //     left: 0,
-                //     bottom: 0,
-                //     width: src_dim.0 as u32,
-                //     height: src_dim.1 as u32,
-                // };
-                // let target_dim = target.get_dimensions();
-                // let target_rect = glium::BlitTarget {
-                //     left: 0,
-                //     bottom: 0,
-                //     width: target_dim.0 as i32,
-                //     height: target_dim.1 as i32,
-                // };
-
-                // target.blit_buffers_from_simple_framebuffer(
-                //     &src,
-                //     &src_rect,
-                //     &target_rect,
-                //     glium::uniforms::MagnifySamplerFilter::Nearest,
-                //     BlitMask::color(),
+                // logln!(
+                //     "rendering {tex:?} {:?} {:?}",
+                //     tex.get_internal_format().unwrap(),
+                //     tex.get_texture_type()
                 // );
-
-                // copy(tex.get_id(), res, 0, res);
-                // copy_hostfbo(&tex.as_surface(), &frame);
-                // copy(tex, frame_data.HostFBO, width, height);
+                tex.as_surface()
+                    .fill(target, glium::uniforms::MagnifySamplerFilter::Nearest);
             },
         );
+
         for (node_id, node) in self.graph.nodes.iter() {
             for err in vec![
                 &node.user_data.render_error,
@@ -307,10 +292,10 @@ unsafe fn blit_fb((read_w, read_h): (u32, u32), (write_w, write_h): (u32, u32)) 
     };
 
     let target_rect = BlitTarget {
-        left: (write_w as f32 * 0.25) as u32,
-        bottom: (write_h as f32 * 0.25) as u32,
-        width: (write_w as i32) / 2,
-        height: (write_h as i32) / 2,
+        left: (write_w as f32 * 0.05) as u32,
+        bottom: (write_h as f32 * 0.05) as u32,
+        width: (write_w as f32 * 0.9) as i32,
+        height: (write_h as f32 * 0.9) as i32,
     };
 
     gl::BlitFramebuffer(

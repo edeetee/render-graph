@@ -166,155 +166,8 @@
           "version": 9
         },
         {
-          "value": {
-            "id": {
-              "idx": 3,
-              "version": 7
-            },
-            "label": "ASCII Art (ascii_art)",
-            "inputs": [
-              [
-                "inputImage",
-                {
-                  "idx": 12,
-                  "version": 7
-                }
-              ],
-              [
-                "size",
-                {
-                  "idx": 11,
-                  "version": 7
-                }
-              ],
-              [
-                "gamma",
-                {
-                  "idx": 10,
-                  "version": 5
-                }
-              ],
-              [
-                "tint",
-                {
-                  "idx": 9,
-                  "version": 5
-                }
-              ],
-              [
-                "tintColor",
-                {
-                  "idx": 8,
-                  "version": 7
-                }
-              ],
-              [
-                "alphaMode",
-                {
-                  "idx": 7,
-                  "version": 9
-                }
-              ]
-            ],
-            "outputs": [
-              [
-                "Texture2D",
-                {
-                  "idx": 3,
-                  "version": 7
-                }
-              ]
-            ],
-            "user_data": {
-              "template": {
-                "Isf": {
-                  "info": {
-                    "name": "ASCII Art",
-                    "path": "/Library/Graphics/ISF/ASCII Art.fs",
-                    "def": {
-                      "ISFVSN": "2",
-                      "VSN": null,
-                      "DESCRIPTION": "ASCII Art",
-                      "CATEGORIES": [
-                        "Stylize",
-                        "Retro"
-                      ],
-                      "INPUTS": [
-                        {
-                          "NAME": "inputImage",
-                          "TYPE": "image",
-                          "DEFAULT": null,
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "size",
-                          "TYPE": "float",
-                          "DEFAULT": 0.10000000149011612,
-                          "MIN": 0.0,
-                          "MAX": 1.0,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "gamma",
-                          "TYPE": "float",
-                          "DEFAULT": 1.0,
-                          "MIN": 0.5,
-                          "MAX": 2.0,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "tint",
-                          "TYPE": "float",
-                          "DEFAULT": 1.0,
-                          "MIN": 0.0,
-                          "MAX": 1.0,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "tintColor",
-                          "TYPE": "color",
-                          "DEFAULT": [
-                            0.0,
-                            1.0,
-                            0.0,
-                            1.0
-                          ],
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "alphaMode",
-                          "TYPE": "bool",
-                          "DEFAULT": false,
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        }
-                      ],
-                      "PASSES": [],
-                      "IMPORTED": {}
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "version": 7
+          "value": null,
+          "version": 8
         }
       ],
       "inputs": [
@@ -347,151 +200,28 @@
           "version": 4
         },
         {
-          "value": {
-            "id": {
-              "idx": 7,
-              "version": 9
-            },
-            "typ": "None",
-            "value": {
-              "Bool": {
-                "value": true,
-                "min": null,
-                "max": null,
-                "default": false
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 3,
-              "version": 7
-            },
-            "shown_inline": true
-          },
-          "version": 9
+          "value": null,
+          "version": 10
         },
         {
-          "value": {
-            "id": {
-              "idx": 8,
-              "version": 7
-            },
-            "typ": "None",
-            "value": {
-              "Color": {
-                "value": [
-                  0.0,
-                  1.0,
-                  2.3841858e-7,
-                  1.0
-                ],
-                "min": null,
-                "max": null,
-                "default": [
-                  0.0,
-                  1.0,
-                  0.0,
-                  1.0
-                ]
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 3,
-              "version": 7
-            },
-            "shown_inline": true
-          },
-          "version": 7
+          "value": null,
+          "version": 8
         },
         {
-          "value": {
-            "id": {
-              "idx": 9,
-              "version": 5
-            },
-            "typ": "None",
-            "value": {
-              "Float": {
-                "value": 1.0,
-                "min": 0.0,
-                "max": 1.0,
-                "default": 1.0
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 3,
-              "version": 7
-            },
-            "shown_inline": true
-          },
-          "version": 5
+          "value": null,
+          "version": 6
         },
         {
-          "value": {
-            "id": {
-              "idx": 10,
-              "version": 5
-            },
-            "typ": "None",
-            "value": {
-              "Float": {
-                "value": 2.0,
-                "min": 0.5,
-                "max": 2.0,
-                "default": 1.0
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 3,
-              "version": 7
-            },
-            "shown_inline": true
-          },
-          "version": 5
+          "value": null,
+          "version": 6
         },
         {
-          "value": {
-            "id": {
-              "idx": 11,
-              "version": 7
-            },
-            "typ": "None",
-            "value": {
-              "Float": {
-                "value": 1.0,
-                "min": 0.0,
-                "max": 1.0,
-                "default": 0.1
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 3,
-              "version": 7
-            },
-            "shown_inline": true
-          },
-          "version": 7
+          "value": null,
+          "version": 8
         },
         {
-          "value": {
-            "id": {
-              "idx": 12,
-              "version": 7
-            },
-            "typ": "Texture2D",
-            "value": "None",
-            "kind": "ConnectionOnly",
-            "node": {
-              "idx": 3,
-              "version": 7
-            },
-            "shown_inline": true
-          },
-          "version": 7
+          "value": null,
+          "version": 8
         },
         {
           "value": {
@@ -618,7 +348,7 @@
             "typ": "None",
             "value": {
               "Float": {
-                "value": 171.31934,
+                "value": 205.17259,
                 "min": null,
                 "max": null,
                 "default": 0.0
@@ -642,7 +372,7 @@
             "typ": "None",
             "value": {
               "Float": {
-                "value": 0.25,
+                "value": 0.5,
                 "min": null,
                 "max": null,
                 "default": 0.25
@@ -682,18 +412,8 @@
           "version": 9
         },
         {
-          "value": {
-            "id": {
-              "idx": 3,
-              "version": 7
-            },
-            "node": {
-              "idx": 3,
-              "version": 7
-            },
-            "typ": "Texture2D"
-          },
-          "version": 7
+          "value": null,
+          "version": 8
         }
       ],
       "connections": [
@@ -746,11 +466,8 @@
           "version": 0
         },
         {
-          "value": {
-            "idx": 2,
-            "version": 9
-          },
-          "version": 7
+          "value": null,
+          "version": 0
         },
         {
           "value": null,
@@ -770,10 +487,6 @@
       {
         "idx": 2,
         "version": 9
-      },
-      {
-        "idx": 3,
-        "version": 7
       }
     ],
     "connection_in_progress": null,
@@ -790,17 +503,14 @@
       },
       {
         "value": {
-          "x": -23049.566,
-          "y": -30499.86
+          "x": -23023.09,
+          "y": -30450.723
         },
         "version": 9
       },
       {
-        "value": {
-          "x": -22660.121,
-          "y": -30429.61
-        },
-        "version": 7
+        "value": null,
+        "version": 0
       }
     ],
     "node_finder": null,
@@ -824,11 +534,44 @@
           "offset"
         ],
         {
-          "FloatSpeed": 1.0
+          "FloatSpeed": 0.3
         }
       ]
     ],
     "node_names": [
+      [
+        {
+          "idx": 2,
+          "version": 3
+        },
+        {
+          "name": "ObjRender",
+          "num": 0,
+          "code_name": "objrender"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 7
+        },
+        {
+          "name": "Rotate",
+          "num": 0,
+          "code_name": "rotate"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 3
+        },
+        {
+          "name": "ASCII Art",
+          "num": 0,
+          "code_name": "ascii_art"
+        }
+      ],
       [
         {
           "idx": 3,
@@ -842,8 +585,8 @@
       ],
       [
         {
-          "idx": 2,
-          "version": 1
+          "idx": 3,
+          "version": 7
         },
         {
           "name": "ASCII Art",
@@ -853,13 +596,13 @@
       ],
       [
         {
-          "idx": 3,
+          "idx": 1,
           "version": 1
         },
         {
-          "name": "Truchet Tile",
+          "name": "ASCII Art",
           "num": 0,
-          "code_name": "truchet_tile"
+          "code_name": "ascii_art"
         }
       ],
       [
@@ -876,18 +619,29 @@
       [
         {
           "idx": 2,
-          "version": 7
+          "version": 1
         },
         {
-          "name": "ObjRender",
+          "name": "ASCII Art",
           "num": 0,
-          "code_name": "objrender"
+          "code_name": "ascii_art"
         }
       ],
       [
         {
           "idx": 2,
           "version": 9
+        },
+        {
+          "name": "Stripes",
+          "num": 0,
+          "code_name": "stripes"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 5
         },
         {
           "name": "Stripes",
@@ -908,63 +662,19 @@
       ],
       [
         {
-          "idx": 1,
-          "version": 7
-        },
-        {
-          "name": "Rotate",
-          "num": 0,
-          "code_name": "rotate"
-        }
-      ],
-      [
-        {
-          "idx": 1,
+          "idx": 3,
           "version": 1
         },
         {
-          "name": "ASCII Art",
+          "name": "Truchet Tile",
           "num": 0,
-          "code_name": "ascii_art"
+          "code_name": "truchet_tile"
         }
       ],
       [
         {
           "idx": 2,
-          "version": 5
-        },
-        {
-          "name": "Stripes",
-          "num": 0,
-          "code_name": "stripes"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 3
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 3,
           "version": 7
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 3
         },
         {
           "name": "ObjRender",
@@ -977,47 +687,47 @@
     "visible_nodes": [
       {
         "idx": 2,
+        "version": 5
+      },
+      {
+        "idx": 3,
         "version": 3
       },
       {
         "idx": 3,
-        "version": 3
+        "version": 1
       },
       {
         "idx": 3,
-        "version": 1
+        "version": 5
       },
       {
         "idx": 3,
         "version": 7
-      },
-      {
-        "idx": 2,
-        "version": 7
-      },
-      {
-        "idx": 1,
-        "version": 1
-      },
-      {
-        "idx": 2,
-        "version": 5
-      },
-      {
-        "idx": 2,
-        "version": 1
-      },
-      {
-        "idx": 1,
-        "version": 5
-      },
-      {
-        "idx": 3,
-        "version": 5
       },
       {
         "idx": 2,
         "version": 9
+      },
+      {
+        "idx": 2,
+        "version": 1
+      },
+      {
+        "idx": 1,
+        "version": 5
+      },
+      {
+        "idx": 2,
+        "version": 7
+      },
+      {
+        "idx": 2,
+        "version": 3
+      },
+      {
+        "idx": 1,
+        "version": 1
       }
     ]
   },

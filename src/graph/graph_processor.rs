@@ -10,8 +10,8 @@ use slotmap::{SecondaryMap, SparseSecondaryMap};
 use crate::common::connections::ConnectionType;
 
 use super::{
-    def::*, graph_utils::GraphUtils, node_shader::NodeShader,
-    node_shader::ProcessedShaderNodeInputs, node_update::NodeUpdate,
+    def::*, graph_utils::GraphMap, node_shader::NodeShader, node_shader::ProcessedShaderNodeInputs,
+    node_update::NodeUpdate,
 };
 
 pub struct UpdateTracker {
