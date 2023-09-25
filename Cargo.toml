@@ -5,8 +5,8 @@ edition = "2021"
 
 [lib]
 name = "render_graph_lib"
-crate-type=["cdylib"]
-panic="abort"
+crate-type = ["cdylib"]
+panic = "unwind"
 
 [features]
 default = ["editor"]
@@ -26,17 +26,17 @@ syphon = { path = "./syphon" }
 [dependencies]
 glium = "0.32.1"
 rand = "0.8.5"
-egui_node_graph = {version="0.4.0", features=["persistence"]}
+egui_node_graph = { version = "0.4.0", features = ["persistence"] }
 
-egui = { version="0.19.0", optional=true }
-egui_glium = { version="0.19.0", optional=true }
+egui = { version = "0.19.0", optional = true }
+egui_glium = { version = "0.19.0", optional = true }
 
 ouroboros = "0.15.0"
 itertools = "0.10.2"
 isf = "0.1.0"
 gl = "0.14.0"
 
-glam = {version="0.21.3", features=["serde"]}
+glam = { version = "0.21.3", features = ["serde"] }
 
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }
@@ -46,7 +46,7 @@ native-dialog = "0.6.3"
 enum_dispatch = "0.3.8"
 thiserror = "1.0.37"
 glsl = "6.0.1"
-naga = { version="0.10.0", features=["glsl-in"] }
+naga = { version = "0.10.0", features = ["glsl-in"] }
 anyhow = "1.0.66"
 signal-hook = "0.3.14"
 serde_json = "1.0.87"
@@ -54,17 +54,17 @@ serde = "1.0.147"
 meval = "0.2.0"
 delegate = "0.9.0"
 
-glutin = {version="0.30.6"}
+glutin = { version = "0.30.6" }
 
 #vst_plugin
-vst = {version="0.3.0", optional=true}
-vst_window = {version="0.3.0", optional=true}
-raw-window-handle = {version="0.5.0", optional=true}
+vst = { version = "0.3.0", optional = true }
+vst_window = { version = "0.3.0", optional = true }
+raw-window-handle = { version = "0.5.0", optional = true }
 obj = { version = "0.10.2", features = ["genmesh"] }
 genmesh = "0.6.2"
 
 
-ffgl = { path="../ffgl-rs", optional=true }
+ffgl = { path = "../ffgl-rs", optional = true }
 gl_loader = { version = "0.1.2", optional = true }
 # ffgl = { git="https://github.com/edeetee/ffgl-rs", path="../ffgl-rs", optional=true }
 
