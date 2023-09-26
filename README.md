@@ -1,13 +1,16 @@
-# Shader graph renderer
+# Minimal shader graph
 
 A node graph renderer written in rust utilising [egui_node_graph](https://github.com/setzer22/egui_node_graph) for the graph view.
 
 I am developing this for the use case of live generative visual performances, where I want to do performant, intuitive experimentation without crashes.
 
 ![screenshot](media/screenshot.png)
+![screenshot resolume](media/screenshot_resolume.png)
 
 ## Features
 
+- !!NEW!! FFGL Shader output
+  - Run your graph inside resolume
 - Spout (Windows texture sharing)
 - ISF shader support
   - Hot reloading
@@ -27,7 +30,7 @@ https://derivative.ca/
 
 ## Contributing
 
-API is very much unstable at the moment. If you are interested in contributing, please make an issue and so I can stabilise the api surface required.
+API is very much unstable at the moment. If you are interested in contributing, please get in contact with me at edeetee@gmail.com
 
 ---
 

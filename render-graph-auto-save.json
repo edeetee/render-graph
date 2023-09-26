@@ -14,49 +14,28 @@
           "value": {
             "id": {
               "idx": 2,
-              "version": 9
+              "version": 11
             },
-            "label": "Stripes (stripes)",
+            "label": "ObjRender (objrender)",
             "inputs": [
               [
-                "width",
-                {
-                  "idx": 18,
-                  "version": 7
-                }
-              ],
-              [
-                "offset",
-                {
-                  "idx": 17,
-                  "version": 7
-                }
-              ],
-              [
-                "vertical",
-                {
-                  "idx": 16,
-                  "version": 7
-                }
-              ],
-              [
-                "color1",
-                {
-                  "idx": 15,
-                  "version": 5
-                }
-              ],
-              [
-                "color2",
-                {
-                  "idx": 14,
-                  "version": 5
-                }
-              ],
-              [
-                "splitPos",
+                "obj",
                 {
                   "idx": 13,
+                  "version": 9
+                }
+              ],
+              [
+                "model",
+                {
+                  "idx": 14,
+                  "version": 7
+                }
+              ],
+              [
+                "view",
+                {
+                  "idx": 15,
                   "version": 7
                 }
               ]
@@ -66,104 +45,15 @@
                 "Texture2D",
                 {
                   "idx": 2,
-                  "version": 9
+                  "version": 11
                 }
               ]
             ],
             "user_data": {
-              "template": {
-                "Isf": {
-                  "info": {
-                    "name": "Stripes",
-                    "path": "/Users/edwardtaylor/dev/render-graph/shaders/Stripes.fs",
-                    "def": {
-                      "ISFVSN": "2",
-                      "VSN": null,
-                      "DESCRIPTION": null,
-                      "CATEGORIES": [
-                        "Geometry"
-                      ],
-                      "INPUTS": [
-                        {
-                          "NAME": "width",
-                          "TYPE": "float",
-                          "DEFAULT": 0.25,
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "offset",
-                          "TYPE": "float",
-                          "DEFAULT": 0.0,
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "vertical",
-                          "TYPE": "bool",
-                          "DEFAULT": false,
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "color1",
-                          "TYPE": "color",
-                          "DEFAULT": [
-                            1.0,
-                            1.0,
-                            1.0,
-                            1.0
-                          ],
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "color2",
-                          "TYPE": "color",
-                          "DEFAULT": [
-                            0.0,
-                            0.0,
-                            0.0,
-                            1.0
-                          ],
-                          "MIN": null,
-                          "MAX": null,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        },
-                        {
-                          "NAME": "splitPos",
-                          "TYPE": "float",
-                          "DEFAULT": 0.5,
-                          "MIN": 0.0,
-                          "MAX": 1.0,
-                          "IDENTITY": null,
-                          "VALUES": [],
-                          "LABELS": []
-                        }
-                      ],
-                      "PASSES": [],
-                      "IMPORTED": {}
-                    }
-                  }
-                }
-              }
+              "template": "ObjRender"
             }
           },
-          "version": 9
+          "version": 11
         },
         {
           "value": null,
@@ -227,165 +117,166 @@
           "value": {
             "id": {
               "idx": 13,
-              "version": 7
+              "version": 9
             },
             "typ": "None",
             "value": {
-              "Float": {
-                "value": 0.5,
-                "min": 0.0,
-                "max": 1.0,
-                "default": 0.5
-              }
+              "Path": null
             },
             "kind": "ConstantOnly",
             "node": {
               "idx": 2,
-              "version": 9
+              "version": 11
             },
             "shown_inline": true
           },
-          "version": 7
+          "version": 9
         },
         {
           "value": {
             "id": {
               "idx": 14,
-              "version": 5
+              "version": 7
             },
             "typ": "None",
             "value": {
-              "Color": {
-                "value": [
-                  1.0,
+              "Mat4": {
+                "mat": [
+                  0.99304545,
+                  0.10514925,
+                  0.0529558,
+                  0.0,
+                  -0.067510836,
+                  0.14008397,
+                  0.9878354,
+                  0.0,
+                  0.096451886,
+                  -0.9845406,
+                  0.14620847,
+                  0.0,
+                  0.0,
                   0.0,
                   0.0,
                   1.0
                 ],
-                "min": null,
-                "max": null,
-                "default": [
+                "initial": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
                   0.0,
                   0.0,
                   0.0,
                   1.0
+                ],
+                "rotation": [
+                  81.054016,
+                  340.08994,
+                  25.73087
+                ],
+                "scale": 1.0,
+                "translation": [
+                  0.0,
+                  0.0,
+                  0.0
                 ]
               }
             },
             "kind": "ConstantOnly",
             "node": {
               "idx": 2,
-              "version": 9
+              "version": 11
             },
             "shown_inline": true
           },
-          "version": 5
+          "version": 7
         },
         {
           "value": {
             "id": {
               "idx": 15,
-              "version": 5
+              "version": 7
             },
             "typ": "None",
             "value": {
-              "Color": {
-                "value": [
-                  1.0,
-                  1.0,
-                  1.0,
+              "Mat4": {
+                "mat": [
+                  13.059248,
+                  13.793997,
+                  0.42637277,
+                  0.0,
+                  -1.1617229,
+                  1.6837201,
+                  -18.889563,
+                  0.0,
+                  13.751602,
+                  -12.957267,
+                  -2.0006776,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
                   1.0
                 ],
-                "min": null,
-                "max": null,
-                "default": [
+                "initial": [
                   1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
                   1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
                   1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  -5.0,
                   1.0
+                ],
+                "rotation": [
+                  96.18065,
+                  192.03053,
+                  34.60469
+                ],
+                "scale": -19.0,
+                "translation": [
+                  0.0,
+                  0.0,
+                  0.0
                 ]
               }
             },
             "kind": "ConstantOnly",
             "node": {
               "idx": 2,
-              "version": 9
-            },
-            "shown_inline": true
-          },
-          "version": 5
-        },
-        {
-          "value": {
-            "id": {
-              "idx": 16,
-              "version": 7
-            },
-            "typ": "None",
-            "value": {
-              "Bool": {
-                "value": false,
-                "min": null,
-                "max": null,
-                "default": false
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 2,
-              "version": 9
+              "version": 11
             },
             "shown_inline": true
           },
           "version": 7
         },
         {
-          "value": {
-            "id": {
-              "idx": 17,
-              "version": 7
-            },
-            "typ": "None",
-            "value": {
-              "Float": {
-                "value": 205.17259,
-                "min": null,
-                "max": null,
-                "default": 0.0
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 2,
-              "version": 9
-            },
-            "shown_inline": true
-          },
-          "version": 7
+          "value": null,
+          "version": 8
         },
         {
-          "value": {
-            "id": {
-              "idx": 18,
-              "version": 7
-            },
-            "typ": "None",
-            "value": {
-              "Float": {
-                "value": 0.5,
-                "min": null,
-                "max": null,
-                "default": 0.25
-              }
-            },
-            "kind": "ConstantOnly",
-            "node": {
-              "idx": 2,
-              "version": 9
-            },
-            "shown_inline": true
-          },
-          "version": 7
+          "value": null,
+          "version": 8
+        },
+        {
+          "value": null,
+          "version": 8
         }
       ],
       "outputs": [
@@ -401,15 +292,15 @@
           "value": {
             "id": {
               "idx": 2,
-              "version": 9
+              "version": 11
             },
             "node": {
               "idx": 2,
-              "version": 9
+              "version": 11
             },
             "typ": "Texture2D"
           },
-          "version": 9
+          "version": 11
         },
         {
           "value": null,
@@ -486,7 +377,7 @@
     "node_order": [
       {
         "idx": 2,
-        "version": 9
+        "version": 11
       }
     ],
     "connection_in_progress": null,
@@ -503,10 +394,10 @@
       },
       {
         "value": {
-          "x": -23023.09,
-          "y": -30450.723
+          "x": -22809.246,
+          "y": -30492.719
         },
-        "version": 9
+        "version": 11
       },
       {
         "value": null,
@@ -516,8 +407,8 @@
     "node_finder": null,
     "pan_zoom": {
       "pan": {
-        "x": 23120.305,
-        "y": 30648.398
+        "x": 23018.305,
+        "y": 30598.398
       },
       "zoom": 100.0
     },
@@ -529,12 +420,38 @@
         [
           {
             "idx": 2,
-            "version": 9
+            "version": 11
           },
-          "offset"
+          "model"
         ],
         {
-          "FloatSpeed": 0.3
+          "Rotation": {
+            "axis": [
+              0.70070523,
+              0.04131121,
+              0.71225375
+            ],
+            "speed": 1.0
+          }
+        }
+      ],
+      [
+        [
+          {
+            "idx": 2,
+            "version": 11
+          },
+          "view"
+        ],
+        {
+          "Rotation": {
+            "axis": [
+              0.8156371,
+              0.4183312,
+              0.39966893
+            ],
+            "speed": 0.83
+          }
         }
       ]
     ],
@@ -542,29 +459,7 @@
       [
         {
           "idx": 2,
-          "version": 3
-        },
-        {
-          "name": "ObjRender",
-          "num": 0,
-          "code_name": "objrender"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 7
-        },
-        {
-          "name": "Rotate",
-          "num": 0,
-          "code_name": "rotate"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 3
+          "version": 1
         },
         {
           "name": "ASCII Art",
@@ -575,18 +470,7 @@
       [
         {
           "idx": 3,
-          "version": 5
-        },
-        {
-          "name": "Expression",
-          "num": 0,
-          "code_name": "expression"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 7
+          "version": 3
         },
         {
           "name": "ASCII Art",
@@ -603,39 +487,6 @@
           "name": "ASCII Art",
           "num": 0,
           "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 3
-        },
-        {
-          "name": "Boxinator",
-          "num": 0,
-          "code_name": "boxinator"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 1
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 9
-        },
-        {
-          "name": "Stripes",
-          "num": 0,
-          "code_name": "stripes"
         }
       ],
       [
@@ -663,6 +514,39 @@
       [
         {
           "idx": 3,
+          "version": 5
+        },
+        {
+          "name": "Expression",
+          "num": 0,
+          "code_name": "expression"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 3
+        },
+        {
+          "name": "ObjRender",
+          "num": 0,
+          "code_name": "objrender"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 7
+        },
+        {
+          "name": "ASCII Art",
+          "num": 0,
+          "code_name": "ascii_art"
+        }
+      ],
+      [
+        {
+          "idx": 3,
           "version": 1
         },
         {
@@ -681,41 +565,69 @@
           "num": 0,
           "code_name": "objrender"
         }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 11
+        },
+        {
+          "name": "ObjRender",
+          "num": 0,
+          "code_name": "objrender"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 7
+        },
+        {
+          "name": "Rotate",
+          "num": 0,
+          "code_name": "rotate"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 9
+        },
+        {
+          "name": "Stripes",
+          "num": 0,
+          "code_name": "stripes"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 3
+        },
+        {
+          "name": "Boxinator",
+          "num": 0,
+          "code_name": "boxinator"
+        }
       ]
     ],
     "param_with_popup": null,
     "visible_nodes": [
       {
-        "idx": 2,
-        "version": 5
-      },
-      {
         "idx": 3,
         "version": 3
-      },
-      {
-        "idx": 3,
-        "version": 1
-      },
-      {
-        "idx": 3,
-        "version": 5
-      },
-      {
-        "idx": 3,
-        "version": 7
       },
       {
         "idx": 2,
         "version": 9
       },
       {
-        "idx": 2,
-        "version": 1
+        "idx": 3,
+        "version": 5
       },
       {
-        "idx": 1,
-        "version": 5
+        "idx": 3,
+        "version": 7
       },
       {
         "idx": 2,
@@ -724,6 +636,26 @@
       {
         "idx": 2,
         "version": 3
+      },
+      {
+        "idx": 2,
+        "version": 11
+      },
+      {
+        "idx": 2,
+        "version": 1
+      },
+      {
+        "idx": 2,
+        "version": 5
+      },
+      {
+        "idx": 1,
+        "version": 5
+      },
+      {
+        "idx": 3,
+        "version": 1
       },
       {
         "idx": 1,

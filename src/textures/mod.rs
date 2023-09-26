@@ -92,6 +92,11 @@ impl TextureManager {
         })
     }
 
+    pub fn clear(&mut self) {
+        self.color_textures.clear();
+        self.depth_textures.clear();
+    }
+
     // fn set_res(&mut self, facade: &impl Facade, res: (u32, u32)){
     //     self.res = res;
     //     for texture in self.color_textures.iter_mut() {
