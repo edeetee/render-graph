@@ -9,17 +9,18 @@ I am developing this for the use case of live generative visual performances, wh
 
 ## Features
 
-- !!NEW!! FFGL Shader output
+- _!!NEW!!_ FFGL Shader output
   - Run your graph inside resolume
-- Spout (Windows texture sharing)
 - ISF shader support
   - Hot reloading
   - Default ISF location (install the [Isf Editor](https://isf.vidvox.net/desktop-editor/) for a free library of examples)
-- Texture sharing
 - Obj file render
   - Will cull objects if they have many vertices (WIP)
 - GL Expression OP
-- Auto save/load with serde
+  - Boilerplate removal
+- Save state
+  - Auto save on exit
+  - Diff friendly json
 - Show errors in UI
 
 ## Inspirations
@@ -30,7 +31,18 @@ https://derivative.ca/
 
 ## Contributing
 
-API is very much unstable at the moment. If you are interested in contributing, please get in contact with me at edeetee@gmail.com
+API is very much unstable at the moment. Even so, it is already quite powerful and I would love support to get this polished up. If you are interested in contributing, please get in contact with me at edeetee@gmail.com
+
+## Next
+
+- FFGL Inputs
+- Vector math node
+- Parameter sharing
+  - FFGL
+  - OSCQuery
+- Multiple save files
+- Full ISF spec
+- SDF Nodes
 
 ---
 
@@ -38,8 +50,12 @@ API is very much unstable at the moment. If you are interested in contributing, 
 
 `cargo watch -s ./run_resolume.sh`
 
-## TODO
+## Backlog
 
+- Remote control
+  - Edit graph of a remote instance
+- Spout/Syphon (GPU Texture sharing)
+- Shadertoy emulator
 - Make systems to define easy way to have common types across nodes so that it works nicely with rust Into<T> system and makes it easy to use graph features/types modularly and simply.
 - Transparent windows https://ecode.dev/transparent-framebuffer-borderless-window-using-glfw/
 - Only use Srgb textures for visible nodes
@@ -47,12 +63,9 @@ API is very much unstable at the moment. If you are interested in contributing, 
 - Dependency resolution ala touchdesigner (only cook what is required)
 - Hot reloading rust code
 - Bevy / rend3 integration
-- Full ISF spec
-- Animation of parameters
 - Midi control UI
 - ISF Meta ops (more complex interface for handling racks + isf standard effects/transitions)
 - Continue reducing dependencies between structs
-- Support an SDF workflow
 - Support different texture sizes (options per node)
 - Sub shader input for obj render
 - Parameter template system for nodes

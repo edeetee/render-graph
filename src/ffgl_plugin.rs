@@ -1,6 +1,6 @@
 use std::{borrow::BorrowMut, fmt::Formatter, rc::Rc, sync::Once, time::SystemTime};
 
-use ffgl::{logln, validate};
+use ffgl::{logln, validate, Param};
 // use egui_node_graph::graph;
 // mod ffgl;
 use ::ffgl::{ffgl_handler, FFGLHandler};
@@ -74,6 +74,7 @@ pub struct RenderGraphHandler {
     texture_manager: crate::textures::TextureManager,
     backend: Rc<RawGlBackend>,
     ctx: Rc<Context>,
+    // params: Vec<ffgl::Param>,
 }
 
 impl std::fmt::Debug for RenderGraphHandler {
@@ -118,6 +119,13 @@ impl FFGLHandler for RenderGraphHandler {
 
         logln!("OPENGL_VERSION {}", ctx.get_opengl_version_string());
 
+        // let params = vec![Param {
+        //     display_name: "TEST NAME",
+        //     name: "TEST_NAME",
+        //     value: ffgl::parameters::ParamValue::Standard(1.0),
+        //     ..Default::default()
+        // }];
+
         Self {
             backend,
             processor: ShaderGraphProcessor::new_from_graph(&mut graph, &ctx),
@@ -125,10 +133,19 @@ impl FFGLHandler for RenderGraphHandler {
             graph,
             texture_manager,
             ctx,
+            // params,
         }
     }
 
-    unsafe fn draw(&mut self, inst_data: &ffgl::FFGLData, frame_data: &ffgl::ProcessOpenGLStruct) {
+    // fn params(&self) -> &[ffgl::parameters::Param] {
+    //     &self.params
+    // }
+
+    unsafe fn draw(
+        &mut self,
+        inst_data: &ffgl::FFGLData,
+        frame_data: &ffgl::ffgl::ProcessOpenGLStruct,
+    ) {
         let viewport = [
             inst_data.viewport.x as i32,
             inst_data.viewport.y as i32,
@@ -138,18 +155,17 @@ impl FFGLHandler for RenderGraphHandler {
 
         // validate_viewport(&viewport);
 
-        //reset to what glium expects the state to be in
+        //glium expects default framebuffer
         gl::BindFramebuffer(FRAMEBUFFER, 0);
 
         // validate_viewport(&viewport);
         // validate::validate_context_state();
 
-        self.ctx.rebuild(self.backend.clone()).unwrap();
+        // self.ctx.rebuild(self.backend.clone()).unwrap();
 
         let res = inst_data.get_dimensions();
 
         let frame = Frame::new(self.ctx.clone(), (res.0, res.1));
-        // let frame_dimen = frame.get_dimensions();
         let rb = RenderBuffer::new(
             &self.ctx,
             glium::texture::UncompressedFloatFormat::F32F32F32F32,
@@ -159,7 +175,7 @@ impl FFGLHandler for RenderGraphHandler {
         .unwrap();
 
         let fb = &mut SimpleFrameBuffer::new(&self.ctx, &rb).unwrap();
-        fb.clear_color(0.0, 0.0, 1.0, 1.0);
+        // fb.clear_color(0.0, 0.0, 1.0, 1.0);
 
         self.render_frame(inst_data, fb);
 
@@ -173,13 +189,15 @@ impl FFGLHandler for RenderGraphHandler {
         blit_fb(res, res);
 
         frame.finish().unwrap();
+
+        //REQUIRED as host takes control of textures
         self.texture_manager.clear();
 
         //reset to what host expects
-        gl_reset(frame_data);
+        // gl_reset(frame_data);
         // validate::validate_context_state();
 
-        validate_viewport(&viewport);
+        // validate_viewport(&viewport);
     }
 }
 
@@ -255,7 +273,7 @@ const TEXTURE_TYPES: [TextureType; 2] = [
     // Add other texture types here...
 ];
 
-unsafe fn gl_reset(frame_data: &ffgl::ProcessOpenGLStructTag) {
+unsafe fn gl_reset(frame_data: &ffgl::ffgl::ProcessOpenGLStructTag) {
     let mut gl_int = 0;
     gl::UseProgram(0);
 
