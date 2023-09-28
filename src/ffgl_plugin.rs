@@ -1,4 +1,6 @@
-use std::{borrow::BorrowMut, fmt::Formatter, rc::Rc, sync::Once, time::SystemTime};
+use std::{
+    borrow::BorrowMut, cell::OnceCell, fmt::Formatter, rc::Rc, sync::Once, time::SystemTime,
+};
 
 use ffgl::{logln, validate, Param};
 // use egui_node_graph::graph;
@@ -67,6 +69,21 @@ unsafe impl glium::backend::Backend for RawGlBackend {
     unsafe fn make_current(&self) {}
 }
 
+pub struct StaticState {
+    pub save_state: PersistentState,
+}
+const INSTANCE: OnceCell<StaticState> = OnceCell::new();
+
+impl StaticState {
+    pub fn get() -> &'static Self {
+        INSTANCE.get_or_init(|| {
+            let editor = PersistentState::load_from_default_path();
+
+            Self { save_state: editor }
+        })
+    }
+}
+
 pub struct RenderGraphHandler {
     graph: crate::graph::def::Graph,
     graph_state: GraphState,
@@ -74,7 +91,6 @@ pub struct RenderGraphHandler {
     texture_manager: crate::textures::TextureManager,
     backend: Rc<RawGlBackend>,
     ctx: Rc<Context>,
-    // params: Vec<ffgl::Param>,
 }
 
 impl std::fmt::Debug for RenderGraphHandler {
@@ -86,18 +102,20 @@ impl std::fmt::Debug for RenderGraphHandler {
     }
 }
 
+static PARAMS: &[Param] = &[Param::standard("12345\0"), Param::standard("test22\0")];
+
 impl FFGLHandler for RenderGraphHandler {
     unsafe fn new(inst_data: &ffgl::FFGLData) -> Self {
         let backend = Rc::new(RawGlBackend::new(inst_data.get_dimensions()));
 
         logln!("BACKEND: {backend:?}");
 
-        let state = PersistentState::load_from_default_path();
+        let state = StaticState::get();
 
-        let mut graph = state.editor.graph;
+        let mut graph = state.save_state.editor.graph.clone();
 
         for (node_id, node) in &graph.nodes {
-            logln!("{node_id:?}: {node:#?}");
+            logln!("{node_id:?}: {}", node.label);
         }
 
         let ctx = glium::backend::Context::new(
@@ -119,26 +137,26 @@ impl FFGLHandler for RenderGraphHandler {
 
         logln!("OPENGL_VERSION {}", ctx.get_opengl_version_string());
 
-        // let params = vec![Param {
-        //     display_name: "TEST NAME",
-        //     name: "TEST_NAME",
-        //     value: ffgl::parameters::ParamValue::Standard(1.0),
-        //     ..Default::default()
-        // }];
-
         Self {
             backend,
             processor: ShaderGraphProcessor::new_from_graph(&mut graph, &ctx),
-            graph_state: state.state,
+            graph_state: state.save_state.state.clone(),
             graph,
             texture_manager,
             ctx,
-            // params,
         }
+    }
+
+    fn params() -> &'static [Param] {
+        &PARAMS
     }
 
     // fn params(&self) -> &[ffgl::parameters::Param] {
     //     &self.params
+    // }
+
+    // fn params_mut(&mut self) -> &mut [ffgl::parameters::Param] {
+    //     &mut self.params
     // }
 
     unsafe fn draw(

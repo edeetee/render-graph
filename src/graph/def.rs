@@ -1,28 +1,39 @@
+use super::node_types::NodeType;
+use crate::{
+    common::{animation::DataUpdater, connections::ConnectionType, def::UiValue},
+    util::SelfCall,
+};
+use egui_node_graph::{NodeId, UserResponseTrait};
+use serde::{Deserialize, Serialize};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    fmt::{Debug, Display},
+    rc::Weak,
+    time::Instant,
+};
 
-use std::{rc::{Weak}, cell::RefCell, time::Instant, collections::{HashMap, HashSet}, fmt::{Debug, Display}};
-use egui_node_graph::{UserResponseTrait, NodeId};
-use serde::{Serialize, Deserialize};
-use crate::{common::{def::{UiValue}, animation::DataUpdater, connections::ConnectionType}, util::SelfCall};
-use super::{node_types::NodeType};
-
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct NodeError {
     pub text: String,
-    pub when: Instant
+    pub when: Instant,
 }
 
 impl From<anyhow::Error> for NodeError {
     fn from(err: anyhow::Error) -> Self {
-        Self { text: format!("{err:?}"), when: Instant::now() }
+        Self {
+            text: format!("{err:?}"),
+            when: Instant::now(),
+        }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct UiNodeData {
     pub template: NodeType,
 
     #[serde(skip)]
-    #[cfg(feature="editor")]
+    #[cfg(feature = "editor")]
     pub texture: Weak<RefCell<crate::textures::ui::UiTexture>>, // pub texture_cache: Option<ShaderData>
 
     #[serde(skip)]
@@ -37,7 +48,7 @@ impl UiNodeData {
     pub fn new(template: NodeType) -> Self {
         Self {
             template,
-            #[cfg(feature="editor")]
+            #[cfg(feature = "editor")]
             texture: Default::default(),
             create_error: Default::default(),
             update_error: Default::default(),
@@ -49,12 +60,12 @@ impl UiNodeData {
 impl Debug for UiNodeData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("UiNodeData")
-        .field("template", &self.template)
-        .field("texture", &self.texture)
-        .field("create_error", &self.create_error)
-        .field("update_error", &self.update_error)
-        .field("render_error", &self.render_error)
-        .finish()
+            .field("template", &self.template)
+            .field("texture", &self.texture)
+            .field("create_error", &self.create_error)
+            .field("update_error", &self.update_error)
+            .field("render_error", &self.render_error)
+            .finish()
     }
 }
 
@@ -66,12 +77,11 @@ impl UserResponseTrait for GraphResponse {}
 pub struct UniqueNodeName {
     pub name: String,
     pub num: usize,
-    pub code_name: String
+    pub code_name: String,
 }
 
 impl UniqueNodeName {
     pub fn new(name: String, num: usize) -> Self {
-
         let mut code_name = name.to_lowercase().replace(" ", "_");
 
         if 0 < num {
@@ -81,31 +91,37 @@ impl UniqueNodeName {
         Self {
             name,
             num,
-            code_name
+            code_name,
         }
     }
 }
 
 impl Display for UniqueNodeName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{name} ({code_name})", name=self.name, code_name=self.code_name)
+        write!(
+            f,
+            "{name} ({code_name})",
+            name = self.name,
+            code_name = self.code_name
+        )
     }
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct GraphState {
-    #[serde(with = "vectorize")] 
+    #[serde(with = "vectorize")]
     pub animations: HashMap<(NodeId, String), DataUpdater>,
-    
+
     #[serde(with = "vectorize")]
     pub node_names: HashMap<NodeId, UniqueNodeName>,
 
     pub param_with_popup: Option<(NodeId, String)>,
-    pub visible_nodes: HashSet<NodeId>
+    pub visible_nodes: HashSet<NodeId>,
 }
 
 pub type Node = egui_node_graph::Node<UiNodeData>;
 pub type NodeResponse = egui_node_graph::NodeResponse<GraphResponse, UiNodeData>;
-pub type GraphEditorState = egui_node_graph::GraphEditorState<UiNodeData, ConnectionType, UiValue, NodeType, GraphState>;
+pub type GraphEditorState =
+    egui_node_graph::GraphEditorState<UiNodeData, ConnectionType, UiValue, NodeType, GraphState>;
 pub type Graph = egui_node_graph::graph::Graph<UiNodeData, ConnectionType, UiValue>;

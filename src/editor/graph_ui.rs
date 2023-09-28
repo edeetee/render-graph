@@ -4,8 +4,8 @@ use crate::graph::def::UniqueNodeName;
 use crate::textures::TextureManager;
 use crate::util::MappableTuple;
 use crate::widgets::debug::debug_options;
-use egui::style::{Margin, DebugOptions};
-use egui::{Color32, RichText, Widget, Rect, Vec2};
+use egui::style::{DebugOptions, Margin};
+use egui::{Color32, Rect, RichText, Vec2, Widget};
 use egui_glium::EguiGlium;
 use egui_node_graph::{
     AnyParameterId, NodeDataTrait, NodeId, NodeResponse, NodeTemplateTrait, UserResponseTrait,
@@ -26,7 +26,7 @@ use crate::graph::{
 };
 
 use super::node_textures::NodeUiTextures;
-use super::node_tree_ui::{TreeState, LeafIndex};
+use super::node_tree_ui::{LeafIndex, TreeState};
 
 pub struct GraphUi {
     processor: ShaderGraphProcessor,
@@ -38,7 +38,7 @@ pub struct GraphUi {
     texture_manager: TextureManager,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 enum NodeSelectionActor {
     Mouse(egui::Pos2),
     DraggingOutput(egui::Pos2, NodeId, AnyParameterId),
@@ -60,14 +60,14 @@ impl NodeSelectionActor {
     }
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Clone)]
 pub struct GraphUiState {
     view_state: ViewState,
     node_selection_actor: Option<NodeSelectionActor>,
     last_connection_in_progress: Option<(NodeId, AnyParameterId)>,
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Clone)]
 pub enum ViewState {
     Graph,
     Output,
@@ -89,14 +89,22 @@ pub enum RenderRequest {
 #[derive(Default)]
 pub struct GraphUiResult {
     pub graph_changes: Vec<GraphChangeEvent>,
-    pub render_requests: Vec<RenderRequest>
+    pub render_requests: Vec<RenderRequest>,
 }
 
 impl GraphUiResult {
-    fn union(self, other: Self) -> Self{
+    fn union(self, other: Self) -> Self {
         Self {
-            graph_changes: self.graph_changes.into_iter().chain(other.graph_changes.into_iter()).collect_vec(),
-            render_requests: self.render_requests.into_iter().chain(other.render_requests.into_iter()).collect_vec(),
+            graph_changes: self
+                .graph_changes
+                .into_iter()
+                .chain(other.graph_changes.into_iter())
+                .collect_vec(),
+            render_requests: self
+                .render_requests
+                .into_iter()
+                .chain(other.render_requests.into_iter())
+                .collect_vec(),
         }
     }
 }
@@ -126,7 +134,7 @@ enum GraphUiAction {
     Home,
     ToggleAddNodeModal,
     Escape,
-    ToggleViewState
+    ToggleViewState,
 }
 
 impl GraphUiAction {
@@ -217,7 +225,6 @@ impl GraphUi {
         const MONO_COLOR: f32 = 0.1;
         frame.clear_color_and_depth((MONO_COLOR, MONO_COLOR, MONO_COLOR, 1.), 0.);
 
-        
         let mut render_requests = vec![];
 
         match self.state.view_state {
@@ -231,12 +238,11 @@ impl GraphUi {
 
                 //Update data that stays aligned with the graph
                 if let Some(response) = graph_response {
-
                     render_requests = response.render_requests;
 
                     for change in response.graph_changes {
                         self.processor
-                                .graph_event(&mut self.editor.graph, display, change);
+                            .graph_event(&mut self.editor.graph, display, change);
 
                         match change {
                             GraphChangeEvent::CreatedNode(node_id) => {
@@ -265,14 +271,22 @@ impl GraphUi {
             }
         }
 
-        let render_previews_connection = self.state.node_selection_actor.as_ref().map(|actor| match actor {
-            NodeSelectionActor::Mouse(_) => None,
-            NodeSelectionActor::DraggingOutput(_, node_id, param_id) => Some((*node_id,*param_id)),
-        })
+        let render_previews_connection = self
+            .state
+            .node_selection_actor
+            .as_ref()
+            .map(|actor| match actor {
+                NodeSelectionActor::Mouse(_) => None,
+                NodeSelectionActor::DraggingOutput(_, node_id, param_id) => {
+                    Some((*node_id, *param_id))
+                }
+            })
             .flatten();
 
         let preview_tex_input = self.texture_manager.get_color(display);
-        preview_tex_input.as_surface().clear_color(1.0, 1.0, 1.0, 1.0);
+        preview_tex_input
+            .as_surface()
+            .clear_color(1.0, 1.0, 1.0, 1.0);
 
         let outputs = self.processor.render_shaders(
             &mut self.editor.graph,
@@ -283,7 +297,10 @@ impl GraphUi {
 
                 if let Some((preview_target_node_id, param_id)) = render_previews_connection {
                     if node_id == preview_target_node_id {
-                        surface.fill(&preview_tex_input.as_surface(), glium::uniforms::MagnifySamplerFilter::Linear);
+                        surface.fill(
+                            &preview_tex_input.as_surface(),
+                            glium::uniforms::MagnifySamplerFilter::Linear,
+                        );
                     }
                 }
 
@@ -292,14 +309,22 @@ impl GraphUi {
             },
         );
 
-        let preview_requests = render_requests.iter().filter_map(|leaf |some!(leaf, if RenderRequest::Leaf)).cloned().collect_vec();
+        let preview_requests = render_requests
+            .iter()
+            .filter_map(|leaf| some!(leaf, if RenderRequest::Leaf))
+            .cloned()
+            .collect_vec();
 
         for leaf_id in preview_requests {
             let leaf = &mut self.tree.leaves[leaf_id];
 
-            leaf.render(display, egui_glium, &mut self.texture_manager, Some(preview_tex_input.as_ref()));
+            leaf.render(
+                display,
+                egui_glium,
+                &mut self.texture_manager,
+                Some(preview_tex_input.as_ref()),
+            );
         }
-        
 
         match self.state.view_state {
             ViewState::Graph => {
@@ -325,19 +350,35 @@ impl GraphUi {
         frame.finish().unwrap();
     }
 
-    pub fn add_node(&mut self, node_kind: &NodeType, position: egui::Pos2, connection: Option<(NodeId, AnyParameterId)>) -> Vec<GraphChangeEvent> {
+    pub fn add_node(
+        &mut self,
+        node_kind: &NodeType,
+        position: egui::Pos2,
+        connection: Option<(NodeId, AnyParameterId)>,
+    ) -> Vec<GraphChangeEvent> {
         let mut responses = vec![];
 
-        let num_copies = self.editor.graph.nodes.iter().filter(|(n_id,n)| n.user_data.template == *node_kind).count();
+        let num_copies = self
+            .editor
+            .graph
+            .nodes
+            .iter()
+            .filter(|(n_id, n)| n.user_data.template == *node_kind)
+            .count();
 
-        let unique_name = UniqueNodeName::new(node_kind.node_graph_label(&mut self.graph_state),num_copies);
+        let unique_name = UniqueNodeName::new(
+            node_kind.node_graph_label(&mut self.graph_state),
+            num_copies,
+        );
 
         let new_node = self.editor.graph.add_node(
             unique_name.to_string(),
             node_kind.user_data(&mut self.graph_state),
             |graph, node_id| node_kind.build_node(graph, &mut self.graph_state, node_id),
         );
-        self.graph_state.node_names.insert(new_node, unique_name.clone());
+        self.graph_state
+            .node_names
+            .insert(new_node, unique_name.clone());
         self.editor.node_positions.insert(new_node, position);
         self.editor.node_order.push(new_node);
 
@@ -351,8 +392,13 @@ impl GraphUi {
                 .map(|input| input.id);
 
             if let Some(matched_input_id) = matched_input_id {
-                self.editor.graph.add_connection(output_id, matched_input_id);
-                responses.push(GraphChangeEvent::Connected { output_id: output_id, input_id: matched_input_id});
+                self.editor
+                    .graph
+                    .add_connection(output_id, matched_input_id);
+                responses.push(GraphChangeEvent::Connected {
+                    output_id: output_id,
+                    input_id: matched_input_id,
+                });
             }
         }
 
@@ -382,7 +428,9 @@ impl GraphUi {
 
         if action == Some(GraphUiAction::ToggleAddNodeModal) {
             self.state.node_selection_actor = if self.state.node_selection_actor.is_none() {
-                Some(NodeSelectionActor::Mouse(self.interaction_pos_on_graph(ctx)))
+                Some(NodeSelectionActor::Mouse(
+                    self.interaction_pos_on_graph(ctx),
+                ))
             } else {
                 None
             };
@@ -395,19 +443,31 @@ impl GraphUi {
         let node_responses = graph_response.node_responses;
 
         //if connection sucessfully ended
-        if node_responses.iter().any(|resp| matches!(resp, NodeResponse::ConnectEventEnded { .. } | NodeResponse::DisconnectEvent { .. })) {
+        if node_responses.iter().any(|resp| {
+            matches!(
+                resp,
+                NodeResponse::ConnectEventEnded { .. } | NodeResponse::DisconnectEvent { .. }
+            )
+        }) {
             self.state.last_connection_in_progress = None;
         }
 
         //if connection started, save it
-        if let Some(NodeResponse::ConnectEventStarted(node_id, param_id)) = node_responses.iter().find(|resp| matches!(resp, NodeResponse::ConnectEventStarted(..))) {
+        if let Some(NodeResponse::ConnectEventStarted(node_id, param_id)) = node_responses
+            .iter()
+            .find(|resp| matches!(resp, NodeResponse::ConnectEventStarted(..)))
+        {
             self.state.last_connection_in_progress = Some((*node_id, *param_id));
 
         //if we were just connecting
         } else if let Some(last_connection_in_progress) = self.state.last_connection_in_progress {
             //and it has ended
             if self.editor.connection_in_progress.is_none() {
-                self.state.node_selection_actor = Some(NodeSelectionActor::DraggingOutput(self.interaction_pos_on_graph(ctx), last_connection_in_progress.0, last_connection_in_progress.1));
+                self.state.node_selection_actor = Some(NodeSelectionActor::DraggingOutput(
+                    self.interaction_pos_on_graph(ctx),
+                    last_connection_in_progress.0,
+                    last_connection_in_progress.1,
+                ));
 
                 let previewed_node = &self.editor.graph.nodes[last_connection_in_progress.0];
                 // dbg!(previewed_node);
@@ -424,14 +484,21 @@ impl GraphUi {
                 .filter_map(GraphChangeEvent::from_response)
                 .collect_vec(),
             ..Default::default()
-        }.union(extra_responses)
+        }
+        .union(extra_responses)
     }
 
     fn interaction_pos_on_graph(&self, ctx: &egui::Context) -> egui::Pos2 {
-        ctx.pointer_latest_pos().unwrap_or(ctx.available_rect().left_top()) - self.editor.pan_zoom.pan
+        ctx.pointer_latest_pos()
+            .unwrap_or(ctx.available_rect().left_top())
+            - self.editor.pan_zoom.pan
     }
 
-    fn draw_node_selector_window(&mut self, action: Option<GraphUiAction>, ctx: &egui::Context) -> GraphUiResult {
+    fn draw_node_selector_window(
+        &mut self,
+        action: Option<GraphUiAction>,
+        ctx: &egui::Context,
+    ) -> GraphUiResult {
         let node_selection_window = egui::Window::new("New node");
         let mut extra_responses = vec![];
 
@@ -441,7 +508,10 @@ impl GraphUi {
             let mut window_is_open = true;
             let new_node_pos = node_selection_actor.pos();
 
-            let modal_rect = Rect::from_center_size(new_node_pos+self.editor.pan_zoom.pan, Vec2::new(256.0, 256.0));
+            let modal_rect = Rect::from_center_size(
+                new_node_pos + self.editor.pan_zoom.pan,
+                Vec2::new(256.0, 256.0),
+            );
 
             let selection_window_resp = node_selection_window
                 .default_rect(modal_rect)
@@ -449,16 +519,23 @@ impl GraphUi {
                 .scroll2([false, true])
                 .collapsible(false)
                 .show(ctx, |ui| self.tree.draw(ui));
-            
-            tree_result = selection_window_resp.map(|resp| resp.inner)
-                .flatten();
 
-            let new_node_ty = tree_result.as_ref().map(|res| res.clicked).flatten().map(|clicked| self.tree.leaves[clicked].ty.clone());
+            tree_result = selection_window_resp.map(|resp| resp.inner).flatten();
+
+            let new_node_ty = tree_result
+                .as_ref()
+                .map(|res| res.clicked)
+                .flatten()
+                .map(|clicked| self.tree.leaves[clicked].ty.clone());
 
             if let Some(node_ty) = &new_node_ty {
                 dbg!(node_selection_actor);
 
-                extra_responses.extend(self.add_node(node_ty, new_node_pos, node_selection_actor.connection()));
+                extra_responses.extend(self.add_node(
+                    node_ty,
+                    new_node_pos,
+                    node_selection_actor.connection(),
+                ));
 
                 self.state.node_selection_actor = None;
             }
@@ -472,9 +549,15 @@ impl GraphUi {
 
         GraphUiResult {
             graph_changes: extra_responses,
-            render_requests: tree_result.map(|result|
-                result.in_view.into_iter().map(RenderRequest::Leaf).collect()
-            ).unwrap_or_default()
+            render_requests: tree_result
+                .map(|result| {
+                    result
+                        .in_view
+                        .into_iter()
+                        .map(RenderRequest::Leaf)
+                        .collect()
+                })
+                .unwrap_or_default(),
         }
     }
 
@@ -492,7 +575,6 @@ impl GraphUi {
 
         if ui.ui_contains_pointer() {
             self.editor.pan_zoom.pan += ctx.input().scroll_delta;
-
 
             if let Some(point) = ctx.input().pointer.hover_pos() {
                 let zoom_delta = ctx.input().zoom_delta();

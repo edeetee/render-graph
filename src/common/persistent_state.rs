@@ -5,7 +5,7 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::{env, path::PathBuf};
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Clone)]
 #[serde(default)]
 pub struct PersistentState {
     pub editor: GraphEditorState,
@@ -16,7 +16,7 @@ pub struct PersistentState {
     pub graph_ui_state: Option<crate::editor::graph_ui::GraphUiState>,
 }
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize, Clone)]
 pub struct WindowState {
     pub res: (u32, u32),
     pub fullscreen: bool,
