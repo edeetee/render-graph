@@ -12,7 +12,7 @@ panic = "unwind"
 # default = ["editor"]
 vst_plugin = ["dep:vst", "dep:vst_window", "dep:raw-window-handle"]
 ffgl_plugin = ["dep:ffgl", "dep:gl_loader"]
-editor = ["dep:egui", "dep:egui_glium"]
+editor = ["dep:egui", "dep:egui_glium", "dep:native-dialog", "dep:signal-hook"]
 webui = ["dep:leptos", "dep:actix-web"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -31,7 +31,6 @@ egui_node_graph = { version = "0.4.0", features = ["persistence"] }
 egui = { version = "0.19.0", optional = true, features = ["bytemuck"] }
 egui_glium = { version = "0.19.0", optional = true }
 
-ouroboros = "0.15.0"
 itertools = "0.10.2"
 isf = "0.1.0"
 gl = "0.14.0"
@@ -41,17 +40,14 @@ glam = { version = "0.21.3", features = ["serde"] }
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }
 
+native-dialog = { version = "0.6.3", optional = true }
 slotmap = "1.0.6"
-native-dialog = "0.6.3"
-enum_dispatch = "0.3.8"
 thiserror = "1.0.37"
 glsl = "6.0.1"
-naga = { version = "0.10.0", features = ["glsl-in"] }
 anyhow = "1.0.66"
-signal-hook = "0.3.14"
+signal-hook = { version = "0.3.14", optional = true }
 serde_json = "1.0.87"
 serde = "1.0.147"
-meval = "0.2.0"
 delegate = "0.9.0"
 
 glutin = { version = "0.30.6" }
@@ -66,24 +62,13 @@ genmesh = "0.6.2"
 
 ffgl = { path = "../ffgl-rs", optional = true }
 gl_loader = { version = "0.1.2", optional = true }
-# ffgl = { git="https://github.com/edeetee/ffgl-rs", path="../ffgl-rs", optional=true }
 
 # webui
 leptos = { version = "0.1.0", optional = true }
 actix-web = { version = "4", optional = true, features = ["macros"] }
-toml = "0.7.3"
 vectorize = "0.2.0"
 
 color-eyre = "0.5"
 partial_application = "0.2.1"
 try_utils = "0.1.2"
-graph = "0.3.0"
 lazy_static = "1.4.0"
-
-# clap = { version = "3.2.8", features = ["derive"] }
-# tracing = "0.1.35"
-# tracing-subscriber = "0.3"
-# palette = "0.6.0"
-# nannou_osc = "0.18.0"
-# pprof = { version = "0.10", features = ["flamegraph"] }
-# circular-queue = "0.2.6"

@@ -6,7 +6,6 @@ use glium::framebuffer::SimpleFrameBuffer;
 use glium::texture::SrgbTexture2d;
 use glium::Surface;
 use glutin::surface::AsRawSurface;
-use ouroboros::self_referencing;
 use std::rc::Rc;
 
 pub struct UiTexture {

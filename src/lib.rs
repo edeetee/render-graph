@@ -5,7 +5,7 @@ mod graph;
 mod isf;
 mod obj_shader;
 mod textures;
-pub mod util;
+mod util;
 
 #[macro_use]
 extern crate partial_application;

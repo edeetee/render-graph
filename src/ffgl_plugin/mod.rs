@@ -1,149 +1,32 @@
-use std::{
-    borrow::BorrowMut,
-    cell::OnceCell,
-    ffi::{CStr, CString},
-    fmt::Formatter,
-    rc::Rc,
-    sync::{Once, OnceLock},
-    time::SystemTime,
-};
+use std::{fmt::Formatter, rc::Rc, sync::OnceLock, time::SystemTime};
 
-use color_eyre::owo_colors::OwoColorize;
-use egui_node_graph::{InputId, NodeId};
 use ffgl::{
     logln,
     parameters::{BasicParam, ParamValue},
-    validate, Param,
 };
 // use egui_node_graph::graph;
 // mod ffgl;
 use ::ffgl::{ffgl_handler, FFGLHandler};
-use gl::{
-    types::{self, GLint},
-    FRAMEBUFFER,
-};
+use gl::FRAMEBUFFER;
 use glium::{
-    backend::{Context, Facade},
-    framebuffer::{ColorAttachment, EmptyFrameBuffer, RenderBuffer, SimpleFrameBuffer},
-    texture::{TextureAny, TextureAnyImage},
-    BlitMask, BlitTarget, CapabilitiesSource, Display, Frame, GlObject, Rect, Surface, Texture2d,
+    backend::Context,
+    framebuffer::{RenderBuffer, SimpleFrameBuffer},
+    BlitTarget, Frame, Surface,
 };
 use itertools::Itertools;
-use naga::back;
 
 use crate::{
     common::{def::UiValue, persistent_state::PersistentState},
-    graph::{
-        def::{GraphEditorState, GraphState},
-        ShaderGraphProcessor,
-    },
+    graph::{def::GraphState, ShaderGraphProcessor},
     textures,
-    util::SelfCall,
 };
 
-const GL_INIT_ONCE: Once = std::sync::Once::new();
-
-#[derive(Debug)]
-struct RawGlBackend {
-    size: (u32, u32),
-}
-
-impl RawGlBackend {
-    ///Only run once!!!
-    fn new(size: (u32, u32)) -> Self {
-        GL_INIT_ONCE.call_once(|| {
-            gl_loader::init_gl();
-            gl::load_with(|s| gl_loader::get_proc_address(s).cast());
-        });
-
-        Self { size }
-    }
-}
-
-/// only use this inside the ffgl callback!!!
-/// Failure to do so will cause UB (invalid context etc)
-unsafe impl glium::backend::Backend for RawGlBackend {
-    fn swap_buffers(&self) -> Result<(), glium::SwapBuffersError> {
-        Ok(())
-    }
-
-    unsafe fn get_proc_address(&self, symbol: &str) -> *const std::os::raw::c_void {
-        gl_loader::get_proc_address(symbol).cast()
-    }
-
-    fn get_framebuffer_dimensions(&self) -> (u32, u32) {
-        self.size
-    }
-
-    fn is_current(&self) -> bool {
-        true
-    }
-
-    unsafe fn make_current(&self) {}
-}
-
-#[derive(Debug)]
-pub struct NodeParam {
-    node_id: NodeId,
-    param_id: InputId,
-    group_name: CString,
-    name: CString,
-    value: ParamValue,
-}
-
-type GraphInput = egui_node_graph::InputParam<crate::common::connections::ConnectionType, UiValue>;
-
-impl NodeParam {
-    pub fn new(input: &GraphInput, input_name: &str, node_name: &str) -> Option<Self> {
-        if let Some(value) = (&input.value).into() {
-            Some(NodeParam {
-                node_id: input.node,
-                param_id: input.id,
-                group_name: CString::new(node_name.as_bytes()).unwrap(),
-                name: CString::new(format!(
-                    "{}.{input_name}",
-                    node_name.chars().take(3).collect::<String>()
-                ))
-                .unwrap(),
-                value,
-            })
-        } else {
-            None
-        }
-    }
-}
-
-impl From<&UiValue> for Option<ParamValue> {
-    fn from(value: &UiValue) -> Self {
-        match value {
-            UiValue::Float(vf) => Some(ParamValue::Float(vf.value)),
-            UiValue::Mat4(m) => Some(ParamValue::Float(m.scale)),
-            _ => None,
-        }
-    }
-}
-
-impl Param for NodeParam {
-    fn name(&self) -> &CStr {
-        &self.name
-    }
-
-    fn group(&self) -> &CStr {
-        &self.group_name
-    }
-
-    fn get(&self) -> ffgl::parameters::ParamValue {
-        self.value
-    }
-
-    fn set(&mut self, value: ffgl::parameters::ParamValue) {
-        self.value = value
-    }
-}
+mod gl_backend;
+mod node_param;
 
 pub struct StaticState {
     pub save_state: PersistentState,
-    pub params: Vec<NodeParam>,
+    pub params: Vec<node_param::NodeParam>,
 }
 
 static mut INSTANCE: OnceLock<StaticState> = OnceLock::new();
@@ -170,7 +53,7 @@ impl StaticState {
                     .map(|(n, id)| (n, id, &save_state.editor.graph.inputs[*id]))
                     //move string to closure
                     .filter_map(move |(input_name, input_id, input)| {
-                        NodeParam::new(input, &node_name, &input_name)
+                        node_param::NodeParam::new(input, &node_name, &input_name)
                     })
             })
             .flatten()
@@ -179,26 +62,21 @@ impl StaticState {
         Self { save_state, params }
     }
 
-    pub fn get_mut() -> &'static mut Self {
-        Self::get();
-        unsafe { INSTANCE.get_mut() }.unwrap()
-    }
-
     pub fn get() -> &'static Self {
         unsafe { INSTANCE.get_or_init(Self::new) }
     }
 }
 
-pub struct RenderGraphHandler {
+pub struct Instance {
     graph: crate::graph::def::Graph,
     graph_state: GraphState,
     processor: crate::graph::ShaderGraphProcessor,
     texture_manager: crate::textures::TextureManager,
-    backend: Rc<RawGlBackend>,
     ctx: Rc<Context>,
+    params: Vec<node_param::NodeParam>,
 }
 
-impl std::fmt::Debug for RenderGraphHandler {
+impl std::fmt::Debug for Instance {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RenderGraphHandler")
             .field("graph", &self.graph)
@@ -212,11 +90,11 @@ static PARAMS: &[BasicParam] = &[
     BasicParam::standard("test22\0"),
 ];
 
-impl FFGLHandler for RenderGraphHandler {
-    type Param = NodeParam;
+impl FFGLHandler for Instance {
+    type Param = node_param::NodeParam;
 
     unsafe fn new(inst_data: &ffgl::FFGLData) -> Self {
-        let backend = Rc::new(RawGlBackend::new(inst_data.get_dimensions()));
+        let backend = Rc::new(gl_backend::RawGlBackend::new(inst_data.get_dimensions()));
 
         logln!("BACKEND: {backend:?}");
 
@@ -227,7 +105,7 @@ impl FFGLHandler for RenderGraphHandler {
         }
 
         let ctx = glium::backend::Context::new(
-            backend.clone(),
+            backend,
             false,
             glium::debug::DebugCallbackBehavior::Custom {
                 callback: Box::new(|src, typ, sev, a, b, c| {
@@ -246,12 +124,12 @@ impl FFGLHandler for RenderGraphHandler {
         logln!("OPENGL_VERSION {}", ctx.get_opengl_version_string());
 
         Self {
-            backend,
             processor: ShaderGraphProcessor::new_from_graph(&mut graph, &ctx),
             graph_state: StaticState::get().save_state.state.clone(),
             graph,
             texture_manager,
             ctx,
+            params: StaticState::get().params.clone(),
         }
     }
 
@@ -259,8 +137,8 @@ impl FFGLHandler for RenderGraphHandler {
         &StaticState::get().params
     }
 
-    fn params_mut() -> &'static mut [Self::Param] {
-        &mut StaticState::get_mut().params
+    fn params_mut(&mut self) -> &mut [Self::Param] {
+        &mut self.params
     }
 
     // fn params(&self) -> &[ffgl::parameters::Param] {
@@ -276,29 +154,12 @@ impl FFGLHandler for RenderGraphHandler {
         inst_data: &ffgl::FFGLData,
         frame_data: &ffgl::ffgl::ProcessOpenGLStruct,
     ) {
-        let viewport = [
-            inst_data.viewport.x as i32,
-            inst_data.viewport.y as i32,
-            inst_data.viewport.width as i32,
-            inst_data.viewport.height as i32,
-        ];
-
-        // validate_viewport(&viewport);
-
-        //glium expects default framebuffer
-        gl::BindFramebuffer(FRAMEBUFFER, 0);
-
-        // validate_viewport(&viewport);
-        // validate::validate_context_state();
-
-        // self.ctx.rebuild(self.backend.clone()).unwrap();
-
         let res = inst_data.get_dimensions();
 
         let frame = Frame::new(self.ctx.clone(), (res.0, res.1));
         let rb = RenderBuffer::new(
             &self.ctx,
-            glium::texture::UncompressedFloatFormat::F32F32F32F32,
+            glium::texture::UncompressedFloatFormat::U8U8U8U8,
             res.0,
             res.1,
         )
@@ -344,7 +205,7 @@ unsafe fn validate_viewport(viewport: &[i32; 4]) {
     assert_eq!(&dims, viewport, "VIEWPORT wrong value: {dims:?}");
 }
 
-impl RenderGraphHandler {
+impl Instance {
     fn render_frame(&mut self, inst_data: &ffgl::FFGLData, target: &mut impl Surface) {
         let ramp = 1.0
             - inst_data
@@ -354,12 +215,12 @@ impl RenderGraphHandler {
                 .as_secs_f32()
                 % 1.0;
 
-        target.clear_color(ramp, 0.0, 0.0, 1.0);
+        // target.clear_color(ramp, 0.0, 0.0, 1.0);
 
         self.processor
             .update(&mut self.graph, &self.graph_state, &self.ctx);
 
-        for param in Self::params() {
+        for param in &self.params {
             // let node = self.graph.nodes.get(param.node_id).unwrap();
             let input = self.graph.inputs.get_mut(param.param_id).unwrap();
 
@@ -474,9 +335,9 @@ unsafe fn blit_fb((read_w, read_h): (u32, u32), (write_w, write_h): (u32, u32)) 
         (target_rect.bottom) as gl::types::GLint,
         (target_rect.left as i32 + target_rect.width) as gl::types::GLint,
         (target_rect.bottom as i32 + target_rect.height) as gl::types::GLint,
-        gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT,
+        gl::COLOR_BUFFER_BIT,
         gl::NEAREST,
     );
 }
 
-ffgl_handler!(RenderGraphHandler);
+ffgl_handler!(Instance);
