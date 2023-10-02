@@ -227,7 +227,7 @@ impl ShaderGraphProcessor {
                 .map(|(name, in_id)| (name.as_str(), &graph.inputs[*in_id]))
                 .collect();
 
-            if let Some(shader) = &mut self.shaders.get_mut(node_id) {
+            if let Some(shader) = self.shaders.get_mut(node_id) {
                 match updater.update(facade, &mut node.user_data.template, &inputs, shader) {
                     Ok(()) => node.user_data.update_error = None,
                     Err(err) => node.user_data.update_error = Some(err.into()),

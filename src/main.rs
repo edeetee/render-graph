@@ -6,9 +6,7 @@ mod graph;
 mod isf;
 mod obj_shader;
 mod textures;
-mod tree_view;
 pub mod util;
-mod widgets;
 
 use color_eyre::eyre::Result;
 
@@ -17,6 +15,10 @@ extern crate partial_application;
 
 #[cfg(feature = "editor")]
 mod editor;
+#[cfg(feature = "editor")]
+mod tree_view;
+#[cfg(feature = "editor")]
+mod widgets;
 
 #[cfg(feature = "webui")]
 mod web_ui;
@@ -24,6 +26,7 @@ mod web_ui;
 #[cfg(feature = "vst_plugin")]
 mod vst_plugin;
 
+#[cfg(feature = "editor")]
 mod egui_glium;
 
 // use graph::render_glium;
@@ -31,6 +34,7 @@ mod egui_glium;
 fn main() -> Result<()> {
     color_eyre::install()?;
 
+    #[cfg(feature = "editor")]
     egui_glium::main();
 
     Ok(())

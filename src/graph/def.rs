@@ -59,10 +59,13 @@ impl UiNodeData {
 
 impl Debug for UiNodeData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("UiNodeData")
-            .field("template", &self.template)
-            .field("texture", &self.texture)
-            .field("create_error", &self.create_error)
+        let mut binding = f.debug_struct("UiNodeData");
+        let d = binding.field("template", &self.template);
+
+        #[cfg(feature = "editor")]
+        d.field("texture", &self.texture);
+
+        d.field("create_error", &self.create_error)
             .field("update_error", &self.update_error)
             .field("render_error", &self.render_error)
             .finish()
@@ -98,12 +101,7 @@ impl UniqueNodeName {
 
 impl Display for UniqueNodeName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{name} ({code_name})",
-            name = self.name,
-            code_name = self.code_name
-        )
+        write!(f, "{code_name}", code_name = self.code_name)
     }
 }
 

@@ -673,17 +673,17 @@
             "value": {
               "Mat4": {
                 "mat": [
-                  0.7692879,
-                  -0.41312608,
-                  -0.4873634,
+                  -0.6890285,
+                  0.08115122,
+                  -0.72017694,
                   0.0,
-                  -0.5865115,
-                  -0.15412629,
-                  -0.7951413,
+                  -0.719514,
+                  -0.19565785,
+                  0.66634685,
                   0.0,
-                  0.25337815,
-                  0.8975368,
-                  -0.36087072,
+                  -0.08683321,
+                  0.97730905,
+                  0.19320285,
                   0.0,
                   0.0,
                   0.0,
@@ -709,9 +709,9 @@
                   1.0
                 ],
                 "rotation": [
-                  307.33142,
-                  126.51827,
-                  104.72355
+                  138.21428,
+                  254.98277,
+                  285.21262
                 ],
                 "scale": 1.0,
                 "translation": [
@@ -754,7 +754,7 @@
                   0.0,
                   0.0,
                   0.0,
-                  -8.9,
+                  -12.1,
                   1.0
                 ],
                 "initial": [
@@ -784,7 +784,7 @@
                 "translation": [
                   0.0,
                   0.0,
-                  -8.9
+                  -12.1
                 ]
               }
             },
@@ -830,7 +830,7 @@
             "typ": "None",
             "value": {
               "Float": {
-                "value": 0.35,
+                "value": 0.3,
                 "min": 0.0,
                 "max": 2.0,
                 "default": 0.5
@@ -1032,10 +1032,6 @@
     },
     "node_order": [
       {
-        "idx": 3,
-        "version": 9
-      },
-      {
         "idx": 2,
         "version": 11
       },
@@ -1050,15 +1046,14 @@
       {
         "idx": 1,
         "version": 15
+      },
+      {
+        "idx": 3,
+        "version": 9
       }
     ],
     "connection_in_progress": null,
-    "selected_nodes": [
-      {
-        "idx": 1,
-        "version": 15
-      }
-    ],
+    "selected_nodes": [],
     "ongoing_box_selection": null,
     "node_positions": [
       {
@@ -1067,7 +1062,7 @@
       },
       {
         "value": {
-          "x": -22122.277,
+          "x": -22122.027,
           "y": -30336.89
         },
         "version": 15
@@ -1082,7 +1077,7 @@
       {
         "value": {
           "x": -22462.418,
-          "y": -30449.328
+          "y": -30449.203
         },
         "version": 9
       },
@@ -1104,8 +1099,8 @@
     "node_finder": null,
     "pan_zoom": {
       "pan": {
-        "x": 22392.305,
-        "y": 30639.398
+        "x": 22786.305,
+        "y": 30727.398
       },
       "zoom": 100.0
     },
@@ -1136,182 +1131,6 @@
     "node_names": [
       [
         {
-          "idx": 2,
-          "version": 7
-        },
-        {
-          "name": "ObjRender",
-          "num": 0,
-          "code_name": "objrender"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 5
-        },
-        {
-          "name": "Expression",
-          "num": 0,
-          "code_name": "expression"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 7
-        },
-        {
-          "name": "Rotate",
-          "num": 0,
-          "code_name": "rotate"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 5
-        },
-        {
-          "name": "Stripes",
-          "num": 0,
-          "code_name": "stripes"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 3
-        },
-        {
-          "name": "ObjRender",
-          "num": 0,
-          "code_name": "objrender"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 3
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 9
-        },
-        {
-          "name": "Quad Tile",
-          "num": 0,
-          "code_name": "quad_tile"
-        }
-      ],
-      [
-        {
-          "idx": 4,
-          "version": 3
-        },
-        {
-          "name": "Expression",
-          "num": 1,
-          "code_name": "expression1"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 11
-        },
-        {
-          "name": "ObjRender",
-          "num": 0,
-          "code_name": "objrender"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 9
-        },
-        {
-          "name": "RGB Trails 3.0",
-          "num": 0,
-          "code_name": "rgb_trails_3.0"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 15
-        },
-        {
-          "name": "Expression",
-          "num": 0,
-          "code_name": "expression"
-        }
-      ],
-      [
-        {
-          "idx": 5,
-          "version": 1
-        },
-        {
-          "name": "Expression",
-          "num": 2,
-          "code_name": "expression2"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 1
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 1
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 13
-        },
-        {
-          "name": "Random Squares Mask",
-          "num": 0,
-          "code_name": "random_squares_mask"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 7
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
           "idx": 3,
           "version": 1
         },
@@ -1323,24 +1142,13 @@
       ],
       [
         {
-          "idx": 1,
-          "version": 3
-        },
-        {
-          "name": "Boxinator",
-          "num": 0,
-          "code_name": "boxinator"
-        }
-      ],
-      [
-        {
           "idx": 2,
-          "version": 9
+          "version": 1
         },
         {
-          "name": "Stripes",
+          "name": "ASCII Art",
           "num": 0,
-          "code_name": "stripes"
+          "code_name": "ascii_art"
         }
       ],
       [
@@ -1356,6 +1164,72 @@
       ],
       [
         {
+          "idx": 4,
+          "version": 3
+        },
+        {
+          "name": "Expression",
+          "num": 1,
+          "code_name": "expression1"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 9
+        },
+        {
+          "name": "Quad Tile",
+          "num": 0,
+          "code_name": "quad_tile"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 11
+        },
+        {
+          "name": "ObjRender",
+          "num": 0,
+          "code_name": "objrender"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 15
+        },
+        {
+          "name": "Expression",
+          "num": 0,
+          "code_name": "expression"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 9
+        },
+        {
+          "name": "RGB Trails 3.0",
+          "num": 0,
+          "code_name": "rgb_trails_3.0"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 7
+        },
+        {
+          "name": "ObjRender",
+          "num": 0,
+          "code_name": "objrender"
+        }
+      ],
+      [
+        {
           "idx": 1,
           "version": 5
         },
@@ -1363,6 +1237,105 @@
           "name": "3d Rotate",
           "num": 0,
           "code_name": "3d_rotate"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 5
+        },
+        {
+          "name": "Stripes",
+          "num": 0,
+          "code_name": "stripes"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 9
+        },
+        {
+          "name": "Stripes",
+          "num": 0,
+          "code_name": "stripes"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 7
+        },
+        {
+          "name": "ASCII Art",
+          "num": 0,
+          "code_name": "ascii_art"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 3
+        },
+        {
+          "name": "ASCII Art",
+          "num": 0,
+          "code_name": "ascii_art"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 7
+        },
+        {
+          "name": "Rotate",
+          "num": 0,
+          "code_name": "rotate"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 3
+        },
+        {
+          "name": "Boxinator",
+          "num": 0,
+          "code_name": "boxinator"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 5
+        },
+        {
+          "name": "Expression",
+          "num": 0,
+          "code_name": "expression"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 13
+        },
+        {
+          "name": "Random Squares Mask",
+          "num": 0,
+          "code_name": "random_squares_mask"
+        }
+      ],
+      [
+        {
+          "idx": 5,
+          "version": 1
+        },
+        {
+          "name": "Expression",
+          "num": 2,
+          "code_name": "expression2"
         }
       ],
       [
@@ -1375,41 +1348,43 @@
           "num": 0,
           "code_name": "modulo"
         }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 3
+        },
+        {
+          "name": "ObjRender",
+          "num": 0,
+          "code_name": "objrender"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 1
+        },
+        {
+          "name": "ASCII Art",
+          "num": 0,
+          "code_name": "ascii_art"
+        }
       ]
     ],
     "param_with_popup": null,
     "visible_nodes": [
       {
-        "idx": 3,
-        "version": 3
-      },
-      {
-        "idx": 2,
-        "version": 5
-      },
-      {
         "idx": 2,
         "version": 9
-      },
-      {
-        "idx": 5,
-        "version": 1
-      },
-      {
-        "idx": 3,
-        "version": 9
-      },
-      {
-        "idx": 2,
-        "version": 3
-      },
-      {
-        "idx": 3,
-        "version": 1
       },
       {
         "idx": 1,
-        "version": 13
+        "version": 1
+      },
+      {
+        "idx": 3,
+        "version": 3
       },
       {
         "idx": 2,
@@ -1417,18 +1392,46 @@
       },
       {
         "idx": 2,
-        "version": 7
+        "version": 5
       },
       {
         "idx": 1,
         "version": 9
       },
       {
-        "idx": 4,
+        "idx": 1,
+        "version": 13
+      },
+      {
+        "idx": 3,
+        "version": 5
+      },
+      {
+        "idx": 3,
+        "version": 9
+      },
+      {
+        "idx": 2,
+        "version": 3
+      },
+      {
+        "idx": 2,
+        "version": 1
+      },
+      {
+        "idx": 3,
         "version": 1
       },
       {
         "idx": 1,
+        "version": 5
+      },
+      {
+        "idx": 1,
+        "version": 15
+      },
+      {
+        "idx": 5,
         "version": 1
       },
       {
@@ -1436,16 +1439,12 @@
         "version": 7
       },
       {
-        "idx": 3,
-        "version": 5
-      },
-      {
-        "idx": 1,
-        "version": 5
+        "idx": 4,
+        "version": 1
       },
       {
         "idx": 2,
-        "version": 1
+        "version": 7
       },
       {
         "idx": 4,

@@ -1,15 +1,15 @@
-use std::{fmt::Display};
-use egui_node_graph::{NodeTemplateTrait, Graph, NodeId, NodeTemplateIter};
+use egui_node_graph::{Graph, NodeId, NodeTemplateIter, NodeTemplateTrait};
 use glam::Mat4;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 
-use super::def::{UiNodeData, GraphState};
+use super::def::{GraphState, UiNodeData};
 
 use crate::common::mat4_animator::Mat4Animator;
-use crate::isf::meta::{IsfInfo};
+use crate::isf::meta::IsfInfo;
 
+use crate::common::connections::{ConnectionType, InputDef, OutputDef};
 use crate::common::def::{TextStyle, UiValue};
-use crate::common::connections::{InputDef, OutputDef, ConnectionType};
 
 ///Enum of node types used to create an actual node
 #[derive(Clone, PartialEq, Debug, Serialize, Deserialize)]
@@ -17,12 +17,8 @@ pub enum NodeType {
     // #[cfg()]
     SharedOut,
     ObjRender,
-    Isf {
-        info: IsfInfo
-    },
-    Expression {
-        inputs: Option<Vec<InputDef>>
-    }
+    Isf { info: IsfInfo },
+    Expression { inputs: Option<Vec<InputDef>> },
 }
 
 impl Display for NodeType {
@@ -36,8 +32,8 @@ impl NodeType {
         match self {
             NodeType::SharedOut => "SpoutOut",
             NodeType::ObjRender => "ObjRender",
-            NodeType::Isf{info} => info.name.as_str(),
-            NodeType::Expression { .. } => "Expression"
+            NodeType::Isf { info } => info.name.as_str(),
+            NodeType::Expression { .. } => "Expression",
         }
     }
 
@@ -51,7 +47,7 @@ impl NodeType {
             // NodeTypes::Output,
             NodeType::ObjRender,
             NodeType::SharedOut,
-            NodeType::Expression { inputs: None }
+            NodeType::Expression { inputs: None },
         ];
         // types.extend(shaders);
 
@@ -60,22 +56,24 @@ impl NodeType {
 
     pub fn get_input_types(&self) -> Vec<InputDef> {
         match self {
-            NodeType::Isf { info } => {
-                info.def.inputs.iter().map(InputDef::from).collect()
-            }
-            NodeType::SharedOut => vec![
-                ("name", "RustSpout").into(),
-                InputDef::texture("texture"),
-            ],
+            NodeType::Isf { info } => info.def.inputs.iter().map(InputDef::from).collect(),
+            NodeType::SharedOut => vec![("name", "RustSpout").into(), InputDef::texture("texture")],
             NodeType::ObjRender => vec![
                 ("obj", UiValue::Path(None)).into(),
                 ("model", UiValue::Mat4(Mat4::IDENTITY.into())).into(),
                 ("view", UiValue::Mat4(Mat4Animator::new_view())).into(),
             ],
             NodeType::Expression { .. } => vec![
-                ("text", UiValue::Text("vec4(1.0,1.0,1.0,1.0)".to_string().into(), TextStyle::Multiline)).into(),
-                InputDef::texture("pixels")
-            ]
+                (
+                    "text",
+                    UiValue::Text(
+                        "vec4(1.0,1.0,1.0,1.0)".to_string().into(),
+                        TextStyle::Multiline,
+                    ),
+                )
+                    .into(),
+                InputDef::texture("pixels"),
+            ],
         }
     }
 
@@ -84,8 +82,7 @@ impl NodeType {
             NodeType::SharedOut => vec![],
             NodeType::Isf { .. } => vec![ConnectionType::Texture2D.into()],
             NodeType::ObjRender => vec![ConnectionType::Texture2D.into()],
-            NodeType::Expression { .. } => vec![ConnectionType::Texture2D.into()]
-            // _ => vec![ConnectionType::Texture2D.into()],
+            NodeType::Expression { .. } => vec![ConnectionType::Texture2D.into()], // _ => vec![ConnectionType::Texture2D.into()],
         }
     }
 }
@@ -97,7 +94,6 @@ impl NodeTemplateIter for AllNodeTypes {
         NodeType::get_builtin()
     }
 }
-
 
 impl NodeTemplateTrait for NodeType {
     type NodeData = UiNodeData;
@@ -121,7 +117,7 @@ impl NodeTemplateTrait for NodeType {
         &self,
         graph: &mut Graph<Self::NodeData, Self::DataType, Self::ValueType>,
         _user_state: &mut Self::UserState,
-        node_id: NodeId
+        node_id: NodeId,
     ) {
         for input in self.get_input_types() {
             let connection = input.ty != ConnectionType::None;
@@ -131,7 +127,7 @@ impl NodeTemplateTrait for NodeType {
                 (true, true) => egui_node_graph::InputParamKind::ConnectionOrConstant,
                 (true, false) => egui_node_graph::InputParamKind::ConnectionOnly,
                 (false, true) => egui_node_graph::InputParamKind::ConstantOnly,
-                (false, false) => continue
+                (false, false) => continue,
             };
 
             graph.add_input_param(node_id, input.name, input.ty, input.value, kind, true);
@@ -141,5 +137,4 @@ impl NodeTemplateTrait for NodeType {
             graph.add_output_param(node_id, output.name, output.ty);
         }
     }
-
 }

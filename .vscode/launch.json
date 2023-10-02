@@ -17,6 +17,8 @@
             "cargo": {
                 "args": [
                     "build",
+                    "--features",
+                    "editor",
                     "--bin",
                     "render-graph"
                 ]
@@ -30,6 +32,8 @@
             "cargo": {
                 "args": [
                     "build",
+                    "--features",
+                    "editor",
                     "--release",
                     "--bin",
                     "render-graph"

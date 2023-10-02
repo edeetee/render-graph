@@ -12,7 +12,8 @@
     "rust-analyzer.cargo.features": [
         "ffgl_plugin",
         // "webui"
-    ]
+    ],
+    "rust-analyzer.cargo.noDefaultFeatures": true,
     // "rust-analyzer.cargo.features": [
     //     // "editor"
     // ],

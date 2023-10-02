@@ -1,12 +1,11 @@
-
-use serde::{Serialize, Deserialize};
+use super::def::UiValue;
+use serde::{Deserialize, Serialize};
 use strum::Display;
-use super::def::{UiValue};
 
 #[derive(PartialEq, Eq, Display, Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum ConnectionType {
     Texture2D,
-    None
+    None,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -26,7 +25,7 @@ impl InputDef {
     }
 }
 
-impl <S: Into<String>, V: Into<UiValue>> From<(S, V)> for InputDef {
+impl<S: Into<String>, V: Into<UiValue>> From<(S, V)> for InputDef {
     fn from((name, val_ty): (S, V)) -> Self {
         Self {
             name: name.into(),
@@ -50,7 +49,7 @@ impl From<ConnectionType> for OutputDef {
     }
 }
 
-impl <S: Into<String>> From<(S, ConnectionType)> for OutputDef {
+impl<S: Into<String>> From<(S, ConnectionType)> for OutputDef {
     fn from((name, ty): (S, ConnectionType)) -> Self {
         Self {
             name: name.into(),
@@ -58,4 +57,3 @@ impl <S: Into<String>> From<(S, ConnectionType)> for OutputDef {
         }
     }
 }
-

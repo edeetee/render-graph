@@ -1,38 +1,43 @@
+use std::{ops::RangeInclusive, path::Path};
 
-use std::{path::Path, ops::RangeInclusive};
+use egui::{
+    color_picker::color_edit_button_rgba, Align, Area, Color32, DragValue, Frame, Id,
+    InnerResponse, Layout, Order, Response, Rgba, Slider, Stroke, Ui, Widget,
+};
+use egui_node_graph::{NodeId, WidgetValueTrait};
+use serde::{Deserialize, Serialize};
 
-use egui::{InnerResponse, Response, Id, Ui, Area, Order, Frame, Layout, color_picker::color_edit_button_rgba, Slider, DragValue, Widget, Align, Stroke, Color32};
-use egui_node_graph::{WidgetValueTrait, NodeId};
-use serde::{Serialize, Deserialize};
-
-use crate::common::{def::{UiValue, RangedData, TextStyle, Reset}, animation::DataUpdater};
-use crate::widgets::limited_ui::{horizontal_drags, UiLimit};
+use crate::common::{
+    animation::DataUpdater,
+    def::{RangedData, Reset, TextStyle, UiValue},
+};
 use crate::graph::def::{GraphResponse, GraphState, UiNodeData};
+use crate::widgets::limited_ui::{horizontal_drags, UiLimit};
 
-fn default_range_f32(min: &Option<f32>, max: &Option<f32>) -> RangeInclusive<f32>{
+fn default_range_f32(min: &Option<f32>, max: &Option<f32>) -> RangeInclusive<f32> {
     min.unwrap_or(0.0)..=max.unwrap_or(1.0)
 }
 
-fn default_range_i32(min: &Option<i32>, max: &Option<i32>) -> RangeInclusive<i32>{
+fn default_range_i32(min: &Option<i32>, max: &Option<i32>) -> RangeInclusive<i32> {
     min.unwrap_or(0)..=max.unwrap_or(1)
 }
 
 #[derive(Serialize, Deserialize)]
 pub enum UpdaterUiState {
     None,
-    Editing
+    Editing,
 }
 
 struct ParamUiResponse {
     response: Response,
-    changed: bool
+    changed: bool,
 }
 
 impl From<InnerResponse<Response>> for ParamUiResponse {
     fn from(value: InnerResponse<Response>) -> Self {
         Self {
             changed: value.response.changed() || value.inner.changed(),
-            response: value.response
+            response: value.response,
         }
     }
 }
@@ -41,7 +46,7 @@ impl From<InnerResponse<bool>> for ParamUiResponse {
     fn from(value: InnerResponse<bool>) -> Self {
         Self {
             changed: value.response.changed() || value.inner,
-            response: value.response
+            response: value.response,
         }
     }
 }
@@ -50,7 +55,7 @@ impl From<Response> for ParamUiResponse {
     fn from(value: Response) -> Self {
         Self {
             changed: value.changed(),
-            response: value
+            response: value,
         }
     }
 }
@@ -83,53 +88,65 @@ pub fn popup<R>(
 
 fn draw_param(param: &mut UiValue, ui: &mut Ui, param_name: &str) -> ParamUiResponse {
     match param {
-        UiValue::Vec2 (data) => {
+        UiValue::Vec2(data) => {
             ui.label(param_name);
             horizontal_drags(
-                ui, 
-                &["x", "y"], 
+                ui,
+                &["x", "y"],
                 UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
-                &mut data.value, 
-            ).into()
+                &mut data.value,
+            )
+            .into()
         }
 
         UiValue::Vec4(data) => {
             ui.label(param_name);
             horizontal_drags(
-                ui, 
-                &["r", "g", "b", "a"], 
+                ui,
+                &["r", "g", "b", "a"],
                 UiLimit::Clamp(data.min.as_ref(), data.max.as_ref()),
-                &mut data.value, 
-            ).into()
+                &mut data.value,
+            )
+            .into()
         }
 
-        UiValue::Color(RangedData { value, .. }) => {
-            ui.horizontal(|ui| {
+        UiValue::Color(RangedData { value, .. }) => ui
+            .horizontal(|ui| {
                 ui.label(param_name);
-                color_edit_button_rgba(ui, value, egui::color_picker::Alpha::OnlyBlend)
-            }).into()
-        }
+                color_edit_button_rgba(
+                    ui,
+                    unsafe { std::mem::transmute::<&mut [f32; 4], &mut Rgba>(value) },
+                    egui::color_picker::Alpha::OnlyBlend,
+                )
+            })
+            .into(),
 
-        UiValue::Float (RangedData { value, min, max, .. }) => {
+        UiValue::Float(RangedData {
+            value, min, max, ..
+        }) => {
             ui.horizontal(|ui| {
                 ui.label(param_name);
                 // ui.add(DragValue::new(value))
-                ui.add(Slider::new(value, default_range_f32(min, max)).clamp_to_range(false).fixed_decimals(2))
-            }).into()
+                ui.add(
+                    Slider::new(value, default_range_f32(min, max))
+                        .clamp_to_range(false)
+                        .fixed_decimals(2),
+                )
+            })
+            .into()
         }
 
-        UiValue::Long(RangedData { value, min, max, .. }) => {
-            ui.horizontal(|ui| {
+        UiValue::Long(RangedData {
+            value, min, max, ..
+        }) => ui
+            .horizontal(|ui| {
                 ui.label(param_name);
                 ui.add(DragValue::new(value).clamp_range(default_range_i32(min, max)))
-            }).into()
-        },
+            })
+            .into(),
 
-        UiValue::Menu(
-            RangedData { value, .. }, 
-            ref label_mapping
-        ) => {
-            ui.horizontal_wrapped(|ui| {
+        UiValue::Menu(RangedData { value, .. }, ref label_mapping) => ui
+            .horizontal_wrapped(|ui| {
                 ui.label(param_name);
 
                 let mut changed = false;
@@ -142,15 +159,15 @@ fn draw_param(param: &mut UiValue, ui: &mut Ui, param_name: &str) -> ParamUiResp
                 }
 
                 changed
-            }).into()
-        },
+            })
+            .into(),
 
-        UiValue::Bool(RangedData { value, .. }) => {
-            ui.horizontal(|ui| {
+        UiValue::Bool(RangedData { value, .. }) => ui
+            .horizontal(|ui| {
                 ui.label(param_name);
                 ui.checkbox(value, "")
-            }).into()
-        }
+            })
+            .into(),
 
         UiValue::Path(path) => {
             ui.horizontal(|ui| {
@@ -161,7 +178,7 @@ fn draw_param(param: &mut UiValue, ui: &mut Ui, param_name: &str) -> ParamUiResp
                         let max_length = 30;
 
                         if max_length < path_str.len() {
-                            &path_str[path_str.len()-max_length..]
+                            &path_str[path_str.len() - max_length..]
                         } else {
                             path_str
                         }
@@ -198,7 +215,8 @@ fn draw_param(param: &mut UiValue, ui: &mut Ui, param_name: &str) -> ParamUiResp
                 }
 
                 open_resp
-            }).into()
+            })
+            .into()
         }
 
         UiValue::Mat4(mat) => {
@@ -215,42 +233,41 @@ fn draw_param(param: &mut UiValue, ui: &mut Ui, param_name: &str) -> ParamUiResp
                 // let tx
                 // let mut slice = mat.translation.to_array();
 
-                changed |= horizontal_drags(
-                    ui, 
-                    &["tx", "ty", "tz"], 
-                    UiLimit::None,
-                    &mut mat.translation
-                ).inner;
+                changed |=
+                    horizontal_drags(ui, &["tx", "ty", "tz"], UiLimit::None, &mut mat.translation)
+                        .inner;
 
                 // mat.translation = Vec3::from_slice(&slice);
                 changed |= horizontal_drags(
-                    ui, 
-                    &["rx", "ry", "rz"], 
+                    ui,
+                    &["rx", "ry", "rz"],
                     UiLimit::Loop(&[0f32; 3], &[360f32; 3]),
-                    &mut mat.rotation
-                ).inner;
+                    &mut mat.rotation,
+                )
+                .inner;
 
                 if changed {
                     mat.update_mat();
                 }
 
                 changed
-            }).into()
+            })
+            .into()
         }
 
-        UiValue::Text(RangedData { value, .. }, style) => {
-            ui.horizontal(|ui| {
+        UiValue::Text(RangedData { value, .. }, style) => ui
+            .horizontal(|ui| {
                 ui.label(param_name);
                 let widget = match style {
                     TextStyle::Oneline => egui::TextEdit::singleline(value),
-                    TextStyle::Multiline => egui::TextEdit::multiline(value).code_editor()
+                    TextStyle::Multiline => egui::TextEdit::multiline(value).code_editor(),
                 };
                 ui.set_max_width(256.0);
                 ui.add_sized(ui.available_size(), widget)
-            }).into()
-        }
+            })
+            .into(),
 
-        UiValue::None => { ui.label(param_name).into() }
+        UiValue::None => ui.label(param_name).into(),
     }
 }
 
@@ -267,7 +284,6 @@ impl WidgetValueTrait for UiValue {
         user_state: &mut Self::UserState,
         _node_data: &Self::NodeData,
     ) -> Vec<Self::Response> {
-
         let param_key = (node_id, param_name.to_string());
 
         let is_animating = user_state.animations.contains_key(&param_key);
@@ -281,60 +297,57 @@ impl WidgetValueTrait for UiValue {
         let param_response: ParamUiResponse = Frame::none()
             // .rounding(2.0)
             .inner_margin(4.0)
-            .stroke(Stroke{
+            .stroke(Stroke {
                 width: 1.0,
                 color: param_frame_color,
             })
-            .show(ui, |ui| {
-                draw_param(self, ui, param_name)
-            }).inner;
-
+            .show(ui, |ui| draw_param(self, ui, param_name))
+            .inner;
 
         let animator_popup_id = ui.make_persistent_id(param_key.clone());
 
-        if ui.rect_contains_pointer(param_response.response.rect) && ui.input().pointer.secondary_clicked() {
+        if ui.rect_contains_pointer(param_response.response.rect)
+            && ui.input().pointer.secondary_clicked()
+        {
             user_state.param_with_popup = Some(param_key.clone());
         }
-        
+
         if user_state.param_with_popup.as_ref() == Some(&param_key) {
-            let popup_response = popup(&ui, 
-                animator_popup_id,
-                &param_response.response,
-                |ui|{
-                    ui.vertical(|ui| {
-                        if ui.button("RESET").clicked() {
-                            self.reset();
+            let popup_response = popup(&ui, animator_popup_id, &param_response.response, |ui| {
+                ui.vertical(|ui| {
+                    if ui.button("RESET").clicked() {
+                        self.reset();
+                    }
+
+                    ui.horizontal(|ui| {
+                        let animator = user_state.animations.get_mut(&param_key);
+                        let mut delete = false;
+
+                        match animator {
+                            Some(updater) => {
+                                delete |= ui.button("REMOVE").clicked();
+                                updater.ui(ui);
+                            }
+                            None => {
+                                if ui.button("ANIMATE").clicked() {
+                                    if let Some(updater) = DataUpdater::from_param(self) {
+                                        user_state.animations.insert(param_key.clone(), updater);
+                                    }
+                                }
+                            }
                         }
 
-                        ui.horizontal(|ui| {
-    
-                            let animator = user_state.animations.get_mut(&param_key);
-                            let mut delete = false;
-    
-                            match animator {
-                                Some(updater) => {
-                                    delete |= ui.button("REMOVE").clicked();
-                                    updater.ui(ui);
-                                },
-                                None => {
-                                    if ui.button("ANIMATE").clicked() {
-                                        if let Some(updater) = DataUpdater::from_param(self) {
-                                            user_state.animations.insert(param_key.clone(), updater);
-                                        }
-                                    }
-                                },
-                            }
-            
-                            if delete {
-                                user_state.animations.remove(&param_key);
-                            }
-                        })
+                        if delete {
+                            user_state.animations.remove(&param_key);
+                        }
                     })
-                    
-                }
-            );
+                })
+            });
 
-            if (popup_response.response.clicked_elsewhere() && param_response.response.clicked_elsewhere()) || param_response.response.clicked() {
+            if (popup_response.response.clicked_elsewhere()
+                && param_response.response.clicked_elsewhere())
+                || param_response.response.clicked()
+            {
                 user_state.param_with_popup = None;
             }
         }
@@ -345,7 +358,7 @@ impl WidgetValueTrait for UiValue {
 
         // if let Some(popup_response) = popup_response {
         //     if ui.rect_contains_pointer(popup_response.response.rect) {
-        //         ui.memory().open_popup(animator_popup_id); 
+        //         ui.memory().open_popup(animator_popup_id);
         //     }
         // }
 
@@ -355,7 +368,6 @@ impl WidgetValueTrait for UiValue {
         //         user_state.editing_param = None;
         //     }
         // }
-
 
         vec![]
     }

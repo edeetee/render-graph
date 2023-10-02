@@ -1,8 +1,20 @@
 use std::{
-    borrow::BorrowMut, cell::OnceCell, fmt::Formatter, rc::Rc, sync::Once, time::SystemTime,
+    borrow::BorrowMut,
+    cell::OnceCell,
+    ffi::{CStr, CString},
+    fmt::Formatter,
+    rc::Rc,
+    sync::{Once, OnceLock},
+    time::SystemTime,
 };
 
-use ffgl::{logln, validate, Param};
+use color_eyre::owo_colors::OwoColorize;
+use egui_node_graph::{InputId, NodeId};
+use ffgl::{
+    logln,
+    parameters::{BasicParam, ParamValue},
+    validate, Param,
+};
 // use egui_node_graph::graph;
 // mod ffgl;
 use ::ffgl::{ffgl_handler, FFGLHandler};
@@ -16,10 +28,11 @@ use glium::{
     texture::{TextureAny, TextureAnyImage},
     BlitMask, BlitTarget, CapabilitiesSource, Display, Frame, GlObject, Rect, Surface, Texture2d,
 };
+use itertools::Itertools;
 use naga::back;
 
 use crate::{
-    common::persistent_state::PersistentState,
+    common::{def::UiValue, persistent_state::PersistentState},
     graph::{
         def::{GraphEditorState, GraphState},
         ShaderGraphProcessor,
@@ -69,18 +82,110 @@ unsafe impl glium::backend::Backend for RawGlBackend {
     unsafe fn make_current(&self) {}
 }
 
+#[derive(Debug)]
+pub struct NodeParam {
+    node_id: NodeId,
+    param_id: InputId,
+    group_name: CString,
+    name: CString,
+    value: ParamValue,
+}
+
+type GraphInput = egui_node_graph::InputParam<crate::common::connections::ConnectionType, UiValue>;
+
+impl NodeParam {
+    pub fn new(input: &GraphInput, input_name: &str, node_name: &str) -> Option<Self> {
+        if let Some(value) = (&input.value).into() {
+            Some(NodeParam {
+                node_id: input.node,
+                param_id: input.id,
+                group_name: CString::new(node_name.as_bytes()).unwrap(),
+                name: CString::new(format!(
+                    "{}.{input_name}",
+                    node_name.chars().take(3).collect::<String>()
+                ))
+                .unwrap(),
+                value,
+            })
+        } else {
+            None
+        }
+    }
+}
+
+impl From<&UiValue> for Option<ParamValue> {
+    fn from(value: &UiValue) -> Self {
+        match value {
+            UiValue::Float(vf) => Some(ParamValue::Float(vf.value)),
+            UiValue::Mat4(m) => Some(ParamValue::Float(m.scale)),
+            _ => None,
+        }
+    }
+}
+
+impl Param for NodeParam {
+    fn name(&self) -> &CStr {
+        &self.name
+    }
+
+    fn group(&self) -> &CStr {
+        &self.group_name
+    }
+
+    fn get(&self) -> ffgl::parameters::ParamValue {
+        self.value
+    }
+
+    fn set(&mut self, value: ffgl::parameters::ParamValue) {
+        self.value = value
+    }
+}
+
 pub struct StaticState {
     pub save_state: PersistentState,
+    pub params: Vec<NodeParam>,
 }
-const INSTANCE: OnceCell<StaticState> = OnceCell::new();
+
+static mut INSTANCE: OnceLock<StaticState> = OnceLock::new();
 
 impl StaticState {
-    pub fn get() -> &'static Self {
-        INSTANCE.get_or_init(|| {
-            let editor = PersistentState::load_from_default_path();
+    fn new() -> Self {
+        let save_state = PersistentState::load_from_default_path();
+        let graph = &save_state.editor.graph;
 
-            Self { save_state: editor }
-        })
+        let params = graph
+            .nodes
+            .iter()
+            .map(|(node_id, node)| {
+                let node_name = save_state
+                    .state
+                    .node_names
+                    .get(&node_id)
+                    .map(|n| format!("{n}"))
+                    .unwrap_or(format!("{node_id:?}"));
+
+                node.inputs
+                    .iter()
+                    //add reference to closure
+                    .map(|(n, id)| (n, id, &save_state.editor.graph.inputs[*id]))
+                    //move string to closure
+                    .filter_map(move |(input_name, input_id, input)| {
+                        NodeParam::new(input, &node_name, &input_name)
+                    })
+            })
+            .flatten()
+            .collect_vec();
+
+        Self { save_state, params }
+    }
+
+    pub fn get_mut() -> &'static mut Self {
+        Self::get();
+        unsafe { INSTANCE.get_mut() }.unwrap()
+    }
+
+    pub fn get() -> &'static Self {
+        unsafe { INSTANCE.get_or_init(Self::new) }
     }
 }
 
@@ -102,17 +207,20 @@ impl std::fmt::Debug for RenderGraphHandler {
     }
 }
 
-static PARAMS: &[Param] = &[Param::standard("12345\0"), Param::standard("test22\0")];
+static PARAMS: &[BasicParam] = &[
+    BasicParam::standard("12345\0"),
+    BasicParam::standard("test22\0"),
+];
 
 impl FFGLHandler for RenderGraphHandler {
+    type Param = NodeParam;
+
     unsafe fn new(inst_data: &ffgl::FFGLData) -> Self {
         let backend = Rc::new(RawGlBackend::new(inst_data.get_dimensions()));
 
         logln!("BACKEND: {backend:?}");
 
-        let state = StaticState::get();
-
-        let mut graph = state.save_state.editor.graph.clone();
+        let mut graph = StaticState::get().save_state.editor.graph.clone();
 
         for (node_id, node) in &graph.nodes {
             logln!("{node_id:?}: {}", node.label);
@@ -140,15 +248,19 @@ impl FFGLHandler for RenderGraphHandler {
         Self {
             backend,
             processor: ShaderGraphProcessor::new_from_graph(&mut graph, &ctx),
-            graph_state: state.save_state.state.clone(),
+            graph_state: StaticState::get().save_state.state.clone(),
             graph,
             texture_manager,
             ctx,
         }
     }
 
-    fn params() -> &'static [Param] {
-        &PARAMS
+    fn params() -> &'static [Self::Param] {
+        &StaticState::get().params
+    }
+
+    fn params_mut() -> &'static mut [Self::Param] {
+        &mut StaticState::get_mut().params
     }
 
     // fn params(&self) -> &[ffgl::parameters::Param] {
@@ -246,6 +358,21 @@ impl RenderGraphHandler {
 
         self.processor
             .update(&mut self.graph, &self.graph_state, &self.ctx);
+
+        for param in Self::params() {
+            // let node = self.graph.nodes.get(param.node_id).unwrap();
+            let input = self.graph.inputs.get_mut(param.param_id).unwrap();
+
+            let value = match param.value {
+                ParamValue::Float(f) => f,
+            };
+
+            match &mut input.value {
+                UiValue::Float(vf) => vf.value = value,
+                UiValue::Mat4(m) => m.scale = value,
+                _ => {}
+            }
+        }
 
         let ends = self.processor.render_shaders(
             &mut self.graph,

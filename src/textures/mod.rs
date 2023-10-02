@@ -6,6 +6,7 @@ use glium::{
     Texture2d,
 };
 
+#[cfg(feature = "editor")]
 pub mod ui;
 
 const NO_MIPMAP: glium::texture::MipmapsOption = glium::texture::MipmapsOption::NoMipmap;

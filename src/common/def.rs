@@ -1,9 +1,8 @@
-use std::{path::PathBuf, fmt::Debug};
+use std::{fmt::Debug, path::PathBuf};
 
-use egui::{Rgba};
-use glium::{uniforms::{AsUniformValue, UniformValue}};
-use serde::{Serialize, Deserialize};
 use super::mat4_animator::Mat4Animator;
+use glium::uniforms::{AsUniformValue, UniformValue};
+use serde::{Deserialize, Serialize};
 
 pub trait Reset {
     fn reset(&mut self);
@@ -18,11 +17,11 @@ pub enum UiValue {
     Menu(RangedData<i32>, Vec<(String, i32)>),
     Bool(RangedData<bool>),
     Vec4(RangedData<[f32; 4]>),
-    Color(RangedData<Rgba>),
+    Color(RangedData<[f32; 4]>),
     Text(RangedData<String>, TextStyle),
     Path(Option<PathBuf>),
     Mat4(Mat4Animator),
-    
+
     #[default]
     None,
 }
@@ -48,13 +47,12 @@ impl Reset for UiValue {
             UiValue::Text(v, style) => {
                 v.reset();
                 *style = Default::default()
-            },
+            }
             UiValue::Path(optional_path) => *optional_path = None,
-            UiValue::None => {},
+            UiValue::None => {}
         }
     }
 }
-
 
 impl UiValue {
     pub fn as_shader_input(&self) -> Option<UniformValue<'_>> {
@@ -63,7 +61,7 @@ impl UiValue {
             UiValue::Float(v) => Some(v.value.as_uniform_value()),
             UiValue::Bool(v) => Some(v.value.as_uniform_value()),
             UiValue::Vec4(v) => Some(v.value.as_uniform_value()),
-            UiValue::Color(v) => Some(UniformValue::Vec4(v.value.to_array())),
+            UiValue::Color(v) => Some(v.value.as_uniform_value()),
             UiValue::Long(v) => Some(v.value.as_uniform_value()),
             UiValue::Menu(v, _) => Some(v.value.as_uniform_value()),
             UiValue::Mat4(v) => Some(UniformValue::Mat4(v.mat.to_cols_array_2d())),
@@ -78,12 +76,13 @@ pub struct RangedData<T: Clone + Default> {
     pub value: T,
     pub min: Option<T>,
     pub max: Option<T>,
-    pub default: Option<T>
+    pub default: Option<T>,
 }
 
 ///just set value and default
-impl <T> From<T> for RangedData<T>
-    where T: Clone + Default
+impl<T> From<T> for RangedData<T>
+where
+    T: Clone + Default,
 {
     ///Set default and value
     fn from(value: T) -> Self {
@@ -91,27 +90,26 @@ impl <T> From<T> for RangedData<T>
             value: value.clone(),
             min: None,
             max: None,
-            default: Some(value)
+            default: Some(value),
         }
     }
 }
 
-impl <T: Clone + Default> Reset for RangedData<T> {
+impl<T: Clone + Default> Reset for RangedData<T> {
     fn reset(&mut self) {
         self.value = self.default.clone().unwrap_or_default();
     }
 }
 
-impl <T: PartialEq + Clone + Default> PartialEq for RangedData<T>{
+impl<T: PartialEq + Clone + Default> PartialEq for RangedData<T> {
     fn eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
 }
 
-
-#[derive(Debug,Default, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Clone, Serialize, Deserialize)]
 pub enum TextStyle {
     #[default]
     Oneline,
-    Multiline
+    Multiline,
 }

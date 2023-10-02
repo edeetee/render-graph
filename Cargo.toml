@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 panic = "unwind"
 
 [features]
-default = ["editor"]
+# default = ["editor"]
 vst_plugin = ["dep:vst", "dep:vst_window", "dep:raw-window-handle"]
 ffgl_plugin = ["dep:ffgl", "dep:gl_loader"]
 editor = ["dep:egui", "dep:egui_glium"]
@@ -28,7 +28,7 @@ glium = "0.32.1"
 rand = "0.8.5"
 egui_node_graph = { version = "0.4.0", features = ["persistence"] }
 
-egui = { version = "0.19.0", optional = true }
+egui = { version = "0.19.0", optional = true, features = ["bytemuck"] }
 egui_glium = { version = "0.19.0", optional = true }
 
 ouroboros = "0.15.0"
@@ -78,6 +78,7 @@ color-eyre = "0.5"
 partial_application = "0.2.1"
 try_utils = "0.1.2"
 graph = "0.3.0"
+lazy_static = "1.4.0"
 
 # clap = { version = "3.2.8", features = ["derive"] }
 # tracing = "0.1.35"
