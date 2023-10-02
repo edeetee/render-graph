@@ -7,7 +7,6 @@ use ffgl::{
 // use egui_node_graph::graph;
 // mod ffgl;
 use ::ffgl::{ffgl_handler, FFGLHandler};
-use gl::FRAMEBUFFER;
 use glium::{
     backend::Context,
     framebuffer::{RenderBuffer, SimpleFrameBuffer},
@@ -23,6 +22,7 @@ use crate::{
 
 mod gl_backend;
 mod node_param;
+mod validate_gl;
 
 pub struct StaticState {
     pub save_state: PersistentState,
@@ -108,12 +108,12 @@ impl FFGLHandler for Instance {
         let ctx = glium::backend::Context::new(
             backend.clone(),
             false,
-            glium::debug::DebugCallbackBehavior::Custom {
-                callback: Box::new(|src, typ, sev, a, b, c| {
-                    logln!("src{src:?},typ{typ:?},sev{sev:?},a{a:?},b{b:?},c{c:?}");
-                }),
-                synchronous: false,
-            },
+            glium::debug::DebugCallbackBehavior::Ignore, // glium::debug::DebugCallbackBehavior::Custom {
+                                                         //     callback: Box::new(|src, typ, sev, a, b, c| {
+                                                         //         logln!("src{src:?},typ{typ:?},sev{sev:?},a{a:?},b{b:?},c{c:?}");
+                                                         //     }),
+                                                         //     synchronous: false,
+                                                         // },
         )
         .unwrap();
 
@@ -142,14 +142,6 @@ impl FFGLHandler for Instance {
     fn params_mut(&mut self) -> &mut [Self::Param] {
         &mut self.params
     }
-
-    // fn params(&self) -> &[ffgl::parameters::Param] {
-    //     &self.params
-    // }
-
-    // fn params_mut(&mut self) -> &mut [ffgl::parameters::Param] {
-    //     &mut self.params
-    // }
 
     unsafe fn draw(
         &mut self,
@@ -184,9 +176,6 @@ impl FFGLHandler for Instance {
 
         frame.finish().unwrap();
 
-        //REQUIRED as host takes control of textures
-        // self.texture_manager.clear();
-
         //reset to what host expects
         // gl_reset(frame_data);
         // validate::validate_context_state();
@@ -194,20 +183,6 @@ impl FFGLHandler for Instance {
         // validate_viewport(&viewport);
     }
 }
-
-unsafe fn validate_viewport(viewport: &[i32; 4]) {
-    // let mut dims: [i32; 4] = [0; 4];
-    // gl::GetIntegerv(gl::SCISSOR_BOX, &mut dims[0]);
-    // assert_eq!(&dims, viewport, "SCISSOR_BOX wrong value: {dims:?}");
-
-    let scissor_enabled = gl::IsEnabled(gl::SCISSOR_TEST);
-    assert_eq!(scissor_enabled, gl::FALSE, "SCISSOR_TEST is enabled");
-
-    let mut dims: [i32; 4] = [0; 4];
-    gl::GetIntegerv(gl::VIEWPORT, &mut dims[0]);
-    assert_eq!(&dims, viewport, "VIEWPORT wrong value: {dims:?}");
-}
-
 impl Instance {
     fn render_frame(&mut self, inst_data: &ffgl::FFGLData, target: &mut impl Surface) {
         let ramp = 1.0
@@ -252,7 +227,7 @@ impl Instance {
             }
         }
 
-        for (node_id, node) in self.graph.nodes.iter() {
+        for (node_id, node) in self.graph.nodes.iter_mut() {
             for err in vec![
                 &node.user_data.render_error,
                 &node.user_data.create_error,
@@ -262,56 +237,22 @@ impl Instance {
                     logln!("ERROR on {node_id:?}: {err:?}");
                 }
             }
+
+            if let Some(time) = node.user_data.render_time.take() {
+                let us = time.as_micros();
+                let name = self
+                    .graph_state
+                    .node_names
+                    .get(&node_id)
+                    .map(|n| format!("{n}"))
+                    .unwrap_or_else(|| format!("{node_id:?}"));
+
+                if 100 < us {
+                    logln!("Render time for {name}: {us}us");
+                }
+            }
         }
     }
-}
-
-struct TextureType {
-    target: u32,
-    binding: u32,
-}
-const TEXTURE_TYPES: [TextureType; 2] = [
-    TextureType {
-        target: gl::TEXTURE_1D,
-        binding: gl::TEXTURE_BINDING_1D,
-    },
-    TextureType {
-        target: gl::TEXTURE_2D,
-        binding: gl::TEXTURE_BINDING_2D,
-    },
-    // Add other texture types here...
-];
-
-unsafe fn gl_reset(frame_data: &ffgl::ffgl::ProcessOpenGLStructTag) {
-    let mut gl_int = 0;
-    gl::UseProgram(0);
-
-    let mut num_samplers = 0;
-    gl::GetIntegerv(gl::MAX_TEXTURE_IMAGE_UNITS, &mut num_samplers);
-
-    for texture_type in TEXTURE_TYPES.iter() {
-        for sampler in 0..num_samplers {
-            gl::ActiveTexture(gl::TEXTURE0 + sampler as u32);
-            // Check if textures are unbound for the current texture unit.
-            gl::GetIntegerv(texture_type.binding, &mut gl_int);
-            // gl::BindTexture(texture_type.target, 0);
-        }
-    }
-
-    gl::ActiveTexture(gl::TEXTURE0);
-
-    gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-    gl::BindBuffer(gl::VERTEX_BINDING_BUFFER, 0);
-    gl::BindVertexArray(0);
-    gl::Disable(gl::BLEND);
-
-    gl::BlendFunc(gl::ONE, gl::ZERO);
-
-    // gl::BindVertexBuffer(0, 0, 0, 0);
-
-    // gl::VertexArrayElementBuffer(vaobj, buffer)
-    // gl::BindTextureUnit(0, 0);
-    gl::BindFramebuffer(gl::FRAMEBUFFER, frame_data.HostFBO);
 }
 
 unsafe fn blit_fb((read_w, read_h): (u32, u32), (write_w, write_h): (u32, u32)) {
