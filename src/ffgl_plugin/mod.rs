@@ -185,16 +185,6 @@ impl FFGLHandler for Instance {
 }
 impl Instance {
     fn render_frame(&mut self, inst_data: &ffgl::FFGLData, target: &mut impl Surface) {
-        let ramp = 1.0
-            - inst_data
-                .host_time
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_secs_f32()
-                % 1.0;
-
-        // target.clear_color(ramp, 0.0, 0.0, 1.0);
-
         self.processor
             .update(&mut self.graph, &self.graph_state, &self.ctx);
 
@@ -229,11 +219,11 @@ impl Instance {
 
         for (node_id, node) in self.graph.nodes.iter_mut() {
             for err in vec![
-                &node.user_data.render_error,
-                &node.user_data.create_error,
-                &node.user_data.update_error,
+                &mut node.user_data.render_error,
+                &mut node.user_data.create_error,
+                &mut node.user_data.update_error,
             ] {
-                if let Some(err) = err {
+                if let Some(err) = err.take() {
                     logln!("ERROR on {node_id:?}: {err:?}");
                 }
             }
