@@ -74,6 +74,7 @@ pub struct Instance {
     texture_manager: crate::textures::TextureManager,
     ctx: Rc<Context>,
     params: Vec<node_param::NodeParam>,
+    backend: Rc<gl_backend::RawGlBackend>,
 }
 
 impl std::fmt::Debug for Instance {
@@ -105,7 +106,7 @@ impl FFGLHandler for Instance {
         }
 
         let ctx = glium::backend::Context::new(
-            backend,
+            backend.clone(),
             false,
             glium::debug::DebugCallbackBehavior::Custom {
                 callback: Box::new(|src, typ, sev, a, b, c| {
@@ -130,6 +131,7 @@ impl FFGLHandler for Instance {
             texture_manager,
             ctx,
             params: StaticState::get().params.clone(),
+            backend,
         }
     }
 
@@ -155,6 +157,7 @@ impl FFGLHandler for Instance {
         frame_data: &ffgl::ffgl::ProcessOpenGLStruct,
     ) {
         let res = inst_data.get_dimensions();
+        self.ctx.rebuild(self.backend.clone()).unwrap();
 
         let frame = Frame::new(self.ctx.clone(), (res.0, res.1));
         let rb = RenderBuffer::new(
@@ -182,7 +185,7 @@ impl FFGLHandler for Instance {
         frame.finish().unwrap();
 
         //REQUIRED as host takes control of textures
-        self.texture_manager.clear();
+        // self.texture_manager.clear();
 
         //reset to what host expects
         // gl_reset(frame_data);

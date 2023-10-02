@@ -1,4 +1,8 @@
-use std::{collections::HashSet, rc::Rc, time::Instant};
+use std::{
+    collections::HashSet,
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 use egui_node_graph::{InputId, NodeId, OutputId};
 use glium::{backend::Facade, Texture2d};
@@ -174,6 +178,7 @@ impl ShaderGraphProcessor {
         mut node_post_render: impl FnMut(NodeId, &Texture2d),
     ) -> Vec<Option<Rc<Texture2d>>> {
         let mut errors: SparseSecondaryMap<NodeId, NodeError> = Default::default();
+        let mut times: SecondaryMap<NodeId, Duration> = Default::default();
 
         let outputs = self
             .terminating_nodes
@@ -184,6 +189,7 @@ impl ShaderGraphProcessor {
                     output_id,
                     &mut |node_id, inputs| {
                         //Render a shader
+                        let start = Instant::now();
                         if let Some(shader) = self.shaders.get_mut(node_id) {
                             match shader.render(
                                 facade,
@@ -192,6 +198,7 @@ impl ShaderGraphProcessor {
                             ) {
                                 Ok(target) => {
                                     node_post_render(node_id, &target);
+                                    times.insert(node_id, start.elapsed());
                                     Some(target)
                                 }
 
@@ -211,6 +218,10 @@ impl ShaderGraphProcessor {
 
         for (node_id, data) in graph.nodes.iter_mut() {
             data.user_data.render_error = errors.remove(node_id);
+
+            if let Some(time) = times.remove(node_id) {
+                data.user_data.update_time_smoothed(time);
+            }
         }
 
         outputs

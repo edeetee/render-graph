@@ -17,7 +17,7 @@ pub fn new_texture_2d(
 ) -> Result<Texture2d, glium::texture::TextureCreationError> {
     Texture2d::empty_with_format(
         facade,
-        glium::texture::UncompressedFloatFormat::F32F32F32F32,
+        glium::texture::UncompressedFloatFormat::U8U8U8U8,
         NO_MIPMAP,
         width,
         height,
@@ -30,7 +30,7 @@ pub fn new_depth_texture_2d(
 ) -> Result<DepthTexture2d, glium::texture::TextureCreationError> {
     DepthTexture2d::empty_with_format(
         facade,
-        glium::texture::DepthFormat::F32,
+        glium::texture::DepthFormat::I16,
         NO_MIPMAP,
         width,
         height,

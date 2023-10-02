@@ -135,7 +135,25 @@ impl NodeDataTrait for UiNodeData {
         draw_error(ui, "Update", &node.user_data.update_error);
         draw_error(ui, "Render", &node.user_data.render_error);
 
+        draw_time(ui, node.user_data.render_time);
+
         vec![]
+    }
+}
+
+fn draw_time(ui: &mut egui::Ui, time: Option<std::time::Duration>) {
+    if let Some(time) = time {
+        let time_us = time.as_micros();
+
+        let color = if time_us < 100 {
+            Color32::GREEN
+        } else if time_us < 1000 {
+            Color32::YELLOW
+        } else {
+            Color32::RED
+        };
+
+        ui.colored_label(color, format!("{time_us}μs"));
     }
 }
 

@@ -9,13 +9,14 @@
         "Srgb"
     ],
     "autoHide.autoHideSideBar": false,
-    // "rust-analyzer.cargo.features": [
-    //     "ffgl_plugin",
-    // ],
-    "rust-analyzer.cargo.noDefaultFeatures": true,
     "rust-analyzer.cargo.features": [
-        // "editor"
+        "ffgl_plugin",
     ],
+    
+    "rust-analyzer.cargo.noDefaultFeatures": true,
+    // "rust-analyzer.cargo.features": [
+    //     "editor"
+    // ],
     // "rust-analyzer.linkedProjects": [
     //     "./Cargo.toml",
     // ],

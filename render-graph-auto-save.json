@@ -673,17 +673,17 @@
             "value": {
               "Mat4": {
                 "mat": [
-                  -0.6890285,
-                  0.08115122,
-                  -0.72017694,
+                  0.6131564,
+                  -0.78631854,
+                  -0.07577947,
                   0.0,
-                  -0.719514,
-                  -0.19565785,
-                  0.66634685,
+                  -0.6147196,
+                  -0.53518474,
+                  0.5793942,
                   0.0,
-                  -0.08683321,
-                  0.97730905,
-                  0.19320285,
+                  -0.49614432,
+                  -0.30867615,
+                  -0.81151736,
                   0.0,
                   0.0,
                   0.0,
@@ -709,9 +709,9 @@
                   1.0
                 ],
                 "rotation": [
-                  138.21428,
-                  254.98277,
-                  285.21262
+                  35.407936,
+                  174.66519,
+                  131.04333
                 ],
                 "scale": 1.0,
                 "translation": [
@@ -1032,10 +1032,6 @@
     },
     "node_order": [
       {
-        "idx": 2,
-        "version": 11
-      },
-      {
         "idx": 5,
         "version": 1
       },
@@ -1050,6 +1046,10 @@
       {
         "idx": 3,
         "version": 9
+      },
+      {
+        "idx": 2,
+        "version": 11
       }
     ],
     "connection_in_progress": null,
@@ -1069,8 +1069,8 @@
       },
       {
         "value": {
-          "x": -22786.66,
-          "y": -30470.602
+          "x": -22794.95,
+          "y": -30470.812
         },
         "version": 11
       },
@@ -1099,8 +1099,8 @@
     "node_finder": null,
     "pan_zoom": {
       "pan": {
-        "x": 22786.305,
-        "y": 30727.398
+        "x": 22872.305,
+        "y": 30679.398
       },
       "zoom": 100.0
     },
@@ -1131,57 +1131,35 @@
     "node_names": [
       [
         {
-          "idx": 3,
-          "version": 1
-        },
-        {
-          "name": "Truchet Tile",
-          "num": 0,
-          "code_name": "truchet_tile"
-        }
-      ],
-      [
-        {
           "idx": 2,
-          "version": 1
+          "version": 3
         },
         {
-          "name": "ASCII Art",
+          "name": "ObjRender",
           "num": 0,
-          "code_name": "ascii_art"
+          "code_name": "objrender"
         }
       ],
       [
         {
           "idx": 1,
-          "version": 11
+          "version": 7
         },
         {
-          "name": "Erode",
+          "name": "Rotate",
           "num": 0,
-          "code_name": "erode"
+          "code_name": "rotate"
         }
       ],
       [
         {
-          "idx": 4,
-          "version": 3
+          "idx": 2,
+          "version": 7
         },
         {
-          "name": "Expression",
-          "num": 1,
-          "code_name": "expression1"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 9
-        },
-        {
-          "name": "Quad Tile",
+          "name": "ObjRender",
           "num": 0,
-          "code_name": "quad_tile"
+          "code_name": "objrender"
         }
       ],
       [
@@ -1197,13 +1175,24 @@
       ],
       [
         {
-          "idx": 1,
-          "version": 15
+          "idx": 3,
+          "version": 9
         },
         {
-          "name": "Expression",
+          "name": "Quad Tile",
           "num": 0,
-          "code_name": "expression"
+          "code_name": "quad_tile"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 11
+        },
+        {
+          "name": "Erode",
+          "num": 0,
+          "code_name": "erode"
         }
       ],
       [
@@ -1220,122 +1209,12 @@
       [
         {
           "idx": 2,
-          "version": 7
-        },
-        {
-          "name": "ObjRender",
-          "num": 0,
-          "code_name": "objrender"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 5
-        },
-        {
-          "name": "3d Rotate",
-          "num": 0,
-          "code_name": "3d_rotate"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 5
-        },
-        {
-          "name": "Stripes",
-          "num": 0,
-          "code_name": "stripes"
-        }
-      ],
-      [
-        {
-          "idx": 2,
-          "version": 9
-        },
-        {
-          "name": "Stripes",
-          "num": 0,
-          "code_name": "stripes"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 7
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 3
-        },
-        {
-          "name": "ASCII Art",
-          "num": 0,
-          "code_name": "ascii_art"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 7
-        },
-        {
-          "name": "Rotate",
-          "num": 0,
-          "code_name": "rotate"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 3
-        },
-        {
-          "name": "Boxinator",
-          "num": 0,
-          "code_name": "boxinator"
-        }
-      ],
-      [
-        {
-          "idx": 3,
-          "version": 5
-        },
-        {
-          "name": "Expression",
-          "num": 0,
-          "code_name": "expression"
-        }
-      ],
-      [
-        {
-          "idx": 1,
-          "version": 13
-        },
-        {
-          "name": "Random Squares Mask",
-          "num": 0,
-          "code_name": "random_squares_mask"
-        }
-      ],
-      [
-        {
-          "idx": 5,
           "version": 1
         },
         {
-          "name": "Expression",
-          "num": 2,
-          "code_name": "expression2"
+          "name": "ASCII Art",
+          "num": 0,
+          "code_name": "ascii_art"
         }
       ],
       [
@@ -1351,13 +1230,68 @@
       ],
       [
         {
-          "idx": 2,
+          "idx": 5,
+          "version": 1
+        },
+        {
+          "name": "Expression",
+          "num": 2,
+          "code_name": "expression2"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 1
+        },
+        {
+          "name": "Truchet Tile",
+          "num": 0,
+          "code_name": "truchet_tile"
+        }
+      ],
+      [
+        {
+          "idx": 3,
           "version": 3
         },
         {
-          "name": "ObjRender",
+          "name": "ASCII Art",
           "num": 0,
-          "code_name": "objrender"
+          "code_name": "ascii_art"
+        }
+      ],
+      [
+        {
+          "idx": 4,
+          "version": 3
+        },
+        {
+          "name": "Expression",
+          "num": 1,
+          "code_name": "expression1"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 5
+        },
+        {
+          "name": "Stripes",
+          "num": 0,
+          "code_name": "stripes"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 3
+        },
+        {
+          "name": "Boxinator",
+          "num": 0,
+          "code_name": "boxinator"
         }
       ],
       [
@@ -1370,61 +1304,95 @@
           "num": 0,
           "code_name": "ascii_art"
         }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 13
+        },
+        {
+          "name": "Random Squares Mask",
+          "num": 0,
+          "code_name": "random_squares_mask"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 5
+        },
+        {
+          "name": "Expression",
+          "num": 0,
+          "code_name": "expression"
+        }
+      ],
+      [
+        {
+          "idx": 2,
+          "version": 9
+        },
+        {
+          "name": "Stripes",
+          "num": 0,
+          "code_name": "stripes"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 5
+        },
+        {
+          "name": "3d Rotate",
+          "num": 0,
+          "code_name": "3d_rotate"
+        }
+      ],
+      [
+        {
+          "idx": 3,
+          "version": 7
+        },
+        {
+          "name": "ASCII Art",
+          "num": 0,
+          "code_name": "ascii_art"
+        }
+      ],
+      [
+        {
+          "idx": 1,
+          "version": 15
+        },
+        {
+          "name": "Expression",
+          "num": 0,
+          "code_name": "expression"
+        }
       ]
     ],
     "param_with_popup": null,
     "visible_nodes": [
       {
-        "idx": 2,
-        "version": 9
-      },
-      {
         "idx": 1,
         "version": 1
       },
       {
-        "idx": 3,
-        "version": 3
+        "idx": 2,
+        "version": 5
+      },
+      {
+        "idx": 2,
+        "version": 9
       },
       {
         "idx": 2,
         "version": 11
       },
       {
-        "idx": 2,
-        "version": 5
-      },
-      {
-        "idx": 1,
-        "version": 9
-      },
-      {
-        "idx": 1,
-        "version": 13
-      },
-      {
-        "idx": 3,
-        "version": 5
-      },
-      {
-        "idx": 3,
-        "version": 9
-      },
-      {
-        "idx": 2,
-        "version": 3
-      },
-      {
-        "idx": 2,
-        "version": 1
-      },
-      {
         "idx": 3,
         "version": 1
-      },
-      {
-        "idx": 1,
-        "version": 5
       },
       {
         "idx": 1,
@@ -1435,8 +1403,12 @@
         "version": 1
       },
       {
+        "idx": 1,
+        "version": 9
+      },
+      {
         "idx": 3,
-        "version": 7
+        "version": 9
       },
       {
         "idx": 4,
@@ -1444,11 +1416,39 @@
       },
       {
         "idx": 2,
-        "version": 7
+        "version": 1
+      },
+      {
+        "idx": 3,
+        "version": 3
+      },
+      {
+        "idx": 3,
+        "version": 5
+      },
+      {
+        "idx": 1,
+        "version": 13
+      },
+      {
+        "idx": 2,
+        "version": 3
       },
       {
         "idx": 4,
         "version": 3
+      },
+      {
+        "idx": 2,
+        "version": 7
+      },
+      {
+        "idx": 1,
+        "version": 5
+      },
+      {
+        "idx": 3,
+        "version": 7
       }
     ]
   },

@@ -10,7 +10,7 @@ use std::{
     collections::{HashMap, HashSet},
     fmt::{Debug, Display},
     rc::Weak,
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 #[derive(Clone, Debug)]
@@ -42,6 +42,8 @@ pub struct UiNodeData {
     pub update_error: Option<NodeError>,
     #[serde(skip)]
     pub render_error: Option<NodeError>,
+    #[serde(skip)]
+    pub render_time: Option<Duration>,
 }
 
 impl UiNodeData {
@@ -53,7 +55,14 @@ impl UiNodeData {
             create_error: Default::default(),
             update_error: Default::default(),
             render_error: Default::default(),
+            render_time: Default::default(),
         }
+    }
+
+    pub fn update_time_smoothed(&mut self, new_time: Duration) {
+        let old_time = self.render_time.unwrap_or(new_time);
+
+        self.render_time = Some(old_time.mul_f32(0.9) + new_time.mul_f32(0.1));
     }
 }
 
