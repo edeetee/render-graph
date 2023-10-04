@@ -1,19 +1,22 @@
-use std::{time::SystemTime};
 use glium::backend::Facade;
+use std::time::SystemTime;
 use thiserror::Error;
 
-use crate::isf::{meta::{IsfInfo, IsfInfoReadError}, shader::{IsfShader, IsfShaderLoadError}};
+use crate::isf::{
+    meta::{IsfInfo, IsfInfoReadError},
+    shader::{IsfShader, IsfShaderLoadError},
+};
 
 pub struct IsfUpdater {
-    pub modified: SystemTime
+    pub modified: SystemTime,
 }
 
 #[derive(Error, Debug)]
-pub enum IsfReloadError{
+pub enum IsfReloadError {
     #[error("Could not read {0}")]
     Read(#[from] IsfInfoReadError),
     #[error("Could not load {0}")]
-    Load(#[from] IsfShaderLoadError)
+    Load(#[from] IsfShaderLoadError),
 }
 
 pub fn reload_ifs_shader(
@@ -27,8 +30,13 @@ pub fn reload_ifs_shader(
 }
 
 impl IsfUpdater {
-    pub fn reload_if_updated(&mut self, facade: &impl Facade, isf_info: &mut IsfInfo, shader: &mut IsfShader) -> Result<(), IsfReloadError> {
-        let new_version = isf_info.path.metadata().unwrap().modified().unwrap();
+    pub fn reload_if_updated(
+        &mut self,
+        facade: &impl Facade,
+        isf_info: &mut IsfInfo,
+        shader: &mut IsfShader,
+    ) -> Result<(), anyhow::Error> {
+        let new_version = isf_info.path.metadata()?.modified()?;
         let diff = new_version.duration_since(self.modified);
 
         if let Ok(diff) = diff {
