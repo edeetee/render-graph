@@ -32,7 +32,7 @@ pub fn main() {
 
     let mut event_loop = glutin::event_loop::EventLoop::new();
 
-    let display = create_display(&event_loop, &state.window_state());
+    let display = create_display(&event_loop, &state.window);
 
     println!("GL Vendor: {}", display.get_opengl_vendor_string());
     println!("GL Version: {}", display.get_opengl_version_string());

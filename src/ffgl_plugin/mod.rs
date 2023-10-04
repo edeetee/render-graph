@@ -16,7 +16,7 @@ use itertools::Itertools;
 
 use crate::{
     common::{def::UiValue, persistent_state::PersistentState},
-    graph::{def::GraphState, ShaderGraphProcessor},
+    graph::{def::GraphState, GraphShaderProcessor, GraphUpdater},
     textures,
 };
 
@@ -34,14 +34,13 @@ static mut INSTANCE: OnceLock<StaticState> = OnceLock::new();
 impl StaticState {
     fn new() -> Self {
         let save_state = PersistentState::load_from_default_path();
-        let graph = &save_state.editor.graph;
+        let graph = &save_state.graph_editor.graph;
 
         let params = graph
             .nodes
             .iter()
             .map(|(node_id, node)| {
                 let node_name = save_state
-                    .state
                     .node_names
                     .get(&node_id)
                     .map(|n| format!("{n}"))
@@ -50,7 +49,7 @@ impl StaticState {
                 node.inputs
                     .iter()
                     //add reference to closure
-                    .map(|(n, id)| (n, id, &save_state.editor.graph.inputs[*id]))
+                    .map(|(n, id)| (n, id, &graph.inputs[*id]))
                     //move string to closure
                     .filter_map(move |(input_name, input_id, input)| {
                         node_param::NodeParam::new(input, &node_name, &input_name)
@@ -70,7 +69,6 @@ impl StaticState {
 pub struct Instance {
     graph: crate::graph::def::Graph,
     graph_state: GraphState,
-    processor: crate::graph::ShaderGraphProcessor,
     texture_manager: crate::textures::TextureManager,
     ctx: Rc<Context>,
     params: Vec<node_param::NodeParam>,
@@ -81,7 +79,6 @@ impl std::fmt::Debug for Instance {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RenderGraphHandler")
             .field("graph", &self.graph)
-            .field("processor", &self.processor)
             .finish()
     }
 }
@@ -99,7 +96,7 @@ impl FFGLHandler for Instance {
 
         logln!("BACKEND: {backend:?}");
 
-        let mut graph = StaticState::get().save_state.editor.graph.clone();
+        let mut graph = StaticState::get().save_state.graph_editor.graph.clone();
 
         for (node_id, node) in &graph.nodes {
             logln!("{node_id:?}: {}", node.label);
@@ -125,8 +122,12 @@ impl FFGLHandler for Instance {
         logln!("OPENGL_VERSION {}", ctx.get_opengl_version_string());
 
         Self {
-            processor: ShaderGraphProcessor::new_from_graph(&mut graph, &ctx),
-            graph_state: StaticState::get().save_state.state.clone(),
+            graph_state: GraphState::from_persistent_state(
+                &mut graph,
+                StaticState::get().save_state.node_names.clone(),
+                StaticState::get().save_state.animator.clone(),
+                &ctx,
+            ),
             graph,
             texture_manager,
             ctx,
@@ -185,8 +186,7 @@ impl FFGLHandler for Instance {
 }
 impl Instance {
     fn render_frame(&mut self, inst_data: &ffgl::FFGLData, target: &mut impl Surface) {
-        self.processor
-            .update(&mut self.graph, &self.graph_state, &self.ctx);
+        self.graph_state.update(&mut self.graph, &self.ctx);
 
         for param in &self.params {
             // let node = self.graph.nodes.get(param.node_id).unwrap();
@@ -203,7 +203,7 @@ impl Instance {
             }
         }
 
-        let ends = self.processor.render_shaders(
+        let ends = self.graph_state.processor.render_shaders(
             &mut self.graph,
             &self.ctx,
             &mut self.texture_manager,

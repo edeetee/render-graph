@@ -157,6 +157,8 @@ impl GraphUpdateListener for GraphShaderProcessor {
                 self.shaders.remove(node_id);
             }
         }
+
+        self.updater.graph_event(graph, facade, event);
     }
 }
 

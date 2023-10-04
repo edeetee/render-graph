@@ -45,6 +45,15 @@ pub trait GraphUpdateListener {
 
 pub trait MultipleUpdatesListener: GraphUpdateListener {
     fn apply_events_from_graph(&mut self, graph: &mut Graph, facade: &impl Facade);
+
+    fn new_from_graph(graph: &mut Graph, facade: &impl Facade) -> Self
+    where
+        Self: Default,
+    {
+        let mut new = Self::default();
+        new.apply_events_from_graph(graph, facade);
+        new
+    }
 }
 
 impl<T: GraphUpdateListener> MultipleUpdatesListener for T {

@@ -11,21 +11,8 @@ use glium::backend::Facade;
 use slotmap::SecondaryMap;
 use std::time::{Instant, SystemTime};
 
-pub struct UpdateTracker {
-    last_update: Instant,
-}
-
-impl Default for UpdateTracker {
-    fn default() -> Self {
-        Self {
-            last_update: Instant::now(),
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct NodeUpdaters {
-    update_info: UpdateTracker,
     updaters: SecondaryMap<NodeId, UpdateShader>,
 }
 

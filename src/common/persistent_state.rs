@@ -1,21 +1,23 @@
 use crate::{
     graph::{
-        def::{GraphEditorState, GraphState},
+        animator::Animator,
+        def::{Graph, GraphEditorState, GraphState, UniqueNodeName},
         MultipleUpdatesListener,
     },
     util::{read_from_json_file, write_to_json_file},
 };
+use egui_node_graph::NodeId;
 use serde::{Deserialize, Serialize};
-use std::{env, path::PathBuf};
+use std::{collections::HashMap, env, path::PathBuf};
 
 #[derive(Default, Serialize, Deserialize)]
-pub struct PersistentState(HydratedPersistentState);
+pub struct PersistentState {
+    pub graph_editor: GraphEditorState,
+    pub animator: Animator,
 
-#[derive(Default, Serialize, Deserialize)]
-#[serde(default)]
-pub struct HydratedPersistentState {
-    pub editor: GraphEditorState,
-    pub state: GraphState,
+    #[serde(with = "vectorize")]
+    pub node_names: HashMap<NodeId, UniqueNodeName>,
+
     pub window: Option<WindowState>,
 
     #[cfg(feature = "editor")]
@@ -23,20 +25,6 @@ pub struct HydratedPersistentState {
 }
 
 impl PersistentState {
-    pub fn new(state: HydratedPersistentState) -> Self {
-        Self(state)
-    }
-
-    pub fn window_state(&self) -> Option<WindowState> {
-        self.0.window.clone()
-    }
-
-    pub fn hydrate(mut self, facade: &impl glium::backend::Facade) -> HydratedPersistentState {
-        let mut state = self.0.state;
-        state.apply_events_from_graph(&mut self.0.editor.graph, facade);
-        HydratedPersistentState { state, ..self.0 }
-    }
-
     pub fn default_path() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("render-graph-auto-save.json")
     }

@@ -3,10 +3,14 @@ use super::{
     GraphUpdater,
 };
 use crate::{
-    common::{animation::DataUpdater, connections::ConnectionType, def::UiValue},
+    common::{
+        animation::DataUpdater, connections::ConnectionType, def::UiValue,
+        persistent_state::PersistentState,
+    },
     util::SelfCall,
 };
 use egui_node_graph::{NodeId, UserResponseTrait};
+use glium::backend::Facade;
 use serde::{Deserialize, Serialize};
 use std::{
     cell::RefCell,
@@ -130,6 +134,25 @@ pub struct GraphState {
     pub processor: GraphShaderProcessor,
 
     pub animator: Animator,
+}
+
+use crate::graph::graph_change_listener::MultipleUpdatesListener;
+
+impl GraphState {
+    pub fn from_persistent_state(
+        graph: &mut Graph,
+        node_names: HashMap<NodeId, UniqueNodeName>,
+        animator: Animator,
+        facade: &impl Facade,
+    ) -> Self {
+        Self {
+            node_names,
+            animator,
+            param_with_popup: None,
+            visible_nodes: Default::default(),
+            processor: GraphShaderProcessor::new_from_graph(graph, facade),
+        }
+    }
 }
 
 impl GraphUpdateListener for GraphState {

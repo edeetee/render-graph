@@ -19,7 +19,7 @@ use try_utils::some;
 
 // use crate::textures::UiTexture;
 
-use crate::common::persistent_state::{HydratedPersistentState, PersistentState, WindowState};
+use crate::common::persistent_state::{PersistentState, WindowState};
 use crate::graph::{
     def::{GraphEditorState, GraphResponse, GraphState, UiNodeData},
     node_types::{AllNodeTypes, NodeType},
@@ -184,28 +184,31 @@ impl GraphUi {
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
     ) -> Self {
-        let mut hydrated = state.hydrate(facade);
+        let mut graph = &mut state.graph_editor.graph;
+
         Self {
-            node_textures: NodeUiTextures::new_from_graph(
-                &mut hydrated.editor.graph,
+            node_textures: NodeUiTextures::new_from_graph(&mut graph, facade, egui_glium),
+            graph_state: GraphState::from_persistent_state(
+                &mut graph,
+                state.node_names,
+                state.animator,
                 facade,
-                egui_glium,
             ),
-            editor: hydrated.editor,
-            graph_state: hydrated.state,
-            state: hydrated.graph_ui_state.unwrap_or_default(),
+            state: state.graph_ui_state.unwrap_or_default(),
+            editor: state.graph_editor,
             ..Default::default()
         }
     }
 
     pub fn to_persistent(self, extras: Option<WindowState>) -> PersistentState {
-        PersistentState::new(HydratedPersistentState {
-            editor: self.editor,
-            state: self.graph_state,
+        PersistentState {
+            graph_editor: self.editor,
+            animator: self.graph_state.animator,
+            node_names: self.graph_state.node_names,
             window: extras,
             #[cfg(feature = "editor")]
             graph_ui_state: Some(self.state),
-        })
+        }
     }
 
     pub fn update(&mut self, facade: &impl Facade) {
