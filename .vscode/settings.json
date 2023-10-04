@@ -10,12 +10,12 @@
     ],
     "autoHide.autoHideSideBar": false,
     "rust-analyzer.cargo.features": [
-        "ffgl_plugin",
+        // "ffgl_plugin",
+        "editor",
     ],
     
     "rust-analyzer.cargo.noDefaultFeatures": true,
     // "rust-analyzer.cargo.features": [
-    //     "editor"
     // ],
     // "rust-analyzer.linkedProjects": [
     //     "./Cargo.toml",

@@ -1,5 +1,8 @@
 use crate::{
-    graph::def::{GraphEditorState, GraphState},
+    graph::{
+        def::{GraphEditorState, GraphState},
+        MultipleUpdatesListener,
+    },
     util::{read_from_json_file, write_to_json_file},
 };
 use serde::{Deserialize, Serialize};
@@ -9,11 +12,34 @@ use std::{env, path::PathBuf};
 #[serde(default)]
 pub struct PersistentState {
     pub editor: GraphEditorState,
-    pub state: GraphState,
+    state: GraphState,
     pub window: Option<WindowState>,
 
     #[cfg(feature = "editor")]
     pub graph_ui_state: Option<crate::editor::graph_ui::GraphUiState>,
+}
+
+impl PersistentState {
+    pub fn build_state(&self, facade: &impl glium::backend::Facade) -> GraphState {
+        let mut state = self.state.clone();
+        state.apply_events_from_graph(&mut self.editor.graph, facade);
+        state
+    }
+
+    pub fn new(
+        editor: GraphEditorState,
+        state: GraphState,
+        window: Option<WindowState>,
+        #[cfg(feature = "editor")] graph_ui_state: Option<crate::editor::graph_ui::GraphUiState>,
+    ) -> Self {
+        Self {
+            editor,
+            state,
+            window,
+            #[cfg(feature = "editor")]
+            graph_ui_state,
+        }
+    }
 }
 
 #[derive(Default, Serialize, Deserialize, Clone)]

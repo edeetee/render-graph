@@ -1,4 +1,7 @@
-use super::node_types::NodeType;
+use super::{
+    animator::Animator, node_types::NodeType, GraphShaderProcessor, GraphUpdateListener,
+    GraphUpdater,
+};
 use crate::{
     common::{animation::DataUpdater, connections::ConnectionType, def::UiValue},
     util::SelfCall,
@@ -118,13 +121,34 @@ impl Display for UniqueNodeName {
 #[serde(default)]
 pub struct GraphState {
     #[serde(with = "vectorize")]
-    pub animations: HashMap<(NodeId, String), DataUpdater>,
-
-    #[serde(with = "vectorize")]
     pub node_names: HashMap<NodeId, UniqueNodeName>,
 
     pub param_with_popup: Option<(NodeId, String)>,
     pub visible_nodes: HashSet<NodeId>,
+
+    #[serde(skip)]
+    pub processor: GraphShaderProcessor,
+
+    pub animator: Animator,
+}
+
+impl GraphUpdateListener for GraphState {
+    fn graph_event(
+        &mut self,
+        graph: &mut Graph,
+        facade: &impl glium::backend::Facade,
+        event: super::GraphChangeEvent,
+    ) {
+        self.processor.graph_event(graph, facade, event);
+        self.animator.graph_event(graph, facade, event);
+    }
+}
+
+impl GraphUpdater for GraphState {
+    fn update(&mut self, graph: &mut super::def::Graph, facade: &impl glium::backend::Facade) {
+        self.processor.update(graph, facade);
+        self.animator.update(graph, facade);
+    }
 }
 
 pub type Node = egui_node_graph::Node<UiNodeData>;

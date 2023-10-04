@@ -14,156 +14,34 @@ use slotmap::{SecondaryMap, SparseSecondaryMap};
 use crate::common::connections::ConnectionType;
 
 use super::{
-    def::*, graph_utils::GraphMap, node_shader::NodeShader, node_shader::ProcessedShaderNodeInputs,
-    node_update::NodeUpdate,
+    def::*,
+    graph_change_listener::{GraphChangeEvent, GraphUpdateListener, GraphUpdater},
+    graph_utils::GraphMap,
+    node_shader::NodeShader,
+    node_shader::ProcessedShaderNodeInputs,
+    node_update::{NodeUpdaters, UpdateShader},
 };
 
-pub struct UpdateTracker {
-    last_update: Instant,
-}
-impl Default for UpdateTracker {
-    fn default() -> Self {
-        Self {
-            last_update: Instant::now(),
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct ShaderGraphProcessor {
+#[derive(Default, Serialize, Deserialize, Clone)]
+pub struct GraphShaderProcessor {
     terminating_nodes: HashSet<NodeId>,
     shaders: SecondaryMap<NodeId, NodeShader>,
-    updaters: SecondaryMap<NodeId, NodeUpdate>,
-    update_info: UpdateTracker,
+    updater: NodeUpdaters,
 }
 
-impl std::fmt::Debug for ShaderGraphProcessor {
+impl std::fmt::Debug for GraphShaderProcessor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ShaderGraphProcessor")
             .field("terminating_nodes", &self.terminating_nodes)
             .field("shaders", &self.shaders.len())
-            .field("updaters", &self.updaters.len())
+            .field("updater", &stringify!(NodeUpdaters))
             .finish()
     }
 }
 
-#[derive(Clone, Copy)]
-pub enum GraphChangeEvent {
-    CreatedNode(NodeId),
-    DestroyedNode(NodeId),
-
-    Connected {
-        output_id: OutputId,
-        input_id: InputId,
-    },
-    Disconnected {
-        output_id: OutputId,
-        input_id: InputId,
-    },
-}
-
-impl GraphChangeEvent {
-    #[must_use = "Use the vec of node responses to load callbacks"]
-    pub fn vec_from_graph(graph: &Graph) -> Vec<Self> {
-        let new_nodes = graph
-            .nodes
-            .iter()
-            .map(|(node_id, ..)| GraphChangeEvent::CreatedNode(node_id));
-
-        let new_connections =
-            graph
-                .connections
-                .iter()
-                .map(|(input, output)| GraphChangeEvent::Connected {
-                    output_id: *output,
-                    input_id: input,
-                });
-
-        new_nodes.chain(new_connections).collect()
-    }
-}
-
-impl ShaderGraphProcessor {
-    pub fn new_from_graph(graph: &mut Graph, facade: &impl Facade) -> Self {
-        let mut this = Self::default();
-
-        for event in GraphChangeEvent::vec_from_graph(graph) {
-            this.graph_event(graph, facade, event);
-        }
-
-        this
-    }
-
+impl GraphShaderProcessor {
     fn add_dangling_output(&mut self, _facade: &impl Facade, node_id: NodeId) {
         self.terminating_nodes.insert(node_id);
-    }
-
-    ///Call with the response of the graph editor ui to update the slotmaps
-    pub fn graph_event(
-        &mut self,
-        graph: &mut Graph,
-        facade: &impl Facade,
-        event: GraphChangeEvent,
-    ) {
-        match event {
-            GraphChangeEvent::CreatedNode(node_id) => {
-                let template = &graph[node_id].user_data.template;
-
-                //only add if needed ()s
-                if let Some(shader) = NodeShader::new(template, facade) {
-                    match shader {
-                        Ok(shader) => {
-                            self.shaders.insert(node_id, shader);
-
-                            if let Some(updater) = NodeUpdate::new(template) {
-                                self.updaters.insert(node_id, updater);
-                            }
-                        }
-                        Err(err) => {
-                            graph[node_id].user_data.create_error = Some(err.into());
-                            // eprintln!("Error {:#?} creating shader for node: {:#?} {:#?}", err, template, node_id);
-                        }
-                    }
-                }
-
-                let template = &graph[node_id].user_data.template;
-
-                if let Some(updater) = NodeUpdate::new(template) {
-                    self.updaters.insert(node_id, updater);
-                }
-
-                //remove output target if not needed
-                for input in graph[node_id].inputs(graph) {
-                    if input.typ == ConnectionType::Texture2D {
-                        let connected_output = graph.connection(input.id);
-                        if let Some(output_id) = connected_output {
-                            let connected_node_id = graph[output_id].node;
-
-                            self.terminating_nodes.remove(&connected_node_id);
-                        }
-                    }
-                }
-
-                self.add_dangling_output(facade, node_id);
-            }
-
-            //may create new output target
-            GraphChangeEvent::Disconnected { output_id, .. } => {
-                if let Some(output) = graph.try_get_output(output_id) {
-                    self.add_dangling_output(facade, output.node);
-                }
-            }
-
-            GraphChangeEvent::Connected { output_id, .. } => {
-                self.terminating_nodes.remove(&graph[output_id].node);
-            }
-
-            GraphChangeEvent::DestroyedNode(node_id) => {
-                self.terminating_nodes.remove(&node_id);
-                self.shaders.remove(node_id);
-                self.updaters.remove(node_id);
-            }
-        }
     }
 
     ///Processes each shader in the output_targets list from start to end
@@ -226,42 +104,64 @@ impl ShaderGraphProcessor {
 
         outputs
     }
+}
 
-    pub fn update(&mut self, graph: &mut Graph, state: &GraphState, facade: &impl Facade) {
-        for (node_id, updater) in self.updaters.iter_mut() {
-            let _template = &mut graph[node_id].user_data.template;
+impl GraphUpdateListener for GraphShaderProcessor {
+    ///Call with the response of the graph editor ui to update the slotmaps
+    fn graph_event(&mut self, graph: &mut Graph, facade: &impl Facade, event: GraphChangeEvent) {
+        match event {
+            GraphChangeEvent::CreatedNode(node_id) => {
+                let template = &graph[node_id].user_data.template;
 
-            let node = &mut graph.nodes[node_id];
-            let inputs: Vec<_> = node
-                .inputs
-                .iter()
-                .map(|(name, in_id)| (name.as_str(), &graph.inputs[*in_id]))
-                .collect();
+                //only add if needed ()s
+                if let Some(shader) = NodeShader::new(template, facade) {
+                    match shader {
+                        Ok(shader) => {
+                            self.shaders.insert(node_id, shader);
+                        }
+                        Err(err) => {
+                            graph[node_id].user_data.create_error = Some(err.into());
+                            // eprintln!("Error {:#?} creating shader for node: {:#?} {:#?}", err, template, node_id);
+                        }
+                    }
+                }
 
-            if let Some(shader) = self.shaders.get_mut(node_id) {
-                match updater.update(facade, &mut node.user_data.template, &inputs, shader) {
-                    Ok(()) => node.user_data.update_error = None,
-                    Err(err) => node.user_data.update_error = Some(err.into()),
+                //remove output target if not needed
+                for input in graph[node_id].inputs(graph) {
+                    if input.typ == ConnectionType::Texture2D {
+                        let connected_output = graph.connection(input.id);
+                        if let Some(output_id) = connected_output {
+                            let connected_node_id = graph[output_id].node;
+
+                            self.terminating_nodes.remove(&connected_node_id);
+                        }
+                    }
+                }
+
+                self.add_dangling_output(facade, node_id);
+            }
+
+            //may create new output target
+            GraphChangeEvent::Disconnected { output_id, .. } => {
+                if let Some(output) = graph.try_get_output(output_id) {
+                    self.add_dangling_output(facade, output.node);
                 }
             }
-        }
 
-        let elapsed_since_update = self.update_info.last_update.elapsed();
-        let update_info = UpdateInfo::new(elapsed_since_update);
+            GraphChangeEvent::Connected { output_id, .. } => {
+                self.terminating_nodes.remove(&graph[output_id].node);
+            }
 
-        for ((node_id, param_name), animation) in &state.animations {
-            let maybe_input = graph.nodes[*node_id]
-                .inputs
-                .iter()
-                .find(|(input_name, _)| input_name == param_name);
-
-            if let Some((_, input_id)) = maybe_input {
-                let input_id = *input_id;
-                let input_param = &mut graph.inputs[input_id].value;
-                animation.update_value(input_param, &update_info);
+            GraphChangeEvent::DestroyedNode(node_id) => {
+                self.terminating_nodes.remove(&node_id);
+                self.shaders.remove(node_id);
             }
         }
+    }
+}
 
-        self.update_info.last_update = Instant::now();
+impl GraphUpdater for GraphShaderProcessor {
+    fn update(&mut self, graph: &mut Graph, facade: &impl Facade) {
+        self.updater.update(&mut self.shaders, graph, facade);
     }
 }

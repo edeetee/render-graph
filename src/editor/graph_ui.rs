@@ -1,6 +1,7 @@
 use std::ops::Deref;
 
 use crate::graph::def::UniqueNodeName;
+use crate::graph::GraphChangeEvent;
 use crate::textures::TextureManager;
 use crate::util::MappableTuple;
 use crate::widgets::debug::debug_options;
@@ -22,14 +23,13 @@ use crate::common::persistent_state::{PersistentState, WindowState};
 use crate::graph::{
     def::{GraphEditorState, GraphResponse, GraphState, UiNodeData},
     node_types::{AllNodeTypes, NodeType},
-    GraphChangeEvent, ShaderGraphProcessor,
+    GraphShaderProcessor,
 };
 
 use super::node_textures::NodeUiTextures;
 use super::node_tree_ui::{LeafIndex, TreeState};
 
 pub struct GraphUi {
-    processor: ShaderGraphProcessor,
     editor: GraphEditorState,
     graph_state: GraphState,
     tree: TreeState,
@@ -122,7 +122,6 @@ impl Default for GraphUi {
             texture_manager: TextureManager::default(),
             graph_state: GraphState::default(),
             tree: TreeState::default(),
-            processor: ShaderGraphProcessor::default(),
             node_textures: NodeUiTextures::default(),
             state: GraphUiState::default(),
         }
@@ -186,30 +185,24 @@ impl GraphUi {
         egui_glium: &mut EguiGlium,
     ) -> Self {
         Self {
-            processor: ShaderGraphProcessor::new_from_graph(&mut state.editor.graph, facade),
             node_textures: NodeUiTextures::new_from_graph(
                 &mut state.editor.graph,
                 facade,
                 egui_glium,
             ),
             editor: state.editor,
-            graph_state: state.state,
+            graph_state: state.build_state(facade),
             state: state.graph_ui_state.unwrap_or_default(),
             ..Default::default()
         }
     }
 
     pub fn to_persistent(self, extras: Option<WindowState>) -> PersistentState {
-        PersistentState {
-            editor: self.editor,
-            state: self.graph_state,
-            window: extras,
-            graph_ui_state: Some(self.state),
-        }
+        PersistentState::new(self.editor, self.graph_state, extras, Some(self.state))
     }
 
     delegate::delegate! {
-         to self.processor {
+         to self.graph_state.processor {
              pub fn update(&mut self, [&mut self.editor.graph], [&self.graph_state], facade: &impl Facade);
          }
     }

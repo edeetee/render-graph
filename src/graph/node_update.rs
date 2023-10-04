@@ -1,12 +1,82 @@
+use super::def::GraphState;
+use super::graph_change_listener::{GraphChangeEvent, GraphUpdateListener};
 use super::{graph_utils::InputParams, node_shader::NodeShader, node_types::NodeType};
 use crate::common::def::UiValue;
+use crate::graph::def::Graph;
 use crate::{
     gl_expression::GlExpressionUpdater, isf::updater::IsfUpdater, obj_shader::loader::ObjLoader,
 };
+use egui_node_graph::NodeId;
 use glium::backend::Facade;
-use std::time::SystemTime;
+use slotmap::SecondaryMap;
+use std::time::{Instant, SystemTime};
 
-pub enum NodeUpdate {
+pub struct UpdateTracker {
+    last_update: Instant,
+}
+
+impl Default for UpdateTracker {
+    fn default() -> Self {
+        Self {
+            last_update: Instant::now(),
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct NodeUpdaters {
+    update_info: UpdateTracker,
+    updaters: SecondaryMap<NodeId, UpdateShader>,
+}
+
+impl NodeUpdaters {
+    pub fn update(
+        &mut self,
+        shaders: &mut SecondaryMap<NodeId, NodeShader>,
+        graph: &mut Graph,
+        facade: &impl Facade,
+    ) {
+        for (node_id, updater) in self.updaters.iter_mut() {
+            let _template = &mut graph[node_id].user_data.template;
+
+            let node = &mut graph.nodes[node_id];
+            let inputs: Vec<_> = node
+                .inputs
+                .iter()
+                .map(|(name, in_id)| (name.as_str(), &graph.inputs[*in_id]))
+                .collect();
+
+            if let Some(shader) = shaders.get_mut(node_id) {
+                match updater.update(facade, &mut node.user_data.template, &inputs, shader) {
+                    Ok(()) => node.user_data.update_error = None,
+                    Err(err) => node.user_data.update_error = Some(err.into()),
+                }
+            }
+        }
+    }
+}
+
+impl GraphUpdateListener for NodeUpdaters {
+    fn graph_event(&mut self, graph: &mut Graph, facade: &impl Facade, event: GraphChangeEvent) {
+        match event {
+            GraphChangeEvent::CreatedNode(node_id) => {
+                let template = &graph[node_id].user_data.template;
+
+                if let Some(updater) = UpdateShader::new(template) {
+                    self.updaters.insert(node_id, updater);
+                }
+            }
+
+            GraphChangeEvent::DestroyedNode(node_id) => {
+                self.updaters.remove(node_id);
+            }
+
+            GraphChangeEvent::Connected { .. } | GraphChangeEvent::Disconnected { .. } => {}
+        }
+    }
+}
+
+pub enum UpdateShader {
     Isf(IsfUpdater),
     Obj(ObjLoader),
     Expression(GlExpressionUpdater),
@@ -15,7 +85,7 @@ pub enum NodeUpdate {
 //TODO: Only run on change (ui etc)
 //Maybe time to use ECS?
 
-impl NodeUpdate {
+impl UpdateShader {
     pub fn new(template: &NodeType) -> Option<Self> {
         match template {
             NodeType::Isf { .. } => Some(Self::Isf(IsfUpdater {
@@ -38,14 +108,14 @@ impl NodeUpdate {
     ) -> anyhow::Result<()> {
         match (self, template, shader) {
             (
-                NodeUpdate::Isf(updater),
+                UpdateShader::Isf(updater),
                 NodeType::Isf { info: isf_info },
                 NodeShader::Isf(shader),
             ) => {
                 updater.reload_if_updated(facade, isf_info, shader)?;
             }
 
-            (NodeUpdate::Obj(loader), _, NodeShader::Obj(obj_renderer)) => {
+            (UpdateShader::Obj(loader), _, NodeShader::Obj(obj_renderer)) => {
                 if let Some(Some(path)) =
                     inputs.iter().find_map(|(_name, input)| match &input.value {
                         UiValue::Path(path) => Some(path),
@@ -57,7 +127,7 @@ impl NodeUpdate {
             }
 
             (
-                NodeUpdate::Expression(updater),
+                UpdateShader::Expression(updater),
                 NodeType::Expression { .. },
                 NodeShader::Expression(renderer),
             ) => {
