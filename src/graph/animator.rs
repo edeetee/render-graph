@@ -13,7 +13,8 @@ pub struct Animator {
     #[serde(with = "vectorize")]
     pub animations: HashMap<(NodeId, String), DataUpdater>,
 
-    pub update_info: UpdateInfo,
+    #[serde(skip)]
+    pub last_update: Option<Instant>,
 }
 
 impl GraphUpdateListener for Animator {
@@ -23,17 +24,18 @@ impl GraphUpdateListener for Animator {
         facade: &impl glium::backend::Facade,
         event: super::graph_change_listener::GraphChangeEvent,
     ) {
-        match self {
+        match event {
             GraphChangeEvent::DestroyedNode(node_id) => {
-                self.animations.retain(|(id, _), _| id != *node_id);
+                self.animations.retain(|(id, _), _| id != &node_id);
             }
+            _ => {}
         }
     }
 }
 
 impl GraphUpdater for Animator {
     fn update(&mut self, graph: &mut super::def::Graph, facade: &impl glium::backend::Facade) {
-        let elapsed_since_update = self.update_info.last_update.elapsed();
+        let elapsed_since_update = self.last_update.unwrap_or(Instant::now()).elapsed();
         let update_info = UpdateInfo::new(elapsed_since_update);
 
         for ((node_id, param_name), animation) in &self.animations {
@@ -49,6 +51,6 @@ impl GraphUpdater for Animator {
             }
         }
 
-        self.update_info.last_update = Instant::now();
+        self.last_update = Some(Instant::now());
     }
 }

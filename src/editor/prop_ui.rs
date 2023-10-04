@@ -286,7 +286,7 @@ impl WidgetValueTrait for UiValue {
     ) -> Vec<Self::Response> {
         let param_key = (node_id, param_name.to_string());
 
-        let is_animating = user_state.animations.contains_key(&param_key);
+        let is_animating = user_state.animator.animations.contains_key(&param_key);
 
         let param_frame_color = if is_animating {
             Color32::LIGHT_GRAY
@@ -320,7 +320,7 @@ impl WidgetValueTrait for UiValue {
                     }
 
                     ui.horizontal(|ui| {
-                        let animator = user_state.animations.get_mut(&param_key);
+                        let animator = user_state.animator.animations.get_mut(&param_key);
                         let mut delete = false;
 
                         match animator {
@@ -331,14 +331,17 @@ impl WidgetValueTrait for UiValue {
                             None => {
                                 if ui.button("ANIMATE").clicked() {
                                     if let Some(updater) = DataUpdater::from_param(self) {
-                                        user_state.animations.insert(param_key.clone(), updater);
+                                        user_state
+                                            .animator
+                                            .animations
+                                            .insert(param_key.clone(), updater);
                                     }
                                 }
                             }
                         }
 
                         if delete {
-                            user_state.animations.remove(&param_key);
+                            user_state.animator.animations.remove(&param_key);
                         }
                     })
                 })

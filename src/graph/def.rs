@@ -117,7 +117,7 @@ impl Display for UniqueNodeName {
     }
 }
 
-#[derive(Default, Serialize, Deserialize, Clone)]
+#[derive(Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct GraphState {
     #[serde(with = "vectorize")]

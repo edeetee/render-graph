@@ -8,11 +8,14 @@ use crate::{
 use serde::{Deserialize, Serialize};
 use std::{env, path::PathBuf};
 
-#[derive(Default, Serialize, Deserialize, Clone)]
+#[derive(Default, Serialize, Deserialize)]
+pub struct PersistentState(HydratedPersistentState);
+
+#[derive(Default, Serialize, Deserialize)]
 #[serde(default)]
-pub struct PersistentState {
+pub struct HydratedPersistentState {
     pub editor: GraphEditorState,
-    state: GraphState,
+    pub state: GraphState,
     pub window: Option<WindowState>,
 
     #[cfg(feature = "editor")]
@@ -20,35 +23,20 @@ pub struct PersistentState {
 }
 
 impl PersistentState {
-    pub fn build_state(&self, facade: &impl glium::backend::Facade) -> GraphState {
-        let mut state = self.state.clone();
-        state.apply_events_from_graph(&mut self.editor.graph, facade);
-        state
+    pub fn new(state: HydratedPersistentState) -> Self {
+        Self(state)
     }
 
-    pub fn new(
-        editor: GraphEditorState,
-        state: GraphState,
-        window: Option<WindowState>,
-        #[cfg(feature = "editor")] graph_ui_state: Option<crate::editor::graph_ui::GraphUiState>,
-    ) -> Self {
-        Self {
-            editor,
-            state,
-            window,
-            #[cfg(feature = "editor")]
-            graph_ui_state,
-        }
+    pub fn window_state(&self) -> Option<WindowState> {
+        self.0.window.clone()
     }
-}
 
-#[derive(Default, Serialize, Deserialize, Clone)]
-pub struct WindowState {
-    pub res: (u32, u32),
-    pub fullscreen: bool,
-}
+    pub fn hydrate(mut self, facade: &impl glium::backend::Facade) -> HydratedPersistentState {
+        let mut state = self.0.state;
+        state.apply_events_from_graph(&mut self.0.editor.graph, facade);
+        HydratedPersistentState { state, ..self.0 }
+    }
 
-impl PersistentState {
     pub fn default_path() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("render-graph-auto-save.json")
     }
@@ -73,4 +61,10 @@ impl PersistentState {
     pub fn write_to_default_path(self) -> anyhow::Result<()> {
         write_to_json_file(&Self::default_path(), &self)
     }
+}
+
+#[derive(Default, Serialize, Deserialize, Clone, Copy)]
+pub struct WindowState {
+    pub res: (u32, u32),
+    pub fullscreen: bool,
 }

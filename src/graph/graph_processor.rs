@@ -22,7 +22,7 @@ use super::{
     node_update::{NodeUpdaters, UpdateShader},
 };
 
-#[derive(Default, Serialize, Deserialize, Clone)]
+#[derive(Default)]
 pub struct GraphShaderProcessor {
     terminating_nodes: HashSet<NodeId>,
     shaders: SecondaryMap<NodeId, NodeShader>,

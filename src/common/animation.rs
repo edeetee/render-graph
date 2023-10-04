@@ -9,6 +9,7 @@ pub struct RotationAnimation {
     pub speed: f32,
 }
 
+#[derive(Default, Clone)]
 pub struct UpdateInfo {
     elapsed_since_update: Duration,
     seconds_since_update: f32,

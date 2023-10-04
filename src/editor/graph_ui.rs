@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::graph::def::UniqueNodeName;
-use crate::graph::GraphChangeEvent;
+use crate::graph::{GraphChangeEvent, GraphUpdateListener, GraphUpdater};
 use crate::textures::TextureManager;
 use crate::util::MappableTuple;
 use crate::widgets::debug::debug_options;
@@ -19,7 +19,7 @@ use try_utils::some;
 
 // use crate::textures::UiTexture;
 
-use crate::common::persistent_state::{PersistentState, WindowState};
+use crate::common::persistent_state::{HydratedPersistentState, PersistentState, WindowState};
 use crate::graph::{
     def::{GraphEditorState, GraphResponse, GraphState, UiNodeData},
     node_types::{AllNodeTypes, NodeType},
@@ -184,27 +184,32 @@ impl GraphUi {
         facade: &impl Facade,
         egui_glium: &mut EguiGlium,
     ) -> Self {
+        let mut hydrated = state.hydrate(facade);
         Self {
             node_textures: NodeUiTextures::new_from_graph(
-                &mut state.editor.graph,
+                &mut hydrated.editor.graph,
                 facade,
                 egui_glium,
             ),
-            editor: state.editor,
-            graph_state: state.build_state(facade),
-            state: state.graph_ui_state.unwrap_or_default(),
+            editor: hydrated.editor,
+            graph_state: hydrated.state,
+            state: hydrated.graph_ui_state.unwrap_or_default(),
             ..Default::default()
         }
     }
 
     pub fn to_persistent(self, extras: Option<WindowState>) -> PersistentState {
-        PersistentState::new(self.editor, self.graph_state, extras, Some(self.state))
+        PersistentState::new(HydratedPersistentState {
+            editor: self.editor,
+            state: self.graph_state,
+            window: extras,
+            #[cfg(feature = "editor")]
+            graph_ui_state: Some(self.state),
+        })
     }
 
-    delegate::delegate! {
-         to self.graph_state.processor {
-             pub fn update(&mut self, [&mut self.editor.graph], [&self.graph_state], facade: &impl Facade);
-         }
+    pub fn update(&mut self, facade: &impl Facade) {
+        self.graph_state.update(&mut self.editor.graph, facade);
     }
 
     pub fn process_frame(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
@@ -234,8 +239,11 @@ impl GraphUi {
                     render_requests = response.render_requests;
 
                     for change in response.graph_changes {
-                        self.processor
-                            .graph_event(&mut self.editor.graph, display, change);
+                        self.graph_state.processor.graph_event(
+                            &mut self.editor.graph,
+                            display,
+                            change,
+                        );
 
                         match change {
                             GraphChangeEvent::CreatedNode(node_id) => {
@@ -281,7 +289,7 @@ impl GraphUi {
             .as_surface()
             .clear_color(1.0, 1.0, 1.0, 1.0);
 
-        let outputs = self.processor.render_shaders(
+        let outputs = self.graph_state.processor.render_shaders(
             &mut self.editor.graph,
             display,
             &mut self.texture_manager,
@@ -415,7 +423,7 @@ impl GraphUi {
 
         egui::TopBottomPanel::top("Titlebar").show(ctx, |ui| {});
 
-        if !self.graph_state.animations.is_empty() {
+        if !self.graph_state.animator.animations.is_empty() {
             self.draw_animators(ctx);
         }
 
@@ -589,7 +597,7 @@ impl GraphUi {
     fn draw_animators(&mut self, ctx: &egui::Context) {
         egui::Window::new("Animators").show(ctx, |ui| {
             let mut removal = None;
-            for (key, updater) in &mut self.graph_state.animations {
+            for (key, updater) in &mut self.graph_state.animator.animations {
                 let (node_id, param_name) = key;
 
                 let node = &self.editor.graph.nodes[*node_id];
@@ -606,7 +614,7 @@ impl GraphUi {
             }
 
             if let Some(removal) = removal {
-                self.graph_state.animations.remove(&removal);
+                self.graph_state.animator.animations.remove(&removal);
             }
         });
     }
