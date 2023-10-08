@@ -1,7 +1,4 @@
-use super::{
-    animator::Animator, node_types::NodeType, GraphShaderProcessor, GraphUpdateListener,
-    GraphUpdater,
-};
+use super::{animator::Animator, node_types::NodeType, GraphShaderProcessor, GraphUpdateListener};
 use crate::{
     common::{animation::DataUpdater, connections::ConnectionType, def::UiValue},
     def::GetUiValue,
@@ -11,7 +8,7 @@ use crate::{
 use egui_node_graph::{NodeId, UserResponseTrait};
 use glium::backend::Facade;
 use serde::{Deserialize, Serialize};
-use slotmap::SecondaryMap;
+use slotmap::{SecondaryMap, SparseSecondaryMap};
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
@@ -38,15 +35,6 @@ impl From<anyhow::Error> for NodeError {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UiNodeData {
     pub template: NodeType,
-
-    #[serde(skip)]
-    pub create_error: Option<NodeError>,
-    #[serde(skip)]
-    pub update_error: Option<NodeError>,
-    #[serde(skip)]
-    pub render_error: Option<NodeError>,
-    #[serde(skip)]
-    pub render_time: Option<Duration>,
 }
 
 impl GetTemplate for UiNodeData {
@@ -60,34 +48,14 @@ impl GetTemplate for UiNodeData {
 
 impl UiNodeData {
     pub fn new(template: NodeType) -> Self {
-        Self {
-            template,
-            create_error: Default::default(),
-            update_error: Default::default(),
-            render_error: Default::default(),
-            render_time: Default::default(),
-        }
-    }
-
-    pub fn update_time_smoothed(&mut self, new_time: Duration) {
-        let old_time = self.render_time.unwrap_or(new_time);
-
-        self.render_time = Some(old_time.mul_f32(0.9) + new_time.mul_f32(0.1));
+        Self { template }
     }
 }
 
 impl Debug for UiNodeData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut binding = f.debug_struct("UiNodeData");
-        let d = binding.field("template", &self.template);
-
-        #[cfg(feature = "editor")]
-        d.field("texture", &self.texture);
-
-        d.field("create_error", &self.create_error)
-            .field("update_error", &self.update_error)
-            .field("render_error", &self.render_error)
-            .finish()
+        binding.field("template", &self.template).finish()
     }
 }
 
@@ -166,15 +134,15 @@ impl<N: GetTemplate, V> GraphUpdateListener<N, ConnectionType, V> for GraphState
     }
 }
 
-impl<N: GetTemplate, C, V: GetUiValue> GraphUpdater<N, C, V> for GraphState {
-    fn update(
+impl GraphState {
+    pub fn update<N: GetTemplate, C, V: GetUiValue>(
         &mut self,
         graph: &mut egui_node_graph::Graph<N, C, V>,
         facade: &impl glium::backend::Facade,
-    ) -> anyhow::Result<()> {
-        self.processor.update(graph, facade)?;
-        self.animator.update(graph, facade)?;
-        Ok(())
+    ) -> SparseSecondaryMap<NodeId, anyhow::Error> {
+        let errors = self.processor.update(graph, facade);
+        self.animator.update(graph);
+        errors
     }
 }
 

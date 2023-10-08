@@ -11,3 +11,13 @@ panic = "unwind"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+graph = { path = "../graph" }
+gl = "0.14.0"
+ffgl = { path = "../../ffgl-rs" }
+gl_loader = { version = "0.1.2" }
+itertools.workspace = true
+glium.workspace = true
+egui_node_graph.workspace = true
+common = { "path" = "../common" }
+persistence = { "path" = "../persistence" }

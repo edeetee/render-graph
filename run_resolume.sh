@@ -15,7 +15,7 @@ OLDDIR="$(pwd)"
 cd "$(dirname "$0")"
 
 echo "Building"
-cargo build --release --lib --features=ffgl_plugin --no-default-features
+cargo build --release -p ffgl-lib
 
 echo "Copying to plugin bundle"
 cp "target/release/librender_graph_lib.dylib" "/Library/Graphics/FreeFrame Plug-Ins/FFGLRsTest.bundle/Contents/MacOS/FFGLRsTest"

@@ -11,6 +11,7 @@ pub use graph::node_types::*;
 pub use textures::TextureManager;
 
 pub use graph::animator::Animator;
+pub use graph::GraphShaderProcessor;
 
 // #[macro_use]
 // extern crate partial_application;

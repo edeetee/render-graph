@@ -11,7 +11,7 @@ use glium::backend::Facade;
 use shaders::{
     gl_expression::GlExpressionUpdater, isf::updater::IsfUpdater, obj_shader::loader::ObjLoader,
 };
-use slotmap::SecondaryMap;
+use slotmap::{SecondaryMap, SparseSecondaryMap};
 use std::time::{Instant, SystemTime};
 
 #[derive(Default)]
@@ -25,7 +25,9 @@ impl NodeUpdaters {
         shaders: &mut SecondaryMap<NodeId, NodeShader>,
         graph: &mut egui_node_graph::Graph<N, C, V>,
         facade: &impl Facade,
-    ) -> anyhow::Result<()> {
+    ) -> SparseSecondaryMap<NodeId, anyhow::Error> {
+        let mut errors = SparseSecondaryMap::default();
+
         for (node_id, updater) in self.updaters.iter_mut() {
             let node = &mut graph.nodes[node_id];
             let inputs: Vec<_> = node
@@ -35,10 +37,14 @@ impl NodeUpdaters {
                 .collect();
 
             if let Some(shader) = shaders.get_mut(node_id) {
-                updater.update(facade, node.user_data.template_mut(), &inputs, shader)?;
+                if let Err(err) =
+                    updater.update(facade, node.user_data.template_mut(), &inputs, shader)
+                {
+                    errors.insert(node_id, err);
+                }
             }
         }
-        Ok(())
+        errors
     }
 }
 
@@ -134,7 +140,6 @@ impl UpdateShader {
                     }
                 }) {
                     let _inputs = updater.update(facade, renderer, frag_source)?;
-                    // dbg!(inputs);
                 }
             }
             _ => {}

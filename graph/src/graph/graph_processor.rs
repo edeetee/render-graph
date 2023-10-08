@@ -20,7 +20,7 @@ use crate::common::connections::ConnectionType;
 
 use super::{
     def::*,
-    graph_change_listener::{GraphChangeEvent, GraphUpdateListener, GraphUpdater},
+    graph_change_listener::{GraphChangeEvent, GraphUpdateListener},
     graph_utils::GraphMap,
     node_shader::NodeShader,
     node_shader::ProcessedShaderNodeInputs,
@@ -168,12 +168,12 @@ impl<N: GetTemplate, V> GraphUpdateListener<N, ConnectionType, V> for GraphShade
     }
 }
 
-impl<N: GetTemplate, C, V: GetUiValue> GraphUpdater<N, C, V> for GraphShaderProcessor {
-    fn update(
+impl GraphShaderProcessor {
+    pub fn update<N: GetTemplate, C, V: GetUiValue>(
         &mut self,
         graph: &mut egui_node_graph::Graph<N, C, V>,
         facade: &impl Facade,
-    ) -> anyhow::Result<()> {
+    ) -> SparseSecondaryMap<NodeId, anyhow::Error> {
         self.updater.update(&mut self.shaders, graph, facade)
     }
 }

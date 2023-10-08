@@ -14,11 +14,8 @@ use glium::{
 };
 use itertools::Itertools;
 
-use crate::{
-    common::{def::UiValue, persistent_state::PersistentState},
-    graph::{def::GraphState, GraphShaderProcessor, GraphUpdater},
-    textures,
-};
+use graph::{def::UiValue, GraphShaderProcessor, GraphState};
+use persistence::PersistentState;
 
 mod gl_backend;
 mod node_param;
@@ -34,7 +31,7 @@ static mut INSTANCE: OnceLock<StaticState> = OnceLock::new();
 impl StaticState {
     fn new() -> Self {
         let save_state = PersistentState::load_from_default_path();
-        let graph = &save_state.graph_editor.graph;
+        let graph = &save_state.graph;
 
         let params = graph
             .nodes
@@ -42,7 +39,7 @@ impl StaticState {
             .map(|(node_id, node)| {
                 let node_name = save_state
                     .node_names
-                    .get(&node_id)
+                    .get(node_id)
                     .map(|n| format!("{n}"))
                     .unwrap_or(format!("{node_id:?}"));
 
@@ -67,9 +64,9 @@ impl StaticState {
 }
 
 pub struct Instance {
-    graph: crate::graph::def::Graph,
+    graph: graph::Graph,
     graph_state: GraphState,
-    texture_manager: crate::textures::TextureManager,
+    texture_manager: graph::TextureManager,
     ctx: Rc<Context>,
     params: Vec<node_param::NodeParam>,
     backend: Rc<gl_backend::RawGlBackend>,
@@ -96,7 +93,7 @@ impl FFGLHandler for Instance {
 
         logln!("BACKEND: {backend:?}");
 
-        let mut graph = StaticState::get().save_state.graph_editor.graph.clone();
+        let mut graph = StaticState::get().save_state.graph.clone();
 
         for (node_id, node) in &graph.nodes {
             logln!("{node_id:?}: {}", node.label);
@@ -114,7 +111,7 @@ impl FFGLHandler for Instance {
         )
         .unwrap();
 
-        let texture_manager = textures::TextureManager {
+        let texture_manager = graph::TextureManager {
             res: inst_data.get_dimensions(),
             ..Default::default()
         };
@@ -127,7 +124,8 @@ impl FFGLHandler for Instance {
                 StaticState::get().save_state.node_names.clone(),
                 StaticState::get().save_state.animator.clone(),
                 &ctx,
-            ),
+            )
+            .expect("Failed to load graph state"),
             graph,
             texture_manager,
             ctx,
@@ -203,43 +201,35 @@ impl Instance {
             }
         }
 
-        let ends = self.graph_state.processor.render_shaders(
+        let resp = self.graph_state.processor.render_shaders(
             &mut self.graph,
             &self.ctx,
             &mut self.texture_manager,
             |_, _| {},
         );
 
-        for end in ends {
+        for end in resp.terminating_textures {
             if let Some(tex) = end {
                 tex.as_surface()
                     .fill(target, glium::uniforms::MagnifySamplerFilter::Nearest);
             }
         }
 
-        for (node_id, node) in self.graph.nodes.iter_mut() {
-            for err in vec![
-                &mut node.user_data.render_error,
-                &mut node.user_data.create_error,
-                &mut node.user_data.update_error,
-            ] {
-                if let Some(err) = err.take() {
-                    logln!("ERROR on {node_id:?}: {err:?}");
-                }
-            }
+        for (node_id, err) in resp.errors {
+            logln!("ERROR on {} {err:?}", self.graph.nodes[node_id].label);
+        }
 
-            if let Some(time) = node.user_data.render_time.take() {
-                let us = time.as_micros();
-                let name = self
-                    .graph_state
-                    .node_names
-                    .get(&node_id)
-                    .map(|n| format!("{n}"))
-                    .unwrap_or_else(|| format!("{node_id:?}"));
+        for (node_id, duration) in resp.times {
+            let us = duration.as_micros();
+            let name = self
+                .graph_state
+                .node_names
+                .get(node_id)
+                .map(|n| format!("{n}"))
+                .unwrap_or_else(|| format!("{node_id:?}"));
 
-                if 100 < us {
-                    logln!("Render time for {name}: {us}us");
-                }
+            if 100 < us {
+                logln!("Render time for {name}: {us}us");
             }
         }
     }

@@ -6,7 +6,7 @@ mod widgets;
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    egui_glium::main();
+    egui_glium::main().expect("Error running egui_glium::main()");
 
     Ok(())
 }

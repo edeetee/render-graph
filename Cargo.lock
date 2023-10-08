@@ -1457,6 +1457,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffgl-lib"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "egui_node_graph",
+ "ffgl",
+ "gl",
+ "gl_loader",
+ "glium",
+ "graph",
+ "itertools 0.10.5",
+ "persistence",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1941,8 +1956,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "common",
- "egui",
  "egui_node_graph",
+ "epaint",
  "glam",
  "glium",
  "itertools 0.10.5",
@@ -3356,9 +3371,6 @@ name = "render-graph"
 version = "0.1.0"
 dependencies = [
  "actix-web",
- "ffgl",
- "gl",
- "gl_loader",
  "lazy_static",
  "leptos",
  "rand 0.8.5",

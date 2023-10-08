@@ -1,6 +1,7 @@
 use std::{collections::HashMap, time::Instant};
 
 use egui_node_graph::NodeId;
+use slotmap::SparseSecondaryMap;
 
 use crate::{
     common::animation::{DataUpdater, UpdateInfo},
@@ -9,7 +10,7 @@ use crate::{
 
 use serde::{Deserialize, Serialize};
 
-use super::graph_change_listener::{GraphChangeEvent, GraphUpdateListener, GraphUpdater};
+use super::graph_change_listener::{GraphChangeEvent, GraphUpdateListener};
 
 #[derive(Default, Serialize, Deserialize, Clone)]
 pub struct Animator {
@@ -37,12 +38,8 @@ impl<N, C, V> GraphUpdateListener<N, C, V> for Animator {
     }
 }
 
-impl<N, C, V: GetUiValue> GraphUpdater<N, C, V> for Animator {
-    fn update(
-        &mut self,
-        graph: &mut egui_node_graph::Graph<N, C, V>,
-        facade: &impl glium::backend::Facade,
-    ) -> anyhow::Result<()> {
+impl Animator {
+    pub fn update<N, C, V: GetUiValue>(&mut self, graph: &mut egui_node_graph::Graph<N, C, V>) {
         let elapsed_since_update = self.last_update.unwrap_or(Instant::now()).elapsed();
         let update_info = UpdateInfo::new(elapsed_since_update);
 
@@ -60,7 +57,5 @@ impl<N, C, V: GetUiValue> GraphUpdater<N, C, V> for Animator {
         }
 
         self.last_update = Some(Instant::now());
-
-        Ok(())
     }
 }

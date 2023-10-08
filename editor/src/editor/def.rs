@@ -4,10 +4,10 @@ use egui_node_graph::{NodeId, NodeTemplateIter, NodeTemplateTrait};
 use glium::uniforms::UniformValue;
 use graph::{
     def::{AsUniformOptional, GetUiValue},
-    GetTemplate,
+    GetTemplate, NodeError,
 };
 use serde::{Deserialize, Serialize};
-use std::{cell::RefCell, rc::Weak};
+use std::{cell::RefCell, rc::Weak, time::Duration};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UiNodeData {
@@ -15,13 +15,34 @@ pub struct UiNodeData {
     pub inner: graph::UiNodeData,
 
     #[serde(skip)]
+    pub create_error: Option<NodeError>,
+    #[serde(skip)]
+    pub update_error: Option<NodeError>,
+    #[serde(skip)]
+    pub render_error: Option<NodeError>,
+    #[serde(skip)]
+    pub render_time: Option<Duration>,
+
+    #[serde(skip)]
     pub texture: Weak<RefCell<UiTexture>>, // pub texture_cache: Option<ShaderData>
+}
+
+impl UiNodeData {
+    pub fn update_time_smoothed(&mut self, new_time: Duration) {
+        let old_time = self.render_time.unwrap_or(new_time);
+
+        self.render_time = Some(old_time.mul_f32(0.9) + new_time.mul_f32(0.1));
+    }
 }
 
 impl From<graph::UiNodeData> for UiNodeData {
     fn from(inner: graph::UiNodeData) -> Self {
         Self {
             inner,
+            create_error: Default::default(),
+            update_error: Default::default(),
+            render_error: Default::default(),
+            render_time: Default::default(),
             texture: Weak::new(),
         }
     }
@@ -92,10 +113,7 @@ impl NodeTemplateTrait for NodeType {
     }
 
     fn user_data(&self, _user_state: &mut Self::UserState) -> Self::NodeData {
-        UiNodeData {
-            inner: graph::UiNodeData::new(self.0.clone()),
-            texture: Weak::new(),
-        }
+        graph::UiNodeData::new(self.0.clone()).into()
     }
 
     fn build_node(

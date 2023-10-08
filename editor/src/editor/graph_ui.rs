@@ -15,7 +15,7 @@ use try_utils::some;
 
 // use crate::textures::UiTexture;
 
-use graph::{GetTemplate, GraphChangeEvent, GraphUpdater, TextureManager, UniqueNodeName};
+use graph::{GetTemplate, GraphChangeEvent, TextureManager, UniqueNodeName};
 
 use persistence::{PersistentState, WindowState};
 
@@ -137,9 +137,11 @@ impl GraphUi {
     }
 
     pub fn update(&mut self, facade: &impl Facade) {
-        self.graph_state
-            .update(&mut self.editor.graph, facade)
-            .expect("update failed");
+        let resp = self.graph_state.update(&mut self.editor.graph, facade);
+
+        for (node_id, err) in resp {
+            self.editor.graph.nodes[node_id].user_data.update_error = Some(err.into())
+        }
     }
 
     pub fn process_frame(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
@@ -242,10 +244,10 @@ impl GraphUi {
         );
 
         for (node_id, data) in self.editor.graph.nodes.iter_mut() {
-            data.user_data.inner.render_error = outputs.errors.remove(node_id);
+            data.user_data.render_error = outputs.errors.remove(node_id);
 
             if let Some(time) = outputs.times.remove(node_id) {
-                data.user_data.inner.update_time_smoothed(time);
+                data.user_data.update_time_smoothed(time);
             }
         }
 

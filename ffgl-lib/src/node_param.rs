@@ -1,7 +1,7 @@
-use crate::common::def::UiValue;
 use egui_node_graph::{InputId, NodeId};
 use ffgl::parameters::ParamValue;
 use ffgl::Param;
+use graph::def::UiValue;
 use std::ffi::CStr;
 use std::ffi::CString;
 
@@ -14,11 +14,11 @@ pub struct NodeParam {
     pub(crate) value: ParamValue,
 }
 
-type GraphInput = egui_node_graph::InputParam<crate::common::connections::ConnectionType, UiValue>;
+type GraphInput = egui_node_graph::InputParam<graph::connections::ConnectionType, UiValue>;
 
 impl NodeParam {
     pub fn new(input: &GraphInput, input_name: &str, node_name: &str) -> Option<Self> {
-        if let Some(value) = (&input.value).into() {
+        if let Some(value) = param_value_from_ui_value(&input.value) {
             Some(NodeParam {
                 node_id: input.node,
                 param_id: input.id,
@@ -36,13 +36,11 @@ impl NodeParam {
     }
 }
 
-impl From<&UiValue> for Option<ParamValue> {
-    fn from(value: &UiValue) -> Self {
-        match value {
-            UiValue::Float(vf) => Some(ParamValue::Float(vf.value)),
-            UiValue::Mat4(m) => Some(ParamValue::Float(m.scale)),
-            _ => None,
-        }
+fn param_value_from_ui_value(value: &UiValue) -> Option<ParamValue> {
+    match value {
+        UiValue::Float(vf) => Some(ParamValue::Float(vf.value)),
+        UiValue::Mat4(m) => Some(ParamValue::Float(m.scale)),
+        _ => None,
     }
 }
 

@@ -1,5 +1,6 @@
 use egui_node_graph::{InputId, NodeDataTrait, NodeId, NodeResponse, OutputId, UserResponseTrait};
 use glium::backend::Facade;
+use slotmap::SparseSecondaryMap;
 
 #[derive(Clone, Copy)]
 pub enum GraphChangeEvent {
@@ -105,11 +106,11 @@ impl<T: GraphUpdateListener<N, C, V>, N, C, V> MultipleUpdatesListener<N, C, V> 
     }
 }
 
-pub trait GraphUpdater<N, C, V> {
-    #[must_use = "must handle the error possibility"]
-    fn update(
-        &mut self,
-        graph: &mut egui_node_graph::Graph<N, C, V>,
-        facade: &impl Facade,
-    ) -> anyhow::Result<()>;
-}
+// pub trait GraphUpdater<N, C, V> {
+//     #[must_use = "must handle the error possibility"]
+//     fn update(
+//         &mut self,
+//         graph: &mut egui_node_graph::Graph<N, C, V>,
+//         facade: &impl Facade,
+//     ) -> SparseSecondaryMap<NodeId, anyhow::Error>;
+// }

@@ -1,8 +1,8 @@
 use crate::GraphState;
 
 use super::def::UiValue;
-use egui::color::Hsva;
 use egui_node_graph::DataTypeTrait;
+use epaint::color::Hsva;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 
@@ -75,7 +75,7 @@ impl<S: Into<String>> From<(S, ConnectionType)> for OutputDef {
 }
 
 impl DataTypeTrait<GraphState> for ConnectionType {
-    fn data_type_color(&self, _: &mut GraphState) -> egui::Color32 {
+    fn data_type_color(&self, _: &mut GraphState) -> epaint::Color32 {
         let hue = match self {
             ConnectionType::Texture2D => 0.7,
             ConnectionType::None => 0.0,

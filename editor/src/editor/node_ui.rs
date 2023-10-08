@@ -127,11 +127,11 @@ impl NodeDataTrait for UiNodeData {
             });
         }
 
-        draw_error(ui, "Init", &node.user_data.inner.create_error);
-        draw_error(ui, "Update", &node.user_data.inner.update_error);
-        draw_error(ui, "Render", &node.user_data.inner.render_error);
+        draw_error(ui, "Init", &node.user_data.create_error);
+        draw_error(ui, "Update", &node.user_data.update_error);
+        draw_error(ui, "Render", &node.user_data.render_error);
 
-        draw_time(ui, node.user_data.inner.render_time);
+        draw_time(ui, node.user_data.render_time);
 
         vec![]
     }

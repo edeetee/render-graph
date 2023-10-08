@@ -12,6 +12,7 @@ glium.workspace = true
 anyhow.workspace = true
 glam.workspace = true
 egui_node_graph.workspace = true
+
 common = { path = "../common" }
 shaders = { path = "../shaders" }
 
@@ -20,4 +21,4 @@ strum.workspace = true
 strum_macros.workspace = true
 slotmap.workspace = true
 itertools.workspace = true
-egui.workspace = true
+epaint.workspace = true
