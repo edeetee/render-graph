@@ -1,0 +1,19 @@
+[package]
+name = "shaders"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+glam.workspace = true
+glium.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+serde.workspace = true
+
+glsl = "6.0.1"
+genmesh = "0.6.2"
+isf = "0.1.0"
+obj = { version = "0.10.2", features = ["genmesh"] }
+common = { path = "../common" }

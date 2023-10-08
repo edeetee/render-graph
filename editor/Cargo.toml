@@ -1,0 +1,29 @@
+[package]
+name = "editor"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+native-dialog = { version = "0.6.3" }
+egui_glium = { version = "0.19.0" }
+signal-hook = { version = "0.3.14" }
+try_utils = "0.1.2"
+partial_application = "0.2.1"
+
+itertools.workspace = true
+slotmap.workspace = true
+color-eyre.workspace = true
+egui.workspace = true
+anyhow.workspace = true
+glium.workspace = true
+egui_node_graph.workspace = true
+serde.workspace = true
+glam.workspace = true
+glutin.workspace = true
+delegate.workspace = true
+
+graph = { path = "../graph" }
+common = { path = "../common" }
+persistence = { path = "../persistence" }

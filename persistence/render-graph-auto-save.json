@@ -1,0 +1,963 @@
+{
+  "graph": {
+    "nodes": [
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 1,
+            "version": 1
+          },
+          "label": "objrender",
+          "inputs": [
+            [
+              "obj",
+              {
+                "idx": 1,
+                "version": 1
+              }
+            ],
+            [
+              "model",
+              {
+                "idx": 2,
+                "version": 1
+              }
+            ],
+            [
+              "view",
+              {
+                "idx": 3,
+                "version": 1
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 1,
+                "version": 1
+              }
+            ]
+          ],
+          "user_data": {
+            "template": "ObjRender"
+          }
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 2,
+            "version": 1
+          },
+          "label": "objrender1",
+          "inputs": [
+            [
+              "obj",
+              {
+                "idx": 4,
+                "version": 1
+              }
+            ],
+            [
+              "model",
+              {
+                "idx": 5,
+                "version": 1
+              }
+            ],
+            [
+              "view",
+              {
+                "idx": 6,
+                "version": 1
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 2,
+                "version": 1
+              }
+            ]
+          ],
+          "user_data": {
+            "template": "ObjRender"
+          }
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 3,
+            "version": 1
+          },
+          "label": "objrender2",
+          "inputs": [
+            [
+              "obj",
+              {
+                "idx": 7,
+                "version": 1
+              }
+            ],
+            [
+              "model",
+              {
+                "idx": 8,
+                "version": 1
+              }
+            ],
+            [
+              "view",
+              {
+                "idx": 9,
+                "version": 1
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 3,
+                "version": 1
+              }
+            ]
+          ],
+          "user_data": {
+            "template": "ObjRender"
+          }
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 4,
+            "version": 1
+          },
+          "label": "objrender3",
+          "inputs": [
+            [
+              "obj",
+              {
+                "idx": 10,
+                "version": 1
+              }
+            ],
+            [
+              "model",
+              {
+                "idx": 11,
+                "version": 1
+              }
+            ],
+            [
+              "view",
+              {
+                "idx": 12,
+                "version": 1
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 4,
+                "version": 1
+              }
+            ]
+          ],
+          "user_data": {
+            "template": "ObjRender"
+          }
+        },
+        "version": 1
+      }
+    ],
+    "inputs": [
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 1,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Path": null
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 1,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 2,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 1,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 3,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                -5.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 1,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 4,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Path": null
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 5,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 6,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                -5.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 2,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 7,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Path": null
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 3,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 8,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 3,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 9,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                -5.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 3,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 10,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Path": null
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 4,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 11,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                0.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 4,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 12,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Mat4": {
+              "mat": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "initial": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                -5.0,
+                1.0
+              ],
+              "rotation": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "scale": 1.0,
+              "translation": [
+                0.0,
+                0.0,
+                -5.0
+              ]
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 4,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      }
+    ],
+    "outputs": [
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 1,
+            "version": 1
+          },
+          "node": {
+            "idx": 1,
+            "version": 1
+          },
+          "typ": "Texture2D"
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 2,
+            "version": 1
+          },
+          "node": {
+            "idx": 2,
+            "version": 1
+          },
+          "typ": "Texture2D"
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 3,
+            "version": 1
+          },
+          "node": {
+            "idx": 3,
+            "version": 1
+          },
+          "typ": "Texture2D"
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 4,
+            "version": 1
+          },
+          "node": {
+            "idx": 4,
+            "version": 1
+          },
+          "typ": "Texture2D"
+        },
+        "version": 1
+      }
+    ],
+    "connections": [
+      {
+        "value": null,
+        "version": 0
+      }
+    ]
+  },
+  "node_positions": [
+    {
+      "value": null,
+      "version": 0
+    },
+    {
+      "value": {
+        "x": -19599.277,
+        "y": -22189.395
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "x": -38291.395,
+        "y": -41036.082
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "x": -38521.117,
+        "y": -28446.414
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "x": -47734.418,
+        "y": -34739.7
+      },
+      "version": 1
+    }
+  ],
+  "animator": {
+    "animations": []
+  },
+  "node_names": [
+    {
+      "value": null,
+      "version": 0
+    },
+    {
+      "value": {
+        "name": "ObjRender",
+        "num": 0,
+        "code_name": "objrender"
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "name": "ObjRender",
+        "num": 1,
+        "code_name": "objrender1"
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "name": "ObjRender",
+        "num": 2,
+        "code_name": "objrender2"
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "name": "ObjRender",
+        "num": 3,
+        "code_name": "objrender3"
+      },
+      "version": 1
+    }
+  ],
+  "window": {
+    "res": [
+      1617,
+      1131
+    ],
+    "fullscreen": false
+  },
+  "graph_ui_state": {
+    "view_state": "Graph",
+    "node_selection_actor": null,
+    "last_connection_in_progress": null
+  }
+}

@@ -4,9 +4,15 @@
 
 use core::ffi::c_void;
 use egui_glium::EguiGlium;
-use glium::{backend::{Context, Facade}, glutin::WindowedContext};
+use glium::{
+    backend::{Context, Facade},
+    glutin::WindowedContext,
+};
 // use glium::{Display, glutin::{window::WindowBuilder, ContextBuilder, event_loop::{EventLoopWindowTarget, EventLoop}}, backend::{glutin::{GlutinBackend}, Facade}};
-use glutin::{config::ConfigTemplateBuilder, surface::SurfaceAttributesBuilder, context::ContextAttributesBuilder, display::Display, prelude::*};
+use glutin::{
+    config::ConfigTemplateBuilder, context::ContextAttributesBuilder, display::Display, prelude::*,
+    surface::SurfaceAttributesBuilder,
+};
 use vst::{
     editor::Editor,
     plugin::{HostCallback, Info, Plugin},
@@ -107,31 +113,37 @@ impl MyRenderer {
             .compatible_with_native_window(_handle)
             .build();
 
-        let sa = SurfaceAttributesBuilder::new()
-            .build(_handle, WINDOW_DIMENSIONS.0, WINDOW_DIMENSIONS.1);
+        let sa = SurfaceAttributesBuilder::new().build(
+            _handle,
+            WINDOW_DIMENSIONS.0,
+            WINDOW_DIMENSIONS.1,
+        );
 
         let display = unsafe {
-                Display::new(raw_window_handle::RawDisplayHandle::AppKit(()), glutin::display::DisplayApiPreference::Cgl)
-                    .unwrap()
+            Display::new(
+                raw_window_handle::RawDisplayHandle::AppKit(()),
+                glutin::display::DisplayApiPreference::Cgl,
+            )
+            .unwrap()
         };
 
         let context = unsafe {
             let config = display.find_configs(ct);
 
             display.create_context(&config, &sa)
-        }.unwrap();
+        }
+        .unwrap();
 
-        let glium_ctx = glium::backend::glutin::headless::Headless::new(context)
-            .unwrap();
+        let glium_ctx = glium::backend::glutin::headless::Headless::new(context).unwrap();
 
         // context.make_current(surface)
 
         // let windowed_ctx = WindowedContext::
 
         // let glium_display = glium::Display
-        
+
         // EguiGlium::new(display, event_loop)
-        
+
         Self
     }
     pub fn draw_frame(&mut self) {

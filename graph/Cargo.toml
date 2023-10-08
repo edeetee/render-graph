@@ -1,0 +1,23 @@
+[package]
+name = "graph"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde.workspace = true
+
+glium.workspace = true
+anyhow.workspace = true
+glam.workspace = true
+egui_node_graph.workspace = true
+common = { path = "../common" }
+shaders = { path = "../shaders" }
+
+vectorize.workspace = true
+strum.workspace = true
+strum_macros.workspace = true
+slotmap.workspace = true
+itertools.workspace = true
+egui.workspace = true
