@@ -292,7 +292,7 @@ impl GraphUi {
 
     pub fn add_node(
         &mut self,
-        node_kind: &NodeType,
+        node_type: &NodeType,
         position: egui::Pos2,
         connection: Option<(NodeId, AnyParameterId)>,
     ) -> Vec<GraphChangeEvent> {
@@ -303,18 +303,18 @@ impl GraphUi {
             .graph
             .nodes
             .iter()
-            .filter(|(_, n)| n.user_data.template() == &node_kind.0)
+            .filter(|(_, n)| n.user_data.template() == &node_type.0)
             .count();
 
         let unique_name = UniqueNodeName::new(
-            node_kind.node_graph_label(&mut self.graph_state),
+            node_type.node_graph_label(&mut self.graph_state),
             num_copies,
         );
 
         let new_node = self.editor.graph.add_node(
             unique_name.to_string(),
-            node_kind.user_data(&mut self.graph_state),
-            |graph, node_id| node_kind.build_node(graph, &mut self.graph_state, node_id),
+            node_type.user_data(&mut self.graph_state),
+            |graph, node_id| node_type.build_node(graph, &mut self.graph_state, node_id),
         );
         self.graph_state
             .node_names
@@ -516,12 +516,12 @@ impl GraphUi {
         if ui.ui_contains_pointer() {
             self.editor.pan_zoom.pan += ctx.input().scroll_delta;
 
-            if let Some(point) = ctx.input().pointer.hover_pos() {
-                let zoom_delta = ctx.input().zoom_delta();
-                self.editor
-                    .pan_zoom
-                    .adjust_zoom(zoom_delta, point.to_vec2(), 0.001, 100.0);
-            }
+            // if let Some(point) = ctx.input().pointer.hover_pos() {
+            //     let zoom_delta = ctx.input().zoom_delta();
+            //     self.editor
+            //         .pan_zoom
+            //         .adjust_zoom(zoom_delta, point.to_vec2(), 0.001, 100.0);
+            // }
         }
 
         let graph_resp = self
