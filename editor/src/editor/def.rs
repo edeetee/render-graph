@@ -12,7 +12,7 @@ use std::{cell::RefCell, rc::Weak, time::Duration};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UiNodeData {
     #[serde(flatten)]
-    pub inner: graph::UiNodeData,
+    pub inner: graph::NodeData,
 
     #[serde(skip)]
     pub create_error: Option<NodeError>,
@@ -35,8 +35,8 @@ impl UiNodeData {
     }
 }
 
-impl From<graph::UiNodeData> for UiNodeData {
-    fn from(inner: graph::UiNodeData) -> Self {
+impl From<graph::NodeData> for UiNodeData {
+    fn from(inner: graph::NodeData) -> Self {
         Self {
             inner,
             create_error: Default::default(),
@@ -113,7 +113,7 @@ impl NodeTemplateTrait for NodeType {
     }
 
     fn user_data(&self, _user_state: &mut Self::UserState) -> Self::NodeData {
-        graph::UiNodeData::new(self.0.clone()).into()
+        graph::NodeData::new(self.0.clone()).into()
     }
 
     fn build_node(

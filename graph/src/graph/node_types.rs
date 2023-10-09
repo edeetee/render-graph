@@ -7,7 +7,7 @@ use slotmap::SlotMap;
 use std::fmt::Display;
 use std::path::{Path, PathBuf};
 
-use super::def::{GraphState, UiNodeData};
+use super::def::{GraphState, NodeData};
 
 use crate::common::mat4_animator::Mat4Animator;
 use shaders::isf::meta::{default_isf_path, IsfInfo};

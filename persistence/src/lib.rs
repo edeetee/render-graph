@@ -1,6 +1,6 @@
 use egui_node_graph::NodeId;
 use graph::{
-    connections::ConnectionType, def::UiValue, Animator, Graph, GraphEditorState, UiNodeData,
+    connections::ConnectionType, def::UiValue, Animator, Graph, GraphEditorState, NodeData,
     UniqueNodeName,
 };
 
@@ -16,7 +16,7 @@ use std::{
 };
 
 #[derive(Serialize, Deserialize)]
-pub struct PersistentState<N = UiNodeData, C = ConnectionType, V = UiValue> {
+pub struct PersistentState<N = NodeData, C = ConnectionType, V = UiValue> {
     pub graph: egui_node_graph::Graph<N, C, V>,
     pub node_positions: SecondaryMap<NodeId, egui::Pos2>,
 

@@ -33,11 +33,11 @@ impl From<anyhow::Error> for NodeError {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct UiNodeData {
+pub struct NodeData {
     pub template: NodeType,
 }
 
-impl GetTemplate for UiNodeData {
+impl GetTemplate for NodeData {
     fn template(&self) -> &NodeType {
         &self.template
     }
@@ -46,13 +46,13 @@ impl GetTemplate for UiNodeData {
     }
 }
 
-impl UiNodeData {
+impl NodeData {
     pub fn new(template: NodeType) -> Self {
         Self { template }
     }
 }
 
-impl Debug for UiNodeData {
+impl Debug for NodeData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut binding = f.debug_struct("UiNodeData");
         binding.field("template", &self.template).finish()
@@ -150,9 +150,9 @@ impl GraphState {
 pub struct CustomGraphResponse;
 impl UserResponseTrait for CustomGraphResponse {}
 
-pub type Node = egui_node_graph::Node<UiNodeData>;
-pub type NodeResponse = egui_node_graph::NodeResponse<CustomGraphResponse, UiNodeData>;
-pub type GraphResponse = egui_node_graph::GraphResponse<CustomGraphResponse, UiNodeData>;
-pub type Graph = egui_node_graph::graph::Graph<UiNodeData, ConnectionType, UiValue>;
+pub type Node = egui_node_graph::Node<NodeData>;
+pub type NodeResponse = egui_node_graph::NodeResponse<CustomGraphResponse, NodeData>;
+pub type GraphResponse = egui_node_graph::GraphResponse<CustomGraphResponse, NodeData>;
+pub type Graph = egui_node_graph::graph::Graph<NodeData, ConnectionType, UiValue>;
 pub type GraphEditorState =
-    egui_node_graph::GraphEditorState<UiNodeData, ConnectionType, UiValue, NodeType, GraphState>;
+    egui_node_graph::GraphEditorState<NodeData, ConnectionType, UiValue, NodeType, GraphState>;
