@@ -1,6 +1,6 @@
 use egui_node_graph::NodeId;
 use graph::{
-    connections::ConnectionType, def::UiValue, Animator, Graph, GraphEditorState, NodeData,
+    connections::ConnectionType, def::UiValue, Animator, NodeData,
     UniqueNodeName,
 };
 
@@ -9,7 +9,6 @@ pub mod ui_state;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use slotmap::SecondaryMap;
 use std::{
-    collections::HashMap,
     env,
     fs::File,
     path::{Path, PathBuf},

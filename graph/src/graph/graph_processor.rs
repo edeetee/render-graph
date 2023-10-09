@@ -4,11 +4,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use egui_node_graph::{InputId, NodeId, OutputId};
+use egui_node_graph::{NodeId};
 use glium::{backend::Facade, Texture2d};
 
 use crate::{
-    common::animation::UpdateInfo,
     def::{AsUniformOptional, GetUiValue},
     textures::TextureManager,
     GetTemplate,
@@ -24,7 +23,7 @@ use super::{
     graph_utils::GraphMap,
     node_shader::NodeShader,
     node_shader::ProcessedShaderNodeInputs,
-    node_update::{NodeUpdaters, UpdateShader},
+    node_update::{NodeUpdaters},
 };
 
 #[derive(Default)]

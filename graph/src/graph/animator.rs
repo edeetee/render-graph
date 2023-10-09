@@ -1,7 +1,7 @@
 use std::{collections::HashMap, time::Instant};
 
 use egui_node_graph::NodeId;
-use slotmap::SparseSecondaryMap;
+
 
 use crate::{
     common::animation::{DataUpdater, UpdateInfo},
@@ -24,8 +24,8 @@ pub struct Animator {
 impl<N, C, V> GraphUpdateListener<N, C, V> for Animator {
     fn graph_event(
         &mut self,
-        graph: &mut egui_node_graph::Graph<N, C, V>,
-        facade: &impl glium::backend::Facade,
+        _graph: &mut egui_node_graph::Graph<N, C, V>,
+        _facade: &impl glium::backend::Facade,
         event: super::graph_change_listener::GraphChangeEvent,
     ) -> anyhow::Result<()> {
         match event {

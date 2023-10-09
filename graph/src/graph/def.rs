@@ -1,6 +1,6 @@
 use super::{animator::Animator, node_types::NodeType, GraphShaderProcessor, GraphUpdateListener};
 use crate::{
-    common::{animation::DataUpdater, connections::ConnectionType, def::UiValue},
+    common::{connections::ConnectionType, def::UiValue},
     def::GetUiValue,
     GetTemplate,
 };
@@ -10,11 +10,9 @@ use glium::backend::Facade;
 use serde::{Deserialize, Serialize};
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 use std::{
-    cell::RefCell,
-    collections::{HashMap, HashSet},
+    collections::{HashSet},
     fmt::{Debug, Display},
-    rc::Weak,
-    time::{Duration, Instant},
+    time::{Instant},
 };
 
 #[derive(Clone, Debug)]

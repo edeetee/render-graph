@@ -1,10 +1,10 @@
-use super::def::GraphState;
+
 use super::graph_change_listener::{GraphChangeEvent, GraphUpdateListener};
 use super::{graph_utils::InputParams, node_shader::NodeShader, node_types::NodeType};
 use crate::common::def::UiValue;
-use crate::connections::ConnectionType;
+
 use crate::def::GetUiValue;
-use crate::graph::def::Graph;
+
 use crate::GetTemplate;
 use egui_node_graph::NodeId;
 use glium::backend::Facade;
@@ -12,7 +12,7 @@ use shaders::{
     gl_expression::GlExpressionUpdater, isf::updater::IsfUpdater, obj_shader::loader::ObjLoader,
 };
 use slotmap::{SecondaryMap, SparseSecondaryMap};
-use std::time::{Instant, SystemTime};
+use std::time::{SystemTime};
 
 #[derive(Default)]
 pub struct NodeUpdaters {
@@ -52,7 +52,7 @@ impl<N: GetTemplate, C, V> GraphUpdateListener<N, C, V> for NodeUpdaters {
     fn graph_event(
         &mut self,
         graph: &mut egui_node_graph::Graph<N, C, V>,
-        facade: &impl Facade,
+        _facade: &impl Facade,
         event: GraphChangeEvent,
     ) -> anyhow::Result<()> {
         match event {

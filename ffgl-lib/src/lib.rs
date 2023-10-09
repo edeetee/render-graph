@@ -1,4 +1,4 @@
-use std::{fmt::Formatter, rc::Rc, sync::OnceLock, time::SystemTime};
+use std::{fmt::Formatter, rc::Rc, sync::OnceLock};
 
 use ffgl::{
     logln,
@@ -14,7 +14,7 @@ use glium::{
 };
 use itertools::Itertools;
 
-use graph::{def::UiValue, GraphShaderProcessor, GraphState};
+use graph::{def::UiValue, GraphState};
 use persistence::PersistentState;
 
 mod gl_backend;
@@ -48,7 +48,7 @@ impl StaticState {
                     //add reference to closure
                     .map(|(n, id)| (n, id, &graph.inputs[*id]))
                     //move string to closure
-                    .filter_map(move |(input_name, input_id, input)| {
+                    .filter_map(move |(input_name, _input_id, input)| {
                         node_param::NodeParam::new(input, &node_name, &input_name)
                     })
             })
@@ -183,7 +183,7 @@ impl FFGLHandler for Instance {
     }
 }
 impl Instance {
-    fn render_frame(&mut self, inst_data: &ffgl::FFGLData, target: &mut impl Surface) {
+    fn render_frame(&mut self, _inst_data: &ffgl::FFGLData, target: &mut impl Surface) {
         self.graph_state.update(&mut self.graph, &self.ctx);
 
         for param in &self.params {

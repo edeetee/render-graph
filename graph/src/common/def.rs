@@ -1,4 +1,4 @@
-use std::{default, fmt::Debug, path::PathBuf};
+use std::{fmt::Debug, path::PathBuf};
 
 use super::mat4_animator::Mat4Animator;
 use glium::uniforms::{AsUniformValue, UniformValue};

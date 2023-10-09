@@ -1,4 +1,4 @@
-use egui::{Ui, Widget};
+use egui::{Ui};
 use glam::Vec3;
 
 use crate::widgets::limited_ui::{horizontal_drags, UiLimit};

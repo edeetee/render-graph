@@ -1,12 +1,9 @@
 use std::{
     fmt::Display,
-    fs::read_dir,
-    path::{Path, PathBuf},
-    rc::Rc,
 };
 
 use common::tree::{LeafIndex, Tree};
-use egui::{Button, Color32, Rect, RichText, Stroke, Widget, WidgetText};
+use egui::{Color32, RichText, Stroke, Widget};
 use egui_glium::EguiGlium;
 use glium::{
     backend::Facade,
@@ -14,12 +11,12 @@ use glium::{
     Surface,
 };
 use graph::{
-    connections::InputDef, def::AsUniformOptional, default_isf_dirs, NodeShader, TextureManager,
+    connections::InputDef, def::AsUniformOptional, NodeShader, TextureManager,
 };
 use itertools::Itertools;
-use partial_application::partial;
+
 use serde::Serialize;
-use slotmap::{SecondaryMap, SlotMap};
+use slotmap::{SecondaryMap};
 
 use crate::tree_view::draw_tree;
 
@@ -149,7 +146,7 @@ impl TreeState {
                 ui,
                 open_state,
                 &mut |ui, leaf_index| {
-                    let node_ty = &mut self.tree.leaves[leaf_index];
+                    let _node_ty = &mut self.tree.leaves[leaf_index];
                     let render = self.renders.get_mut(leaf_index).unwrap();
 
                     if render.visible {

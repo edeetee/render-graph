@@ -1,11 +1,11 @@
 use std::{
     fs::read_dir,
-    path::{Path, PathBuf},
+    path::{PathBuf},
 };
 
-use slotmap::SlotMap;
 
-use crate::tree::{BranchIndex, LeafIndex, Tree, TreeStructure};
+
+
 
 pub fn map_file_tree<O, DirFn: FnMut(PathBuf, Vec<O>) -> O, FileFn: FnMut(PathBuf) -> O>(
     path: PathBuf,

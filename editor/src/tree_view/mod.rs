@@ -1,7 +1,7 @@
-use common::tree::{BranchIndex, LeafIndex, Tree, TreeStructure};
-use egui::{Ui, Widget};
-use egui_node_graph::NodeId;
-use std::fmt::Display;
+use common::tree::{BranchIndex, LeafIndex, TreeStructure};
+use egui::{Ui};
+
+
 
 //implementation for copyable items
 // impl<Leaf: Copy, Branch: Copy> Tree<Leaf, Branch> {

@@ -2,11 +2,11 @@ use glium::{
     uniforms::{AsUniformValue, UniformValue, Uniforms},
     ProgramCreationError,
 };
-use serde::de::DeserializeOwned;
-use serde::Serialize;
+
+
 use std::fmt::Display;
-use std::path::Path;
-use std::{fs::File, io::Write};
+
+use std::{io::Write};
 use thiserror::Error;
 
 pub struct MultiUniforms<'a, T: Uniforms> {

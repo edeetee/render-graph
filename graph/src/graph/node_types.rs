@@ -1,6 +1,6 @@
 use common::files::map_file_tree;
 use common::tree::{BranchIndex, LeafIndex, Tree, TreeStructure};
-use egui_node_graph::{Graph, NodeId, NodeTemplateIter, NodeTemplateTrait};
+use egui_node_graph::{NodeTemplateIter};
 use glam::Mat4;
 use serde::{Deserialize, Serialize};
 use slotmap::SlotMap;

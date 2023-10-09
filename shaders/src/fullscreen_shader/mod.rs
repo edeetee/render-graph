@@ -3,7 +3,7 @@ use glium::{
     implement_vertex,
     index::{self},
     uniforms::Uniforms,
-    Blend, DrawError, DrawParameters, Program, Rect, Smooth, Surface, VertexBuffer,
+    Blend, DrawError, DrawParameters, Program, Smooth, Surface, VertexBuffer,
 };
 
 use crate::util::{GlProgramCreationError, MultiUniforms, ToGlCreationError};

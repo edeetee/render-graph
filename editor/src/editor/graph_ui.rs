@@ -155,8 +155,8 @@ impl GraphUi {
         let action = GraphUiAction::from_keyboard_pressed(&egui_glium.egui_ctx);
         if action == Some(GraphUiAction::ToggleViewState) {
             self.state.view_state.toggle();
-        } else if (action == Some(GraphUiAction::Escape)
-            && self.state.view_state == ViewState::Output)
+        } else if action == Some(GraphUiAction::Escape)
+            && self.state.view_state == ViewState::Output
         {
             self.state.view_state = ViewState::Graph;
         }

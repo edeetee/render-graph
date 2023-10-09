@@ -1,8 +1,8 @@
-use std::{ops::RangeInclusive, path::Path};
+use std::{ops::RangeInclusive};
 
 use egui::{
     color_picker::color_edit_button_rgba, Align, Area, Color32, DragValue, Frame, Id,
-    InnerResponse, Layout, Order, Response, Rgba, Slider, Stroke, Ui, Widget,
+    InnerResponse, Layout, Order, Response, Rgba, Slider, Stroke, Ui,
 };
 use egui_node_graph::{NodeId, WidgetValueTrait};
 use graph::{

@@ -5,7 +5,7 @@ use glium::glutin::{
     event::{Event, WindowEvent},
     event_loop::ControlFlow,
     platform::{
-        macos::{WindowBuilderExtMacOS, WindowExtMacOS},
+        macos::{WindowBuilderExtMacOS},
         run_return::EventLoopExtRunReturn,
     },
     window::{Fullscreen, WindowBuilder},

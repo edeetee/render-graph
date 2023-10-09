@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use glium::{
     backend::Facade,
-    texture::{DepthTexture2d, SrgbTexture2d},
+    texture::{DepthTexture2d},
     Texture2d,
 };
 

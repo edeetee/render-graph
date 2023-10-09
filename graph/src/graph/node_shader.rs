@@ -4,7 +4,7 @@ use glium::{
     backend::Facade,
     framebuffer::SimpleFrameBuffer,
     texture::Texture2d,
-    uniforms::{AsUniformValue, UniformType, UniformValue, Uniforms},
+    uniforms::{AsUniformValue, UniformValue, Uniforms},
     Surface,
 };
 

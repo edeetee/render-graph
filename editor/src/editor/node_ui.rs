@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Weak};
 
-use egui::{color::Hsva, Color32, Label, Response, RichText, Sense, Stroke, Ui};
-use egui_node_graph::{DataTypeTrait, Graph, NodeDataTrait, NodeId};
+use egui::{Color32, Label, Response, RichText, Sense, Stroke, Ui};
+use egui_node_graph::{Graph, NodeDataTrait, NodeId};
 
 use super::{def::*, ui_texture::UiTexture};
 

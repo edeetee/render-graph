@@ -1,6 +1,6 @@
 use egui_node_graph::{InputId, NodeDataTrait, NodeId, NodeResponse, OutputId, UserResponseTrait};
 use glium::backend::Facade;
-use slotmap::SparseSecondaryMap;
+
 
 #[derive(Clone, Copy)]
 pub enum GraphChangeEvent {
