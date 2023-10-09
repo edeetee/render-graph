@@ -8,6 +8,10 @@
 members = ["editor", "graph", "shaders", "common", "persistence", "ffgl-lib"]
 default-members = ["editor"]
 
+[workspace.package]
+authors = ["Edward Taylor <dev@edt.nz>"]
+license = "	GPL-3.0-or-later"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 # [target.'cfg(windows)'.dependencies]
