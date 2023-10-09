@@ -5,6 +5,7 @@ use std::{
     rc::Rc,
 };
 
+use common::tree::{LeafIndex, Tree};
 use egui::{Button, Color32, Rect, RichText, Stroke, Widget, WidgetText};
 use egui_glium::EguiGlium;
 use glium::{
@@ -13,14 +14,14 @@ use glium::{
     Surface,
 };
 use graph::{
-    connections::InputDef, def::AsUniformOptional, default_node_dirs, NodeShader, TextureManager,
+    connections::InputDef, def::AsUniformOptional, default_isf_dirs, NodeShader, TextureManager,
 };
 use itertools::Itertools;
 use partial_application::partial;
 use serde::Serialize;
-use slotmap::SlotMap;
+use slotmap::{SecondaryMap, SlotMap};
 
-use crate::tree_view::Tree;
+use crate::tree_view::draw_tree;
 
 use super::{def::*, ui_texture::UiTexture};
 
@@ -50,19 +51,15 @@ impl Default for FilterState {
 }
 
 impl FilterState {
-    fn filter_item(&self, item: &LeafItem) -> bool {
+    fn filter_item(&self, item: &graph::NodeType) -> bool {
         let text_pass = self.text.is_empty()
             || item
-                .ty
-                .0
                 .get_name()
                 .to_lowercase()
                 .contains(&self.text.to_lowercase());
 
         let image_input_pass = {
             let has_inputs = item
-                .ty
-                .0
                 .get_input_types()
                 .iter()
                 .any(|x| x.ty == ConnectionType::Texture2D);
@@ -77,37 +74,24 @@ impl FilterState {
 ///Holds the data for the tree vi
 pub struct TreeState {
     filter: FilterState,
-    pub trees: Vec<Tree<LeafIndex, BranchIndex>>,
-    pub branches: SlotMap<BranchIndex, BranchItem>,
-    pub leaves: SlotMap<LeafIndex, LeafItem>,
+    pub tree: Tree<String, graph::NodeType>,
+    pub renders: SecondaryMap<LeafIndex, RenderNodeItem>,
 }
 
 impl Default for TreeState {
     fn default() -> Self {
-        let mut branches = SlotMap::default();
-        let mut leaves = SlotMap::default();
+        let tree = graph::NodeType::templates();
 
-        use egui_node_graph::NodeTemplateIter;
+        let mut renders = SecondaryMap::default();
 
-        let default_nodes = AllNodeTypes
-            .all_kinds()
-            .into_iter()
-            .map(LeafItem::new)
-            .map(|leaf| leaves.insert(leaf))
-            .map(Tree::Leaf)
-            .collect_vec();
-
-        let dirs = default_node_dirs();
-        let isf_nodes = dirs
-            .iter()
-            .map(|f| f.as_path())
-            .filter_map(partial!(load_isf_tree => _, &mut leaves, &mut branches));
+        for (leaf_id, node_ty) in &tree.leaves {
+            renders.insert(leaf_id, RenderNodeItem::new(node_ty.clone()));
+        }
 
         Self {
-            trees: default_nodes.into_iter().chain(isf_nodes).collect(),
+            tree,
             filter: FilterState::default(),
-            branches,
-            leaves,
+            renders,
         }
     }
 }
@@ -151,22 +135,25 @@ impl TreeState {
 
         let mut leaves_in_view = vec![];
 
-        for tree in &mut self.trees {
+        for tree in &mut self.tree.tree {
             if search_changed {
-                tree.map_leaf(&mut |item| {
-                    let item = &mut self.leaves[item];
-                    item.visible = self.filter.filter_item(item);
+                tree.map_leaf(&mut |leaf_index| {
+                    let item = &mut self.tree.leaves[leaf_index];
+                    let render = self.renders.get_mut(leaf_index).unwrap();
+                    render.visible = self.filter.filter_item(item);
                 });
             }
 
-            tree.draw(
+            draw_tree(
+                tree,
                 ui,
                 open_state,
                 &mut |ui, leaf_index| {
-                    let leaf = &mut self.leaves[leaf_index];
+                    let node_ty = &mut self.tree.leaves[leaf_index];
+                    let render = self.renders.get_mut(leaf_index).unwrap();
 
-                    if leaf.visible {
-                        let resp = leaf.ui(ui);
+                    if render.visible {
+                        let resp = render.ui(ui);
 
                         // let available_rect = ui.available_rect_before_wrap();
 
@@ -179,7 +166,7 @@ impl TreeState {
                         }
                     }
                 },
-                &mut |branch_index| self.branches[branch_index].name.clone(),
+                &mut |branch_index| self.tree.branches[branch_index].clone(),
             );
         }
 
@@ -192,9 +179,9 @@ impl TreeState {
     }
 }
 
-pub struct LeafItem {
+pub struct RenderNodeItem {
     visible: bool,
-    pub ty: NodeType,
+    pub ty: graph::NodeType,
     //some(ok) if loaded
     //some(err) if failed to load
     //none if not loaded yet
@@ -225,8 +212,8 @@ impl<'b> Uniforms for LeafTempUniforms<'b> {
     }
 }
 
-impl LeafItem {
-    fn new(ty: NodeType) -> Self {
+impl RenderNodeItem {
+    fn new(ty: graph::NodeType) -> Self {
         Self {
             visible: true,
             ty,
@@ -242,7 +229,7 @@ impl LeafItem {
         input_tex: Option<&glium::Texture2d>,
     ) {
         if self.instance.is_none() {
-            if let Some(shader) = NodeShader::new(&self.ty.0, facade) {
+            if let Some(shader) = NodeShader::new(&self.ty, facade) {
                 self.instance = Some(shader.map(|shader| {
                     let img =
                         UiTexture::new(facade, egui_glium, (LEAF_RENDER_WIDTH, LEAF_RENDER_WIDTH));
@@ -252,7 +239,7 @@ impl LeafItem {
         }
 
         if let Some(Ok((shader, img))) = &mut self.instance {
-            let inputs = self.ty.0.get_input_types();
+            let inputs = self.ty.get_input_types();
 
             let uniforms = LeafTempUniforms {
                 input_tex,
@@ -268,17 +255,11 @@ impl LeafItem {
             }
         }
     }
-
-    fn try_from_path(isf_path: &Path) -> Option<Self> {
-        Some(Self::new(NodeType(graph::NodeType::try_from_path(
-            &isf_path,
-        )?)))
-    }
 }
 
 const LEAF_RENDER_WIDTH: u32 = 64;
 
-impl Widget for &LeafItem {
+impl Widget for &RenderNodeItem {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let all_width = LEAF_RENDER_WIDTH as f32;
         let all_size = [all_width; 2];
@@ -314,9 +295,9 @@ impl Widget for &LeafItem {
     }
 }
 
-impl Display for LeafItem {
+impl Display for RenderNodeItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.ty.0)
+        write!(f, "{}", self.ty)
     }
 }
 
@@ -327,36 +308,5 @@ pub struct BranchItem {
 impl Display for BranchItem {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.name)
-    }
-}
-
-slotmap::new_key_type! {
-    pub struct LeafIndex;
-}
-
-slotmap::new_key_type! {
-    pub struct BranchIndex;
-}
-
-fn load_isf_tree(
-    path: &Path,
-    leaves: &mut SlotMap<LeafIndex, LeafItem>,
-    branches: &mut SlotMap<BranchIndex, BranchItem>,
-) -> Option<Tree<LeafIndex, BranchIndex>> {
-    if path.is_dir() {
-        let branch_inner = read_dir(path)
-            .unwrap()
-            .into_iter()
-            .filter_map(|dir| load_isf_tree(&dir.unwrap().path(), leaves, branches))
-            .collect();
-
-        let info = BranchItem {
-            name: path.file_name().unwrap().to_str().unwrap().to_string(),
-        };
-
-        Some(Tree::Branch(branches.insert(info), branch_inner))
-    } else {
-        let info = LeafItem::try_from_path(path)?;
-        Some(Tree::Leaf(leaves.insert(info)))
     }
 }

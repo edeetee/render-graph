@@ -1,7 +1,8 @@
 // use crate::textures::TextureManager;
 // use crate::util::MappableTuple;
 use crate::widgets::debug::debug_options;
-use common::MappableTuple;
+use common::tree::LeafIndex;
+use common::tuple::MappableTuple;
 use egui::{Color32, Rect, RichText, Vec2};
 use egui_glium::EguiGlium;
 use egui_node_graph::{AnyParameterId, NodeId, NodeTemplateTrait};
@@ -22,7 +23,7 @@ use persistence::{PersistentState, WindowState};
 use super::animation_ui::draw_dataupdater;
 use super::def::{NodeResponse, *};
 use super::node_textures::NodeUiTextures;
-use super::node_tree_ui::{LeafIndex, TreeState};
+use super::node_tree_ui::TreeState;
 
 pub struct GraphUi {
     editor: GraphEditorState,
@@ -137,11 +138,15 @@ impl GraphUi {
     }
 
     pub fn update(&mut self, facade: &impl Facade) {
-        let resp = self.graph_state.update(&mut self.editor.graph, facade);
+        let mut resp = self.graph_state.update(&mut self.editor.graph, facade);
 
-        for (node_id, err) in resp {
-            self.editor.graph.nodes[node_id].user_data.update_error = Some(err.into())
+        for (node_id, node) in &mut self.editor.graph.nodes {
+            node.user_data.update_error = resp.remove(node_id).map(|e| e.into());
         }
+
+        // for (node_id, err) in resp {
+        //     self.editor.graph.nodes[node_id].user_data.update_error = Some(err.into())
+        // }
     }
 
     pub fn process_frame(&mut self, display: &Display, egui_glium: &mut EguiGlium) {
@@ -150,6 +155,10 @@ impl GraphUi {
         let action = GraphUiAction::from_keyboard_pressed(&egui_glium.egui_ctx);
         if action == Some(GraphUiAction::ToggleViewState) {
             self.state.view_state.toggle();
+        } else if (action == Some(GraphUiAction::Escape)
+            && self.state.view_state == ViewState::Output)
+        {
+            self.state.view_state = ViewState::Graph;
         }
 
         const MONO_COLOR: f32 = 0.1;
@@ -173,21 +182,37 @@ impl GraphUi {
                     for change in response.graph_changes {
                         use graph::GraphUpdateListener;
 
-                        self.graph_state
-                            .processor
-                            .graph_event(&mut self.editor.graph, display, change)
-                            .expect("graph event failed");
+                        let resp = self.graph_state.processor.graph_event(
+                            &mut self.editor.graph,
+                            display,
+                            change,
+                        );
 
-                        match change {
-                            GraphChangeEvent::CreatedNode(node_id) => {
-                                let node = self.editor.graph.nodes.get_mut(node_id).unwrap();
-                                self.node_textures.add(display, egui_glium, node);
-                            }
-                            GraphChangeEvent::DestroyedNode(node_id) => {
-                                self.node_textures.remove(node_id);
-                            }
+                        match resp {
+                            Err(err) => match change {
+                                GraphChangeEvent::CreatedNode(node_id) => {
+                                    self.editor.graph.nodes[node_id].user_data.create_error =
+                                        Some(err.into());
+                                }
+                                // GraphChangeEvent::Connected {
+                                //     output_id,
+                                //     input_id,
+                                // } => {
+                                //     self.editor.graph.remove_connection(output_id, input_id);
+                                // }
+                                _ => {}
+                            },
+                            Ok(_) => match change {
+                                GraphChangeEvent::CreatedNode(node_id) => {
+                                    let node = self.editor.graph.nodes.get_mut(node_id).unwrap();
+                                    self.node_textures.add(display, egui_glium, node);
+                                }
+                                GraphChangeEvent::DestroyedNode(node_id) => {
+                                    self.node_textures.remove(node_id);
+                                }
 
-                            _ => {}
+                                _ => resp.expect("Unexpected graph update failure"),
+                            },
                         }
                     }
                 }
@@ -258,9 +283,9 @@ impl GraphUi {
             .collect_vec();
 
         for leaf_id in preview_requests {
-            let leaf = &mut self.tree.leaves[leaf_id];
+            let leaf_render = &mut self.tree.renders[leaf_id];
 
-            leaf.render(
+            leaf_render.render(
                 display,
                 egui_glium,
                 &mut self.texture_manager,
@@ -468,13 +493,13 @@ impl GraphUi {
                 .as_ref()
                 .map(|res| res.clicked)
                 .flatten()
-                .map(|clicked| self.tree.leaves[clicked].ty.clone());
+                .map(|clicked| self.tree.renders[clicked].ty.clone());
 
             if let Some(node_ty) = new_node_ty {
                 dbg!(node_selection_actor);
 
                 extra_responses.extend(self.add_node(
-                    &node_ty,
+                    &NodeType(node_ty),
                     new_node_pos,
                     node_selection_actor.connection(),
                 ));
@@ -509,7 +534,9 @@ impl GraphUi {
         ctx: &egui::Context,
         ui_action: &Option<GraphUiAction>,
     ) -> GraphResponse {
-        debug_options(ctx, ui);
+        egui::Window::new("Debug UI").show(ctx, |ui| {
+            debug_options(ctx, ui);
+        });
 
         if ui_action == &Some(GraphUiAction::Home) {
             self.editor.pan_zoom.pan = egui::Vec2::ZERO;

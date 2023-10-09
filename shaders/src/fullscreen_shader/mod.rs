@@ -7,6 +7,7 @@ use glium::{
 };
 
 use crate::util::{GlProgramCreationError, MultiUniforms, ToGlCreationError};
+#[derive(Debug)]
 pub struct FullscreenFrag {
     pub verts: VertexBuffer<VertexAttr>,
     pub program: Program,
@@ -61,7 +62,7 @@ impl FullscreenFrag {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct VertexAttr {
     position: [f32; 3],
 }

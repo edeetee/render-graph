@@ -27,3 +27,4 @@ delegate.workspace = true
 graph = { path = "../graph" }
 common = { path = "../common" }
 persistence = { path = "../persistence" }
+egui_code_editor = "0.1.8"

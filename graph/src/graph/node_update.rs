@@ -91,8 +91,10 @@ impl UpdateShader {
                 modified: SystemTime::now(),
             })),
             NodeType::ObjRender => Some(Self::Obj(ObjLoader::new())),
-            NodeType::Expression { .. } => {
-                Some(Self::Expression(GlExpressionUpdater { frag_source: None }))
+            NodeType::Expression { source: text, .. } => {
+                Some(Self::Expression(GlExpressionUpdater {
+                    frag_source: Some(text.clone()),
+                }))
             }
             _ => None,
         }

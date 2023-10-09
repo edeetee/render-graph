@@ -11,3 +11,4 @@ serde.workspace = true
 egui_node_graph.workspace = true
 egui.workspace = true
 # egui_glium.workspace = true
+slotmap.workspace = true

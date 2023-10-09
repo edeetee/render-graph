@@ -32,9 +32,15 @@ impl NodeShader {
             ),
             NodeType::SharedOut => Some(Ok(NodeShader::SpoutOut(SpoutOutShader::new()))),
             NodeType::ObjRender => Some(Ok(NodeShader::Obj(ObjRenderer::new(facade).unwrap()))),
-            NodeType::Expression { .. } => Some(Ok(NodeShader::Expression(
-                GlExpressionRenderer::new(facade),
-            ))),
+            NodeType::Expression { source: text, .. } => {
+                let mut renderer = GlExpressionRenderer::new(facade);
+                if !text.is_empty() {
+                    if let Err(err) = renderer.set_shader(facade, text) {
+                        return Some(Err(anyhow::Error::new(err)));
+                    }
+                }
+                Some(Ok(NodeShader::Expression(renderer)))
+            }
         }
     }
 

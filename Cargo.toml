@@ -1,42 +1,20 @@
-[package]
-name = "render-graph"
-version = "0.1.0"
-edition = "2021"
+# [package]
+# name = "render-graph"
+# version = "0.1.0"
+# edition = "2021"
 
 
 [workspace]
 members = ["editor", "graph", "shaders", "common", "persistence", "ffgl-lib"]
 
-[features]
-# default = ["editor"]
-vst_plugin = ["dep:vst", "dep:vst_window", "dep:raw-window-handle"]
-# ffgl_plugin = ["dep:ffgl", "dep:gl_loader"]
-webui = ["dep:leptos", "dep:actix-web"]
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[target.'cfg(windows)'.dependencies]
-spout_texture_share = { path = "./spout" }
+# [target.'cfg(windows)'.dependencies]
+# spout_texture_share = { path = "./spout" }
 
-[target.'cfg(macos)'.dependencies]
-syphon = { path = "./syphon" }
+# [target.'cfg(macos)'.dependencies]
+# syphon = { path = "./syphon" }
 
-[dependencies]
-vst = { version = "0.3.0", optional = true }
-vst_window = { version = "0.3.0", optional = true }
-raw-window-handle = { version = "0.5.0", optional = true }
-
-
-# webui
-leptos = { version = "0.1.0", optional = true }
-actix-web = { version = "4", optional = true, features = ["macros"] }
-
-rand = "0.8.5"
-
-
-#vst_plugin
-
-lazy_static = "1.4.0"
 
 [workspace.dependencies]
 

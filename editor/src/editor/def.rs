@@ -147,7 +147,7 @@ impl NodeTemplateIter for AllNodeTypes {
     type Item = NodeType;
 
     fn all_kinds(&self) -> Vec<Self::Item> {
-        graph::NodeType::get_builtin()
+        graph::NodeType::defaults()
             .into_iter()
             .map(NodeType)
             .collect()
