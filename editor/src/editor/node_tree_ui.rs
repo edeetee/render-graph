@@ -1,6 +1,4 @@
-use std::{
-    fmt::Display,
-};
+use std::fmt::Display;
 
 use common::tree::{LeafIndex, Tree};
 use egui::{Color32, RichText, Stroke, Widget};
@@ -10,13 +8,10 @@ use glium::{
     uniforms::{AsUniformValue, Uniforms},
     Surface,
 };
-use graph::{
-    connections::InputDef, def::AsUniformOptional, NodeShader, TextureManager,
-};
-use itertools::Itertools;
+use graph::{connections::InputDef, def::AsUniformOptional, NodeShader, TextureManager};
 
 use serde::Serialize;
-use slotmap::{SecondaryMap};
+use slotmap::SecondaryMap;
 
 use crate::tree_view::draw_tree;
 

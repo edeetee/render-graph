@@ -4,7 +4,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use egui_node_graph::{NodeId};
+use egui_node_graph::NodeId;
 use glium::{backend::Facade, Texture2d};
 
 use crate::{
@@ -12,7 +12,6 @@ use crate::{
     textures::TextureManager,
     GetTemplate,
 };
-use itertools::Itertools;
 use slotmap::{SecondaryMap, SparseSecondaryMap};
 
 use crate::common::connections::ConnectionType;
@@ -23,7 +22,7 @@ use super::{
     graph_utils::GraphMap,
     node_shader::NodeShader,
     node_shader::ProcessedShaderNodeInputs,
-    node_update::{NodeUpdaters},
+    node_update::NodeUpdaters,
 };
 
 #[derive(Default)]
@@ -161,7 +160,7 @@ impl<N: GetTemplate, V> GraphUpdateListener<N, ConnectionType, V> for GraphShade
             }
         }
 
-        self.updater.graph_event(graph, facade, event);
+        self.updater.graph_event(graph, facade, event)?;
 
         Ok(())
     }

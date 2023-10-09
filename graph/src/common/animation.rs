@@ -12,13 +12,12 @@ pub struct RotationAnimation {
 #[derive(Default, Clone)]
 pub struct UpdateInfo {
     elapsed_since_update: Duration,
-    seconds_since_update: f32,
+    // seconds_since_update: f32,
 }
 
 impl UpdateInfo {
     pub fn new(elapsed_since_update: Duration) -> Self {
         Self {
-            seconds_since_update: elapsed_since_update.as_secs_f32(),
             elapsed_since_update,
         }
     }
@@ -49,11 +48,11 @@ impl DataUpdater {
                 // Mat4::from_ax
                 mat4.rotate(Quat::from_axis_angle(
                     anim.axis.into(),
-                    anim.speed * info.seconds_since_update,
+                    anim.speed * info.elapsed_since_update.as_secs_f32(),
                 ));
             }
             (DataUpdater::FloatSpeed(speed), UiValue::Float(data)) => {
-                data.value += speed * info.seconds_since_update;
+                data.value += speed * info.elapsed_since_update.as_secs_f32();
             }
             _ => {}
         }

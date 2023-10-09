@@ -2,7 +2,7 @@ use egui_glium::EguiGlium;
 use egui_node_graph::NodeId;
 use glium::{backend::Facade, Surface};
 use slotmap::SecondaryMap;
-use std::{borrow::BorrowMut, cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use super::ui_texture::UiTexture;
 

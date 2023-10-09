@@ -1,9 +1,6 @@
 use std::{fmt::Formatter, rc::Rc, sync::OnceLock};
 
-use ffgl::{
-    logln,
-    parameters::{BasicParam, ParamValue},
-};
+use ffgl::{logln, parameters::ParamValue};
 // use egui_node_graph::graph;
 // mod ffgl;
 use ::ffgl::{ffgl_handler, FFGLHandler};
@@ -79,11 +76,6 @@ impl std::fmt::Debug for Instance {
             .finish()
     }
 }
-
-static PARAMS: &[BasicParam] = &[
-    BasicParam::standard("12345\0"),
-    BasicParam::standard("test22\0"),
-];
 
 impl FFGLHandler for Instance {
     type Param = node_param::NodeParam;

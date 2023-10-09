@@ -3,10 +3,6 @@ use glium::{
     ProgramCreationError,
 };
 
-
-use std::fmt::Display;
-
-use std::{io::Write};
 use thiserror::Error;
 
 pub struct MultiUniforms<'a, T: Uniforms> {
@@ -66,7 +62,7 @@ impl std::fmt::Display for GlProgramCreationError {
             glium::ProgramCreationError::LinkingError(source) => {
                 write!(f, "LinkingError (\n{source})")
             }
-            _ => self.inner.fmt(f),
+            _ => write!(f, "{} (\n{}\n)", self.inner, self.shader_source),
         }
     }
 }
