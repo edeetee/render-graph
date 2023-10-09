@@ -18,7 +18,7 @@ echo "Building"
 cargo build --release -p ffgl-lib
 
 echo "Copying to plugin bundle"
-cp "target/release/librender_graph_lib.dylib" "/Library/Graphics/FreeFrame Plug-Ins/FFGLRsTest.bundle/Contents/MacOS/FFGLRsTest"
+cp "target/release/libffgl_lib.dylib" "/Library/Graphics/FreeFrame Plug-Ins/FFGLRsTest.bundle/Contents/MacOS/FFGLRsTest"
 
 echo "Running resolume"
 open "/Applications/Resolume Arena/Arena.app" --args --nosplash

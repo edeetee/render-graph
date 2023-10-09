@@ -6,6 +6,7 @@
 
 [workspace]
 members = ["editor", "graph", "shaders", "common", "persistence", "ffgl-lib"]
+default-members = ["editor"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,7 +14,12 @@ members = ["editor", "graph", "shaders", "common", "persistence", "ffgl-lib"]
 # spout_texture_share = { path = "./spout" }
 
 # [target.'cfg(macos)'.dependencies]
-# syphon = { path = "./syphon" }
+# syphon = { path = "./syphon" 
+[profile.release]
+strip = true      # Automatically strip symbols from the binary.
+opt-level = "z"   # Optimize for size.
+lto = true
+codegen-units = 1
 
 
 [workspace.dependencies]

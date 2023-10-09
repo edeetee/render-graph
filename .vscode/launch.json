@@ -17,8 +17,6 @@
             "cargo": {
                 "args": [
                     "build",
-                    "-p",
-                    "editor"
                 ]
             },
             "args": []
@@ -31,8 +29,6 @@
                 "args": [
                     "build",
                     "--release",
-                    "-p",
-                    "editor"
                 ]
             },
             "args": []

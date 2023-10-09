@@ -93,6 +93,145 @@
           }
         },
         "version": 5
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 3,
+            "version": 1
+          },
+          "label": "mod",
+          "inputs": [
+            [
+              "text",
+              {
+                "idx": 6,
+                "version": 1
+              }
+            ],
+            [
+              "pixels",
+              {
+                "idx": 7,
+                "version": 1
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 3,
+                "version": 1
+              }
+            ]
+          ],
+          "user_data": {
+            "template": {
+              "Expression": {
+                "inputs": null,
+                "name": "mod",
+                "source": "mod(pixel, vec4(0.1))/vec4(0.1)"
+              }
+            }
+          }
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 4,
+            "version": 13
+          },
+          "label": "rgb_halftone",
+          "inputs": [
+            [
+              "inputImage",
+              {
+                "idx": 8,
+                "version": 13
+              }
+            ],
+            [
+              "gridSize",
+              {
+                "idx": 9,
+                "version": 13
+              }
+            ],
+            [
+              "smoothing",
+              {
+                "idx": 10,
+                "version": 9
+              }
+            ]
+          ],
+          "outputs": [
+            [
+              "Texture2D",
+              {
+                "idx": 4,
+                "version": 13
+              }
+            ]
+          ],
+          "user_data": {
+            "template": {
+              "Isf": {
+                "info": {
+                  "name": "RGB Halftone",
+                  "path": "/Library/Graphics/ISF/RGB Halftone.fs",
+                  "def": {
+                    "ISFVSN": "2",
+                    "VSN": null,
+                    "DESCRIPTION": null,
+                    "CATEGORIES": [
+                      "Halftone Effect",
+                      "Retro"
+                    ],
+                    "INPUTS": [
+                      {
+                        "NAME": "inputImage",
+                        "TYPE": "image",
+                        "DEFAULT": null,
+                        "MIN": null,
+                        "MAX": null,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      },
+                      {
+                        "NAME": "gridSize",
+                        "TYPE": "float",
+                        "DEFAULT": 45.0,
+                        "MIN": 1.0,
+                        "MAX": 256.0,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      },
+                      {
+                        "NAME": "smoothing",
+                        "TYPE": "float",
+                        "DEFAULT": 0.15000000596046448,
+                        "MIN": 0.0,
+                        "MAX": 1.0,
+                        "IDENTITY": null,
+                        "VALUES": [],
+                        "LABELS": []
+                      }
+                    ],
+                    "PASSES": [],
+                    "IMPORTED": {}
+                  }
+                }
+              }
+            }
+          }
+        },
+        "version": 13
       }
     ],
     "inputs": [
@@ -125,7 +264,7 @@
           },
           "typ": "None",
           "value": {
-            "Path": null
+            "Path": "/Users/edwardtaylor/Downloads/aegyptopithecus_seuxis.obj"
           },
           "kind": "ConstantOnly",
           "node": {
@@ -146,17 +285,17 @@
           "value": {
             "Mat4": {
               "mat": [
-                1.0,
+                -0.52607346,
+                -0.52352965,
+                -0.67019653,
                 0.0,
+                0.8038058,
+                -0.04871893,
+                -0.5928935,
                 0.0,
-                0.0,
-                0.0,
-                1.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
+                0.27774605,
+                -0.8506135,
+                0.44644588,
                 0.0,
                 0.0,
                 0.0,
@@ -182,9 +321,9 @@
                 1.0
               ],
               "rotation": [
-                0.0,
-                0.0,
-                0.0
+                323.6374,
+                56.330757,
+                266.53152
               ],
               "scale": 1.0,
               "translation": [
@@ -227,7 +366,7 @@
                 0.0,
                 0.0,
                 0.0,
-                -5.0,
+                -11.4,
                 1.0
               ],
               "initial": [
@@ -257,7 +396,7 @@
               "translation": [
                 0.0,
                 0.0,
-                -5.0
+                -11.4
               ]
             }
           },
@@ -280,7 +419,7 @@
           "value": {
             "Text": [
               {
-                "value": "dot(pixel, vec4(1,0,0,0))",
+                "value": "vec4(vec3(dot(pixel.rgb, vec3(1,0,0))), pixel.a)",
                 "min": null,
                 "max": null,
                 "default": "dot(pixel, vec4(1,0,0,0))"
@@ -296,6 +435,115 @@
           "shown_inline": true
         },
         "version": 3
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 6,
+            "version": 1
+          },
+          "typ": "None",
+          "value": {
+            "Text": [
+              {
+                "value": "vec4(mod(pixel.rgb, vec3(0.1))/vec3(0.1),pixel.a)",
+                "min": null,
+                "max": null,
+                "default": "mod(pixel, vec4(0.1))/vec4(0.1)"
+              },
+              "Multiline"
+            ]
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 3,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 7,
+            "version": 1
+          },
+          "typ": "Texture2D",
+          "value": "None",
+          "kind": "ConnectionOnly",
+          "node": {
+            "idx": 3,
+            "version": 1
+          },
+          "shown_inline": true
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 8,
+            "version": 13
+          },
+          "typ": "Texture2D",
+          "value": "None",
+          "kind": "ConnectionOnly",
+          "node": {
+            "idx": 4,
+            "version": 13
+          },
+          "shown_inline": true
+        },
+        "version": 13
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 9,
+            "version": 13
+          },
+          "typ": "None",
+          "value": {
+            "Float": {
+              "value": 20.0,
+              "min": 1.0,
+              "max": 256.0,
+              "default": 45.0
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 4,
+            "version": 13
+          },
+          "shown_inline": true
+        },
+        "version": 13
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 10,
+            "version": 9
+          },
+          "typ": "None",
+          "value": {
+            "Float": {
+              "value": 0.0,
+              "min": 0.0,
+              "max": 1.0,
+              "default": 0.15
+            }
+          },
+          "kind": "ConstantOnly",
+          "node": {
+            "idx": 4,
+            "version": 13
+          },
+          "shown_inline": true
+        },
+        "version": 9
       }
     ],
     "outputs": [
@@ -330,6 +578,34 @@
           "typ": "Texture2D"
         },
         "version": 5
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 3,
+            "version": 1
+          },
+          "node": {
+            "idx": 3,
+            "version": 1
+          },
+          "typ": "Texture2D"
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "id": {
+            "idx": 4,
+            "version": 13
+          },
+          "node": {
+            "idx": 4,
+            "version": 13
+          },
+          "typ": "Texture2D"
+        },
+        "version": 13
       }
     ],
     "connections": [
@@ -351,6 +627,40 @@
       {
         "value": null,
         "version": 0
+      },
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": {
+          "idx": 1,
+          "version": 9
+        },
+        "version": 1
+      },
+      {
+        "value": {
+          "idx": 3,
+          "version": 1
+        },
+        "version": 13
+      },
+      {
+        "value": null,
+        "version": 0
+      },
+      {
+        "value": null,
+        "version": 0
       }
     ]
   },
@@ -361,21 +671,55 @@
     },
     {
       "value": {
-        "x": 427.25,
-        "y": 178.02734
+        "x": 511.83203,
+        "y": 302.91406
       },
       "version": 9
     },
     {
       "value": {
-        "x": 49.9375,
-        "y": 228.60156
+        "x": 127.9375,
+        "y": 235.98438
       },
       "version": 5
+    },
+    {
+      "value": {
+        "x": 948.73047,
+        "y": 326.53906
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "x": 1378.1484,
+        "y": 356.22656
+      },
+      "version": 13
     }
   ],
   "animator": {
-    "animations": []
+    "animations": [
+      [
+        [
+          {
+            "idx": 2,
+            "version": 5
+          },
+          "model"
+        ],
+        {
+          "Rotation": {
+            "axis": [
+              0.0,
+              0.596274,
+              0.80278105
+            ],
+            "speed": 1.0
+          }
+        }
+      ]
+    ]
   },
   "node_names": [
     {
@@ -397,12 +741,28 @@
         "code_name": "objrender"
       },
       "version": 5
+    },
+    {
+      "value": {
+        "name": "mod",
+        "num": 0,
+        "code_name": "mod"
+      },
+      "version": 1
+    },
+    {
+      "value": {
+        "name": "RGB Halftone",
+        "num": 0,
+        "code_name": "rgb_halftone"
+      },
+      "version": 13
     }
   ],
   "window": {
     "res": [
-      800,
-      600
+      1235,
+      691
     ],
     "fullscreen": false
   },

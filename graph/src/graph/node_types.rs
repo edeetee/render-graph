@@ -7,8 +7,6 @@ use slotmap::SlotMap;
 use std::fmt::Display;
 use std::path::{Path, PathBuf};
 
-use super::def::{GraphState, NodeData};
-
 use crate::common::mat4_animator::Mat4Animator;
 use shaders::isf::meta::{default_isf_path, IsfInfo};
 
@@ -137,8 +135,8 @@ impl NodeType {
 
         let expression_templates = vec![
             ("white", "vec4(1.0,1.0,1.0,1.0)"),
-            ("dot", "dot(pixel, vec4(1,0,0,0))"),
-            ("mod", "mod(pixel, vec4(0.1))/vec4(0.1)"),
+            ("dot", "vec4(vec3(dot(pixel.rgb, vec3(1,0,0))), pixel.a)"),
+            ("mod", "vec4(mod(pixel.rgb, vec3(0.1))/vec3(0.1),pixel.a)"),
         ];
 
         let expressions = expression_templates
@@ -157,9 +155,6 @@ impl NodeType {
             .map(|node| TreeStructure::Leaf(leaves.insert(node)))
             .collect();
 
-        // let mut new_branches = SlotMap::default();
-        // branches.iter().map(|(b, p)| (b, p)).collect();
-
         Tree {
             tree: vec![
                 TreeStructure::Branch(branches.insert("defaults".to_string()), defaults),
@@ -172,13 +167,7 @@ impl NodeType {
     }
 
     pub fn defaults() -> Vec<NodeType> {
-        // let path = default_isf_path();
-        // let shaders = parse_isf_shaders(&path)
-        //     .map(|info| NodeType::Isf{info});
-
         let types = vec![
-            // NodeTypes::Instances,
-            // NodeTypes::Output,
             NodeType::ObjRender,
             NodeType::SharedOut,
             NodeType::Expression {
@@ -187,11 +176,11 @@ impl NodeType {
                 source: String::default(),
             },
         ];
-        // types.extend(shaders);
 
         types
     }
 }
+
 pub struct AllNodeTypes;
 impl NodeTemplateIter for AllNodeTypes {
     type Item = NodeType;
